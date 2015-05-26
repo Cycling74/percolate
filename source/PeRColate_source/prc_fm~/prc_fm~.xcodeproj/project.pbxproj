@@ -1,0 +1,413 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0F355ABB0945C48A00B134F6 /* MaxAudioAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F355ABA0945C48A00B134F6 /* MaxAudioAPI.framework */; };
+		0F5B62030919440900A62EB9 /* MaxAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F5B62020919440900A62EB9 /* MaxAPI.framework */; };
+		8D01CCCE0486CAD60068D4B7 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 08EA7FFBFE8413EDC02AAC07 /* Carbon.framework */; };
+		C1C01C3F0A900084001717A9 /* stk.c in Sources */ = {isa = PBXBuildFile; fileRef = C1C01C3E0A900084001717A9 /* stk.c */; };
+		C1C022490A9021DF001717A9 /* Stk.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C022480A9021DF001717A9 /* Stk.cpp */; };
+		C1C022FB0A902525001717A9 /* prc_fm~.rsrc in Rez */ = {isa = PBXBuildFile; fileRef = C1C022FA0A902525001717A9 /* prc_fm~.rsrc */; };
+		C1C022FD0A90252A001717A9 /* prc_fm~.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C022FC0A90252A001717A9 /* prc_fm~.cpp */; };
+		C1C023610A90263C001717A9 /* BeeThree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0235A0A90263C001717A9 /* BeeThree.cpp */; };
+		C1C023620A90263C001717A9 /* FMVoices.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0235B0A90263C001717A9 /* FMVoices.cpp */; };
+		C1C023630A90263C001717A9 /* HevyMetl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0235C0A90263C001717A9 /* HevyMetl.cpp */; };
+		C1C023640A90263C001717A9 /* PercFlut.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0235D0A90263C001717A9 /* PercFlut.cpp */; };
+		C1C023650A90263C001717A9 /* Rhodey.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0235E0A90263C001717A9 /* Rhodey.cpp */; };
+		C1C023660A90263C001717A9 /* TubeBell.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0235F0A90263C001717A9 /* TubeBell.cpp */; };
+		C1C023670A90263C001717A9 /* Wurley.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C023600A90263C001717A9 /* Wurley.cpp */; };
+		C1C0236D0A90267D001717A9 /* ADSR.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C023690A90267D001717A9 /* ADSR.cpp */; };
+		C1C0236E0A90267D001717A9 /* FM.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0236A0A90267D001717A9 /* FM.cpp */; };
+		C1C0236F0A90267D001717A9 /* Instrmnt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0236B0A90267D001717A9 /* Instrmnt.cpp */; };
+		C1C023700A90267D001717A9 /* TwoZero.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0236C0A90267D001717A9 /* TwoZero.cpp */; };
+		C1C023760A9026A7001717A9 /* Envelope.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C023720A9026A7001717A9 /* Envelope.cpp */; };
+		C1C023770A9026A7001717A9 /* Generator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C023730A9026A7001717A9 /* Generator.cpp */; };
+		C1C023780A9026A7001717A9 /* Phonemes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C023740A9026A7001717A9 /* Phonemes.cpp */; };
+		C1C023790A9026A7001717A9 /* WaveLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C023750A9026A7001717A9 /* WaveLoop.cpp */; };
+		C1C0237C0A9026BC001717A9 /* Filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0237B0A9026BC001717A9 /* Filter.cpp */; };
+		C1C0237E0A9026C7001717A9 /* WvIn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C1C0237D0A9026C7001717A9 /* WvIn.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		08EA7FFBFE8413EDC02AAC07 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
+		0F355ABA0945C48A00B134F6 /* MaxAudioAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MaxAudioAPI.framework; path = /Library/Frameworks/MaxAudioAPI.framework; sourceTree = "<absolute>"; };
+		0F5B62020919440900A62EB9 /* MaxAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MaxAPI.framework; path = /Library/Frameworks/MaxAPI.framework; sourceTree = "<absolute>"; };
+		C1C018C10A8FEEC4001717A9 /* prc_fm~.mxo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "prc_fm~.mxo"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1C01C3E0A900084001717A9 /* stk.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = stk.c; path = ../../c74support/PeRColate_includes/stk.c; sourceTree = SOURCE_ROOT; };
+		C1C022480A9021DF001717A9 /* Stk.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Stk.cpp; path = ../../c74support/PeRColate_includes/src/Stk.cpp; sourceTree = SOURCE_ROOT; };
+		C1C022FA0A902525001717A9 /* prc_fm~.rsrc */ = {isa = PBXFileReference; lastKnownFileType = archive.rsrc; path = "prc_fm~.rsrc"; sourceTree = "<group>"; };
+		C1C022FC0A90252A001717A9 /* prc_fm~.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = "prc_fm~.cpp"; sourceTree = "<group>"; };
+		C1C0235A0A90263C001717A9 /* BeeThree.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = BeeThree.cpp; path = ../../c74support/PeRColate_includes/src/BeeThree.cpp; sourceTree = SOURCE_ROOT; };
+		C1C0235B0A90263C001717A9 /* FMVoices.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = FMVoices.cpp; path = ../../c74support/PeRColate_includes/src/FMVoices.cpp; sourceTree = SOURCE_ROOT; };
+		C1C0235C0A90263C001717A9 /* HevyMetl.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = HevyMetl.cpp; path = ../../c74support/PeRColate_includes/src/HevyMetl.cpp; sourceTree = SOURCE_ROOT; };
+		C1C0235D0A90263C001717A9 /* PercFlut.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = PercFlut.cpp; path = ../../c74support/PeRColate_includes/src/PercFlut.cpp; sourceTree = SOURCE_ROOT; };
+		C1C0235E0A90263C001717A9 /* Rhodey.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Rhodey.cpp; path = ../../c74support/PeRColate_includes/src/Rhodey.cpp; sourceTree = SOURCE_ROOT; };
+		C1C0235F0A90263C001717A9 /* TubeBell.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = TubeBell.cpp; path = ../../c74support/PeRColate_includes/src/TubeBell.cpp; sourceTree = SOURCE_ROOT; };
+		C1C023600A90263C001717A9 /* Wurley.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Wurley.cpp; path = ../../c74support/PeRColate_includes/src/Wurley.cpp; sourceTree = SOURCE_ROOT; };
+		C1C023690A90267D001717A9 /* ADSR.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = ADSR.cpp; path = ../../c74support/PeRColate_includes/src/ADSR.cpp; sourceTree = SOURCE_ROOT; };
+		C1C0236A0A90267D001717A9 /* FM.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = FM.cpp; path = ../../c74support/PeRColate_includes/src/FM.cpp; sourceTree = SOURCE_ROOT; };
+		C1C0236B0A90267D001717A9 /* Instrmnt.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Instrmnt.cpp; path = ../../c74support/PeRColate_includes/src/Instrmnt.cpp; sourceTree = SOURCE_ROOT; };
+		C1C0236C0A90267D001717A9 /* TwoZero.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = TwoZero.cpp; path = ../../c74support/PeRColate_includes/src/TwoZero.cpp; sourceTree = SOURCE_ROOT; };
+		C1C023720A9026A7001717A9 /* Envelope.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Envelope.cpp; path = ../../c74support/PeRColate_includes/src/Envelope.cpp; sourceTree = SOURCE_ROOT; };
+		C1C023730A9026A7001717A9 /* Generator.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Generator.cpp; path = ../../c74support/PeRColate_includes/src/Generator.cpp; sourceTree = SOURCE_ROOT; };
+		C1C023740A9026A7001717A9 /* Phonemes.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Phonemes.cpp; path = ../../c74support/PeRColate_includes/src/Phonemes.cpp; sourceTree = SOURCE_ROOT; };
+		C1C023750A9026A7001717A9 /* WaveLoop.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = WaveLoop.cpp; path = ../../c74support/PeRColate_includes/src/WaveLoop.cpp; sourceTree = SOURCE_ROOT; };
+		C1C0237B0A9026BC001717A9 /* Filter.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Filter.cpp; path = ../../c74support/PeRColate_includes/src/Filter.cpp; sourceTree = SOURCE_ROOT; };
+		C1C0237D0A9026C7001717A9 /* WvIn.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = WvIn.cpp; path = ../../c74support/PeRColate_includes/src/WvIn.cpp; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8D01CCCD0486CAD60068D4B7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D01CCCE0486CAD60068D4B7 /* Carbon.framework in Frameworks */,
+				0F5B62030919440900A62EB9 /* MaxAPI.framework in Frameworks */,
+				0F355ABB0945C48A00B134F6 /* MaxAudioAPI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		089C166AFE841209C02AAC07 /* cycle~ */ = {
+			isa = PBXGroup;
+			children = (
+				08FB77ADFE841716C02AAC07 /* Source */,
+				089C167CFE841241C02AAC07 /* Resources */,
+				089C1671FE841209C02AAC07 /* External Frameworks and Libraries */,
+				19C28FB4FE9D528D11CA2CBB /* Products */,
+			);
+			name = "cycle~";
+			sourceTree = "<group>";
+		};
+		089C1671FE841209C02AAC07 /* External Frameworks and Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				0F355ABA0945C48A00B134F6 /* MaxAudioAPI.framework */,
+				0F5B62020919440900A62EB9 /* MaxAPI.framework */,
+				08EA7FFBFE8413EDC02AAC07 /* Carbon.framework */,
+			);
+			name = "External Frameworks and Libraries";
+			sourceTree = "<group>";
+		};
+		089C167CFE841241C02AAC07 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				C1C022FA0A902525001717A9 /* prc_fm~.rsrc */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		08FB77ADFE841716C02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				C1C022FC0A90252A001717A9 /* prc_fm~.cpp */,
+				C1C01C3E0A900084001717A9 /* stk.c */,
+				C1C022480A9021DF001717A9 /* Stk.cpp */,
+				C1C0235A0A90263C001717A9 /* BeeThree.cpp */,
+				C1C0235B0A90263C001717A9 /* FMVoices.cpp */,
+				C1C0235C0A90263C001717A9 /* HevyMetl.cpp */,
+				C1C0235D0A90263C001717A9 /* PercFlut.cpp */,
+				C1C0235E0A90263C001717A9 /* Rhodey.cpp */,
+				C1C0235F0A90263C001717A9 /* TubeBell.cpp */,
+				C1C023600A90263C001717A9 /* Wurley.cpp */,
+				C1C023690A90267D001717A9 /* ADSR.cpp */,
+				C1C0236A0A90267D001717A9 /* FM.cpp */,
+				C1C0236B0A90267D001717A9 /* Instrmnt.cpp */,
+				C1C0236C0A90267D001717A9 /* TwoZero.cpp */,
+				C1C023720A9026A7001717A9 /* Envelope.cpp */,
+				C1C023730A9026A7001717A9 /* Generator.cpp */,
+				C1C023740A9026A7001717A9 /* Phonemes.cpp */,
+				C1C023750A9026A7001717A9 /* WaveLoop.cpp */,
+				C1C0237B0A9026BC001717A9 /* Filter.cpp */,
+				C1C0237D0A9026C7001717A9 /* WvIn.cpp */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		19C28FB4FE9D528D11CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C1C018C10A8FEEC4001717A9 /* prc_fm~.mxo */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		8D01CCC70486CAD60068D4B7 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		8D01CCC60486CAD60068D4B7 /* prc_fm~ */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0FFBBDBD097459CD00D78707 /* Build configuration list for PBXNativeTarget "prc_fm~" */;
+			buildPhases = (
+				8D01CCC70486CAD60068D4B7 /* Headers */,
+				8D01CCC90486CAD60068D4B7 /* Resources */,
+				8D01CCCB0486CAD60068D4B7 /* Sources */,
+				8D01CCCD0486CAD60068D4B7 /* Frameworks */,
+				8D01CCCF0486CAD60068D4B7 /* Rez */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "prc_fm~";
+			productInstallPath = "$(HOME)/Library/Bundles";
+			productName = "cycle~";
+			productReference = C1C018C10A8FEEC4001717A9 /* prc_fm~.mxo */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		089C1669FE841209C02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 0FFBBDC1097459CD00D78707 /* Build configuration list for PBXProject "prc_fm~" */;
+			hasScannedForEncodings = 1;
+			mainGroup = 089C166AFE841209C02AAC07 /* cycle~ */;
+			projectDirPath = "";
+			targets = (
+				8D01CCC60486CAD60068D4B7 /* prc_fm~ */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8D01CCC90486CAD60068D4B7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXRezBuildPhase section */
+		8D01CCCF0486CAD60068D4B7 /* Rez */ = {
+			isa = PBXRezBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C1C022FB0A902525001717A9 /* prc_fm~.rsrc in Rez */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXRezBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8D01CCCB0486CAD60068D4B7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C1C01C3F0A900084001717A9 /* stk.c in Sources */,
+				C1C022490A9021DF001717A9 /* Stk.cpp in Sources */,
+				C1C022FD0A90252A001717A9 /* prc_fm~.cpp in Sources */,
+				C1C023610A90263C001717A9 /* BeeThree.cpp in Sources */,
+				C1C023620A90263C001717A9 /* FMVoices.cpp in Sources */,
+				C1C023630A90263C001717A9 /* HevyMetl.cpp in Sources */,
+				C1C023640A90263C001717A9 /* PercFlut.cpp in Sources */,
+				C1C023650A90263C001717A9 /* Rhodey.cpp in Sources */,
+				C1C023660A90263C001717A9 /* TubeBell.cpp in Sources */,
+				C1C023670A90263C001717A9 /* Wurley.cpp in Sources */,
+				C1C0236D0A90267D001717A9 /* ADSR.cpp in Sources */,
+				C1C0236E0A90267D001717A9 /* FM.cpp in Sources */,
+				C1C0236F0A90267D001717A9 /* Instrmnt.cpp in Sources */,
+				C1C023700A90267D001717A9 /* TwoZero.cpp in Sources */,
+				C1C023760A9026A7001717A9 /* Envelope.cpp in Sources */,
+				C1C023770A9026A7001717A9 /* Generator.cpp in Sources */,
+				C1C023780A9026A7001717A9 /* Phonemes.cpp in Sources */,
+				C1C023790A9026A7001717A9 /* WaveLoop.cpp in Sources */,
+				C1C0237C0A9026BC001717A9 /* Filter.cpp in Sources */,
+				C1C0237E0A9026C7001717A9 /* WvIn.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0FFBBDBE097459CD00D78707 /* Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DEBUGGING_SYMBOLS = YES;
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = "$(PROJECT_DIR)";
+				FRAMEWORK_SEARCH_PATHS = /Library/Frameworks;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_ENABLE_TRIGRAPHS = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "../../c74support/max-includes/macho-prefix.h";
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
+				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
+				GCC_WARN_UNKNOWN_PRAGMAS = NO;
+				GENERATE_PKGINFO_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"../../c74support/max-includes",
+					"../../c74support/msp-includes",
+					../../c74support/PeRColate_includes,
+				);
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "/../../../sysbuild/$(CONFIGURATION)/Cycling '74/externals";
+				LIBRARY_SEARCH_PATHS = "";
+				LIBRARY_STYLE = Bundle;
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "prc_fm~";
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+				WRAPPER_EXTENSION = mxo;
+				ZERO_LINK = YES;
+			};
+			name = Development;
+		};
+		0FFBBDBF097459CD00D78707 /* Deployment */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					ppc,
+					i386,
+				);
+				COPY_PHASE_STRIP = YES;
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = "$(PROJECT_DIR)";
+				FRAMEWORK_SEARCH_PATHS = /Library/Frameworks;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_ENABLE_TRIGRAPHS = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "../../c74support/max-includes/macho-prefix.h";
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
+				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
+				GCC_WARN_UNKNOWN_PRAGMAS = NO;
+				GENERATE_PKGINFO_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"../../c74support/max-includes",
+					"../../c74support/msp-includes",
+					../../c74support/PeRColate_includes,
+				);
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "/../../../sysbuild/$(CONFIGURATION)/Cycling '74/externals";
+				LIBRARY_SEARCH_PATHS = "";
+				LIBRARY_STYLE = Bundle;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "prc_fm~";
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+				WRAPPER_EXTENSION = mxo;
+				ZERO_LINK = NO;
+			};
+			name = Deployment;
+		};
+		0FFBBDC0097459CD00D78707 /* Default */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = "$(PROJECT_DIR)";
+				FRAMEWORK_SEARCH_PATHS = /Library/Frameworks;
+				GCC_ENABLE_TRIGRAPHS = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "../../c74support/max-includes/macho-prefix.h";
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
+				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
+				GCC_WARN_UNKNOWN_PRAGMAS = NO;
+				GENERATE_PKGINFO_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"../../c74support/max-includes",
+					"../../c74support/msp-includes",
+					../../c74support/PeRColate_includes,
+				);
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "/../../../sysbuild/$(CONFIGURATION)/Cycling '74/externals";
+				LIBRARY_SEARCH_PATHS = "";
+				LIBRARY_STYLE = Bundle;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "prc_fm~";
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+				WRAPPER_EXTENSION = mxo;
+			};
+			name = Default;
+		};
+		0FFBBDC2097459CD00D78707 /* Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Development;
+		};
+		0FFBBDC3097459CD00D78707 /* Deployment */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Deployment;
+		};
+		0FFBBDC4097459CD00D78707 /* Default */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Default;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0FFBBDBD097459CD00D78707 /* Build configuration list for PBXNativeTarget "prc_fm~" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0FFBBDBE097459CD00D78707 /* Development */,
+				0FFBBDBF097459CD00D78707 /* Deployment */,
+				0FFBBDC0097459CD00D78707 /* Default */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Default;
+		};
+		0FFBBDC1097459CD00D78707 /* Build configuration list for PBXProject "prc_fm~" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0FFBBDC2097459CD00D78707 /* Development */,
+				0FFBBDC3097459CD00D78707 /* Deployment */,
+				0FFBBDC4097459CD00D78707 /* Default */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Default;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 089C1669FE841209C02AAC07 /* Project object */;
+}

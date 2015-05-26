@@ -1,28 +1,18 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+.DS_Store
+build/
+*.pbxuser
+*.mode1v3
+xcuserdata
+*.xcworkspace
+*.tm_build_errors
+*.ncb
+*.suo
+*.vcproj.*
+*.wwdb
+*.user
+*.sdf
+ipch
+*.opensdf
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+externals
+temp
