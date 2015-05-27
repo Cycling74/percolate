@@ -287,7 +287,7 @@ void gq_setbank(t_gq *x, Symbol *s, short argc, Atom *argv)
 	banksettings[2] = x->x_bt[x->currentbank];			//boost
 	banksettings[3] = x->x_type[x->currentbank];		//filter type
 	for(i=0;i<4;i++) {
-		SETFLOAT(outlist+i, banksettings[i]);
+		atom_setfloat(outlist+i, banksettings[i]);
 	}
 	outlet_list(x->outlist, 0L, 4, outlist);
 	}

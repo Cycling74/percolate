@@ -62,6 +62,9 @@
 #define post(...)	object_post(NULL, __VA_ARGS__)
 #define error(...)	object_error(NULL, __VA_ARGS__)
 
+#define SETLONG atom_setlong
+#define SETFLOAT atom_setfloat
+
 BEGIN_USING_C_LINKAGE
 /**	ext_main() is the entry point for an extern to be loaded, which all externs must implement
 	this shared/common prototype ensures that it will be exported correctly on all platforms.

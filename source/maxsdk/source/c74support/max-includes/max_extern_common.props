@@ -26,6 +26,7 @@
     </ResourceCompile>
     <ClCompile>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(C74SUPPORT)\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Manifest>
       <OutputManifestFile>$(IntDir)$(TargetName).manifest</OutputManifestFile>

@@ -168,7 +168,7 @@ void *gen25_free(gen25 *x)
 {
 	if (x != NULL) {
 		if (x->g_table != NULL) {
-			sysmem_freeptr((Ptr) x->g_table); // free the memory allocated for the table...
+			sysmem_freeptr(x->g_table); // free the memory allocated for the table...
 		}
 	}
 }
