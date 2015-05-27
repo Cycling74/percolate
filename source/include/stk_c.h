@@ -29,7 +29,11 @@
 /************************************************/
 #include "ext.h"
 #include "z_dsp.h"
+#ifdef WIN_VERSION
+#include <sys/stat.h>
+#else
 #include <stat.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
