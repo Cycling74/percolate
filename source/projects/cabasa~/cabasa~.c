@@ -131,7 +131,7 @@ float noise_tick()
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&cabasa_class, (method)cabasa_new, (method)dsp_free, (short)sizeof(t_cabasa), 0L, A_DEFFLOAT, 0);
     addmess((method)cabasa_dsp, "dsp", A_CANT, 0);

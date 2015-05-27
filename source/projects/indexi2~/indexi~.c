@@ -23,7 +23,7 @@ void index_dblclick(t_index *x);
 
 t_symbol *ps_buffer;
 
-void main(void)
+void ext_main(void* p)
 {
 	setup((struct messlist **)&index_class, (method)index_new, (method)dsp_free, (short)sizeof(t_index), 0L, 
 		A_SYM, A_DEFLONG, 0);

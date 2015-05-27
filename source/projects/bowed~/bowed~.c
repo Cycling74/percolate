@@ -122,7 +122,7 @@ float vib_tick(t_bowed *x)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((t_messlist **)&bowed_class, (method)bowed_new, (method)bowed_free, (short)sizeof(t_bowed), 0L, A_DEFFLOAT, 0);
     addmess((method)bowed_dsp, "dsp", A_CANT, 0);

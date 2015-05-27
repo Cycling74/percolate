@@ -21,7 +21,7 @@ void sigabsmin_int(t_sigabsmin *x, long n);
 void sigabsmin_dsp(t_sigabsmin *x, t_signal **sp, short *count);
 void sigabsmin_assist(t_sigabsmin *x, void *b, long m, long a, char *s);
 
-void main(void)
+void ext_main(void* p)
 {
     setup((t_messlist **)&sigabsmin_class, (method)sigabsmin_new, (method)dsp_free, (short)sizeof(t_sigabsmin), 0L, A_DEFFLOAT, 0);
     addmess((method)sigabsmin_dsp, "dsp", A_CANT, 0);

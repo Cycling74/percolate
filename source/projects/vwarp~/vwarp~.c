@@ -47,7 +47,7 @@ void *vectorwarp_class;
 
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&vectorwarp_class, (method)vectorwarp_new, (method)dsp_free, (short)sizeof(t_vectorwarp), 0L, A_GIMME, 0);
     addmess((method)vectorwarp_dsp, "dsp", A_CANT, 0);

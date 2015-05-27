@@ -48,7 +48,7 @@ float dcblock_tick(t_dcblock *x, float sample)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
 	//basic setup of the object
     setup((struct messlist **)&dcblock_class, (method)dcblock_new, (method)dsp_free, (short)sizeof(t_dcblock), 0L, A_DEFFLOAT, 0);

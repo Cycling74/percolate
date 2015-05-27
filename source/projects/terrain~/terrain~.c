@@ -30,7 +30,7 @@ void terrain_frames(t_terrain *x, long frames);
 
 t_symbol *ps_buffer;
 
-void main(void)
+void ext_main(void* p)
 {
 	setup((t_messlist **)&terrain_class, (method)terrain_new, (method)dsp_free, (short)sizeof(t_terrain), 0L, 
 		A_SYM, A_DEFLONG, A_DEFLONG, 0);

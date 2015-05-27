@@ -144,7 +144,7 @@ float noise_tick()
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&guiro_class, (method)guiro_new, (method)dsp_free, (short)sizeof(t_guiro), 0L, A_DEFFLOAT, 0);
     addmess((method)guiro_dsp, "dsp", A_CANT, 0);

@@ -21,7 +21,7 @@ void sigflip_int(t_sigflip *x, long n);
 void sigflip_dsp(t_sigflip *x, t_signal **sp, short *count);
 void sigflip_assist(t_sigflip *x, void *b, long m, long a, char *s);
 
-void main(void)
+void ext_main(void* p)
 {
     setup((t_messlist **)&sigflip_class, (method)sigflip_new, (method)dsp_free, (short)sizeof(t_sigflip), 0L, A_DEFFLOAT, 0);
     addmess((method)sigflip_dsp, "dsp", A_CANT, 0);

@@ -93,7 +93,7 @@ void pluck(t_plucked *x, float amplitude)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&plucked_class, (method)plucked_new, (method)plucked_free, (short)sizeof(t_plucked), 0L, A_DEFFLOAT, 0);
     addmess((method)plucked_dsp, "dsp", A_CANT, 0);

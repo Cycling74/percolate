@@ -117,7 +117,7 @@ float vib_tick(t_clar *x)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&clar_class, (method)clar_new, (method)clar_free, (short)sizeof(t_clar), 0L, A_DEFFLOAT, 0);
     addmess((method)clar_dsp, "dsp", A_CANT, 0);

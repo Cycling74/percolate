@@ -32,7 +32,7 @@ void weave_int(t_weave *x, long n); // what to do with an int
 void weave_dsp(t_weave *x, t_signal **sp, short *count); // dsp add function
 void weave_assist(t_weave *x, void *b, long m, long a, char *s); // assistance function
 
-void main(void)
+void ext_main(void* p)
 {
     setup((t_messlist **)&weave_class, (method)weave_new, (method)weave_free, (short)sizeof(t_weave), 0L, A_DEFLONG, A_DEFLONG, 0);
 

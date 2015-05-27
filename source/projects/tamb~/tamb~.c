@@ -170,7 +170,7 @@ float noise_tick()
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&tamb_class, (method)tamb_new, (method)dsp_free, (short)sizeof(t_tamb), 0L, A_DEFFLOAT, 0);
     addmess((method)tamb_dsp, "dsp", A_CANT, 0);

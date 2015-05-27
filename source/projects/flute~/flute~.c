@@ -136,7 +136,7 @@ float vib_tick(t_flute *x)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&flute_class, (method)flute_new, (method)flute_free, (short)sizeof(t_flute), 0L, A_DEFFLOAT, 0);
     addmess((method)flute_dsp, "dsp", A_CANT, 0);

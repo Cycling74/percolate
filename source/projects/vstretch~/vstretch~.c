@@ -36,7 +36,7 @@ void *vectorstretch_class;
 
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&vectorstretch_class, (method)vectorstretch_new, (method)dsp_free, (short)sizeof(t_vectorstretch), 0L, A_GIMME, 0);
     addmess((method)vectorstretch_dsp, "dsp", A_CANT, 0);

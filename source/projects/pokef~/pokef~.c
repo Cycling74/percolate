@@ -27,7 +27,7 @@ void pokef_length(t_pokef *x, Symbol *s, short argc, Atom *argv);
 
 t_symbol *ps_buffer;
 
-void main(void)
+void ext_main(void* p)
 {
 	setup((struct messlist **)&pokef_class, (method)pokef_new, (method)dsp_free, (short)sizeof(t_pokef), 0L, 
 		A_SYM, A_DEFLONG, 0);

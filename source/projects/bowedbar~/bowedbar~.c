@@ -177,7 +177,7 @@ void pluck(t_bowedbar *x, float amplitude)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&bowedbar_class, (method)bowedbar_new, (method)bowedbar_free, (short)sizeof(t_bowedbar), 0L, A_DEFFLOAT, 0);
     addmess((method)bowedbar_dsp, "dsp", A_CANT, 0);

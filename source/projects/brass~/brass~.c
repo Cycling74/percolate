@@ -121,7 +121,7 @@ float vib_tick(t_brass *x)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&brass_class, (method)brass_new, (method)brass_free, (short)sizeof(t_brass), 0L, A_DEFFLOAT, 0);
     addmess((method)brass_dsp, "dsp", A_CANT, 0);

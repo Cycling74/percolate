@@ -97,7 +97,7 @@ void dline_tick(t_vcomb *x, long whichLine, float *samples)        			// Take tw
 
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
 	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
 	//change these if you want different user args

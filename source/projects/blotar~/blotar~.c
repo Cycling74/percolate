@@ -213,7 +213,7 @@ float vib_tick(t_blotar *x)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&blotar_class, (method)blotar_new, (method)blotar_free, (short)sizeof(t_blotar), 0L, A_DEFFLOAT, 0);
     addmess((method)blotar_dsp, "dsp", A_CANT, 0);

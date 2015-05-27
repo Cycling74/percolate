@@ -21,7 +21,7 @@ void sigabsmax_int(t_sigabsmax *x, long n);
 void sigabsmax_dsp(t_sigabsmax *x, t_signal **sp, short *count);
 void sigabsmax_assist(t_sigabsmax *x, void *b, long m, long a, char *s);
 
-void main(void)
+void ext_main(void* p)
 {
     setup((t_messlist **)&sigabsmax_class, (method)sigabsmax_new, (method)dsp_free, (short)sizeof(t_sigabsmax), 0L, A_DEFFLOAT, 0);
     addmess((method)sigabsmax_dsp, "dsp", A_CANT, 0);

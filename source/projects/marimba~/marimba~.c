@@ -104,7 +104,7 @@ void Marimba_strike(t_marimba *x, float amplitude)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&marimba_class, (method)marimba_new, (method)marimba_free, (short)sizeof(t_marimba), 0L, A_DEFFLOAT, 0);
     addmess((method)marimba_dsp, "dsp", A_CANT, 0);

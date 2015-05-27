@@ -30,7 +30,7 @@ void jitter_dsp(t_jitter *x, t_signal **sp, short *count); // dsp add function
 void jitter_assist(t_jitter *x, void *b, long m, long a, char *s); // assistance function
 void jitter_bang(t_jitter *x); // bang function
 
-void main(void)
+void ext_main(void* p)
 {
     setup((t_messlist **)&jitter_class, (method)jitter_new, (method)dsp_free, (short)sizeof(t_jitter), 0L, A_DEFFLOAT, A_DEFFLOAT, 0);
 

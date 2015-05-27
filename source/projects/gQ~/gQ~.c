@@ -204,7 +204,7 @@ void setFreqBoostBandwidth(t_gq *x, float freq, float boost, float thisBandwidth
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&gq_class, (method)gq_new, (method)dsp_free, (short)sizeof(t_gq), 0L, A_DEFFLOAT, 0);
     addmess((method)gq_dsp, "dsp", A_CANT, 0);

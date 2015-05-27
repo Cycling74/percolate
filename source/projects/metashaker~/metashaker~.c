@@ -515,7 +515,7 @@ float noise_tick()
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&metashake_class, (method)metashake_new, (method)dsp_free, (short)sizeof(t_metashake), 0L, A_DEFFLOAT, 0);
     addmess((method)metashake_dsp, "dsp", A_CANT, 0);

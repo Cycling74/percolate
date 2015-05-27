@@ -21,7 +21,7 @@ void waffle_assist(t_waffle *x, void *b, long m, long a, char *s);
 
 t_symbol *ps_buffer;
 
-void main(void)
+void ext_main(void* p)
 {
 	setup((t_messlist **)&waffle_class, (method)waffle_new, (method)dsp_free, (short)sizeof(t_waffle), 0L, 0);
 	addmess((method)waffle_dsp, "dsp", A_CANT, 0);

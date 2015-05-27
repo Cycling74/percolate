@@ -144,7 +144,7 @@ float nbody_tick(t_nbody *x) {
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&nbody_class, (method)nbody_new, (method)dsp_free, (short)sizeof(t_nbody), 0L, A_DEFFLOAT, 0);
     addmess((method)nbody_dsp, "dsp", A_CANT, 0);

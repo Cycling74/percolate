@@ -39,7 +39,7 @@ void recordf_dblclick(t_recordf *x);
 
 t_symbol *ps_buffer;
 
-void main(void)
+void ext_main(void* p)
 {
 	setup((struct messlist **)&recordf_class, (method)recordf_new, (method)dsp_free, (short)sizeof(t_recordf), 0L, 
 		A_SYM, A_DEFLONG, 0);

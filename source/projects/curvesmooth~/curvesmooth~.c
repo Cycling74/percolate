@@ -99,7 +99,7 @@ double table_lookup(t_curvesmooth *x, double d, double k);
 /****FUNCTIONS****/
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
 	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
 	//change these if you want different user args

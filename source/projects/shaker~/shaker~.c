@@ -271,7 +271,7 @@ float noise_tick()
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&shaker_class, (method)shaker_new, (method)dsp_free, (short)sizeof(t_shaker), 0L, A_DEFFLOAT, 0);
     addmess((method)shaker_dsp, "dsp", A_CANT, 0);

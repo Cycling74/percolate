@@ -89,7 +89,7 @@ void Agogo_setStrikePosition(t_agogo *x, float position)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&agogo_class, (method)agogo_new, (method)agogo_free, (short)sizeof(t_agogo), 0L, A_DEFFLOAT, 0);
     addmess((method)agogo_dsp, "dsp", A_CANT, 0);

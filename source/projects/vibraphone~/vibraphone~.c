@@ -89,7 +89,7 @@ void Vibraphone_setStrikePosition(t_vibraphone *x, float position)
 }
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&vibraphone_class, (method)vibraphone_new, (method)vibraphone_free, (short)sizeof(t_vibraphone), 0L, A_DEFFLOAT, 0);
     addmess((method)vibraphone_dsp, "dsp", A_CANT, 0);

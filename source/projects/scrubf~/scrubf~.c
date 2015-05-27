@@ -356,7 +356,7 @@ void scrub_assist(t_scrub *x, void *b, long m, long a, char *s)
 
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&scrub_class, (method)scrub_new, (method)scrub_free, (short)sizeof(t_scrub), 0L, A_DEFFLOAT, 0);
     addmess((method)scrub_dsp, "dsp", A_CANT, 0);

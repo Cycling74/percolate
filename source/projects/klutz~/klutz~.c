@@ -25,7 +25,7 @@ t_int *klutz_perform(t_int *w); // dsp perform function
 void klutz_dsp(t_klutz *x, t_signal **sp, short *count); // dsp add function
 void klutz_assist(t_klutz *x, void *b, long m, long a, char *s); // assistance function
 
-void main(void)
+void ext_main(void* p)
 {
     setup((t_messlist **)&klutz_class, (method)klutz_new, (method)dsp_free, (short)sizeof(t_klutz), 0L, A_DEFFLOAT, A_DEFFLOAT, 0);
 

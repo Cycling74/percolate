@@ -22,7 +22,7 @@ void chase_assist(t_chase *x, void *b, long m, long a, char *s);
 
 t_symbol *ps_buffer;
 
-void main(void)
+void ext_main(void* p)
 {
 	setup((t_messlist **)&chase_class, (method)chase_new, (method)dsp_free, (short)sizeof(t_chase), 0L, 0);
 	addmess((method)chase_dsp, "dsp", A_CANT, 0);

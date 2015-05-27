@@ -23,7 +23,7 @@ void sigcasey_bang(t_sigcasey *x);
 void sigcasey_dsp(t_sigcasey *x, t_signal **sp, short *count);
 void sigcasey_assist(t_sigcasey *x, void *b, long m, long a, char *s);
 
-void main(void)
+void ext_main(void* p)
 {
     setup((t_messlist **)&sigcasey_class, (method)sigcasey_new, (method)dsp_free, (short)sizeof(t_sigcasey), 0L, A_DEFFLOAT, 0);
     addmess((method)sigcasey_dsp, "dsp", A_CANT, 0);

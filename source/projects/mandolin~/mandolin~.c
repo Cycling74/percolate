@@ -157,7 +157,7 @@ void setBaseLoopGain(t_mando *x, float aGain)
 
 
 //primary MSP funcs
-void main(void)
+void ext_main(void* p)
 {
     setup((struct messlist **)&mando_class, (method)mando_new, (method)mando_free, (short)sizeof(t_mando), 0L, A_DEFFLOAT, 0);
     addmess((method)mando_dsp, "dsp", A_CANT, 0);

@@ -29,7 +29,7 @@ void random_range(t_random *x, long n); // set random range
 void random_dsp(t_random *x, t_signal **sp, short *count); // dsp add function
 void random_assist(t_random *x, void *b, long m, long a, char *s); // assistance function
 
-void main(void)
+void ext_main(void* p)
 {
     setup((t_messlist **)&random_class, (method)random_new, (method)random_free, (short)sizeof(t_random), 0L, A_DEFLONG, A_DEFLONG, 0);
 
