@@ -17,7 +17,7 @@ ARCHS = i386 x86_64
 
 // Paths
 C74SUPPORT = $(SRCROOT)/../../c74support
-HEADER_SEARCH_PATHS = "$(C74SUPPORT)/max-includes" "$(C74SUPPORT)/msp-includes" "$(C74SUPPORT)/jit-includes"
+HEADER_SEARCH_PATHS = "$(C74SUPPORT)/max-includes" "$(C74SUPPORT)/msp-includes" "$(C74SUPPORT)/jit-includes" "$(SRCROOT)"/../../include
 FRAMEWORK_SEARCH_PATHS = "$(C74SUPPORT)/max-includes" "$(C74SUPPORT)/msp-includes" "$(C74SUPPORT)/jit-includes"
 DSTROOT = $(SRCROOT)/../../../externals
 // (This next path is relative to DSTROOT)
@@ -49,7 +49,7 @@ MACOSX_DEPLOYMENT_TARGET = 10.7
 
 
 // Preprocessor Defines
-GCC_PREPROCESSOR_DEFINITIONS = "DENORM_WANT_FIX = 1" "NO_TRANSLATION_SUPPORT = 1"
+GCC_PREPROCESSOR_DEFINITIONS = "DENORM_WANT_FIX = 1" "NO_TRANSLATION_SUPPORT = 1" "_TIMESPEC = 1" "SETFLOAT = atom_setfloat" "SETLONG = atom_setlong"
 
 
 // Static Configuration (don't change these)

@@ -1,0 +1,303 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2248D3031B14FBC50056F8B2 /* maxmspsdk.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 2248D3021B14FBC50056F8B2 /* maxmspsdk.xcconfig */; };
+		2248D3051B14FBF90056F8B2 /* voice_form~.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D3041B14FBF90056F8B2 /* voice_form~.cpp */; };
+		2248D3081B14FC350056F8B2 /* MaxAudioAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2248D3071B14FC350056F8B2 /* MaxAudioAPI.framework */; };
+		2248D30A1B14FC430056F8B2 /* JitterAPI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2248D3091B14FC430056F8B2 /* JitterAPI.framework */; };
+		2248D4E71B15F3EB0056F8B2 /* ADSR.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4D31B15F3EB0056F8B2 /* ADSR.cpp */; };
+		2248D4E81B15F3EB0056F8B2 /* BiQuad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4D41B15F3EB0056F8B2 /* BiQuad.cpp */; };
+		2248D4E91B15F3EB0056F8B2 /* Delay.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4D51B15F3EB0056F8B2 /* Delay.cpp */; };
+		2248D4EA1B15F3EB0056F8B2 /* DelayA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4D61B15F3EB0056F8B2 /* DelayA.cpp */; };
+		2248D4EB1B15F3EB0056F8B2 /* Envelope.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4D71B15F3EB0056F8B2 /* Envelope.cpp */; };
+		2248D4EC1B15F3EB0056F8B2 /* Filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4D81B15F3EB0056F8B2 /* Filter.cpp */; };
+		2248D4ED1B15F3EB0056F8B2 /* FormSwep.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4D91B15F3EB0056F8B2 /* FormSwep.cpp */; };
+		2248D4EE1B15F3EB0056F8B2 /* Generator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4DA1B15F3EB0056F8B2 /* Generator.cpp */; };
+		2248D4EF1B15F3EB0056F8B2 /* Instrmnt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4DB1B15F3EB0056F8B2 /* Instrmnt.cpp */; };
+		2248D4F01B15F3EB0056F8B2 /* Modulate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4DC1B15F3EB0056F8B2 /* Modulate.cpp */; };
+		2248D4F11B15F3EB0056F8B2 /* Noise.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4DD1B15F3EB0056F8B2 /* Noise.cpp */; };
+		2248D4F21B15F3EB0056F8B2 /* OnePole.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4DE1B15F3EB0056F8B2 /* OnePole.cpp */; };
+		2248D4F31B15F3EB0056F8B2 /* OneZero.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4DF1B15F3EB0056F8B2 /* OneZero.cpp */; };
+		2248D4F41B15F3EB0056F8B2 /* Phonemes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4E01B15F3EB0056F8B2 /* Phonemes.cpp */; };
+		2248D4F51B15F3EB0056F8B2 /* SingWave.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4E11B15F3EB0056F8B2 /* SingWave.cpp */; };
+		2248D4F61B15F3EB0056F8B2 /* Stk.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4E21B15F3EB0056F8B2 /* Stk.cpp */; };
+		2248D4F71B15F3EB0056F8B2 /* SubNoise.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4E31B15F3EB0056F8B2 /* SubNoise.cpp */; };
+		2248D4F81B15F3EB0056F8B2 /* VoicForm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4E41B15F3EB0056F8B2 /* VoicForm.cpp */; };
+		2248D4F91B15F3EB0056F8B2 /* WaveLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4E51B15F3EB0056F8B2 /* WaveLoop.cpp */; };
+		2248D4FA1B15F3EB0056F8B2 /* WvIn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2248D4E61B15F3EB0056F8B2 /* WvIn.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		2248D3021B14FBC50056F8B2 /* maxmspsdk.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = maxmspsdk.xcconfig; path = ../../maxsdk/source/maxmspsdk.xcconfig; sourceTree = "<group>"; };
+		2248D3041B14FBF90056F8B2 /* voice_form~.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "voice_form~.cpp"; sourceTree = "<group>"; };
+		2248D3061B14FC0F0056F8B2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../../maxsdk/source/Info.plist; sourceTree = "<group>"; };
+		2248D3071B14FC350056F8B2 /* MaxAudioAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MaxAudioAPI.framework; path = "../../maxsdk/source/c74support/msp-includes/MaxAudioAPI.framework"; sourceTree = "<group>"; };
+		2248D3091B14FC430056F8B2 /* JitterAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JitterAPI.framework; path = "../../maxsdk/source/c74support/jit-includes/JitterAPI.framework"; sourceTree = "<group>"; };
+		2248D4D31B15F3EB0056F8B2 /* ADSR.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ADSR.cpp; path = ../../include/src/ADSR.cpp; sourceTree = "<group>"; };
+		2248D4D41B15F3EB0056F8B2 /* BiQuad.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BiQuad.cpp; path = ../../include/src/BiQuad.cpp; sourceTree = "<group>"; };
+		2248D4D51B15F3EB0056F8B2 /* Delay.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Delay.cpp; path = ../../include/src/Delay.cpp; sourceTree = "<group>"; };
+		2248D4D61B15F3EB0056F8B2 /* DelayA.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DelayA.cpp; path = ../../include/src/DelayA.cpp; sourceTree = "<group>"; };
+		2248D4D71B15F3EB0056F8B2 /* Envelope.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Envelope.cpp; path = ../../include/src/Envelope.cpp; sourceTree = "<group>"; };
+		2248D4D81B15F3EB0056F8B2 /* Filter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Filter.cpp; path = ../../include/src/Filter.cpp; sourceTree = "<group>"; };
+		2248D4D91B15F3EB0056F8B2 /* FormSwep.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FormSwep.cpp; path = ../../include/src/FormSwep.cpp; sourceTree = "<group>"; };
+		2248D4DA1B15F3EB0056F8B2 /* Generator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Generator.cpp; path = ../../include/src/Generator.cpp; sourceTree = "<group>"; };
+		2248D4DB1B15F3EB0056F8B2 /* Instrmnt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Instrmnt.cpp; path = ../../include/src/Instrmnt.cpp; sourceTree = "<group>"; };
+		2248D4DC1B15F3EB0056F8B2 /* Modulate.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Modulate.cpp; path = ../../include/src/Modulate.cpp; sourceTree = "<group>"; };
+		2248D4DD1B15F3EB0056F8B2 /* Noise.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Noise.cpp; path = ../../include/src/Noise.cpp; sourceTree = "<group>"; };
+		2248D4DE1B15F3EB0056F8B2 /* OnePole.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OnePole.cpp; path = ../../include/src/OnePole.cpp; sourceTree = "<group>"; };
+		2248D4DF1B15F3EB0056F8B2 /* OneZero.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OneZero.cpp; path = ../../include/src/OneZero.cpp; sourceTree = "<group>"; };
+		2248D4E01B15F3EB0056F8B2 /* Phonemes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Phonemes.cpp; path = ../../include/src/Phonemes.cpp; sourceTree = "<group>"; };
+		2248D4E11B15F3EB0056F8B2 /* SingWave.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SingWave.cpp; path = ../../include/src/SingWave.cpp; sourceTree = "<group>"; };
+		2248D4E21B15F3EB0056F8B2 /* Stk.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Stk.cpp; path = ../../include/src/Stk.cpp; sourceTree = "<group>"; };
+		2248D4E31B15F3EB0056F8B2 /* SubNoise.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SubNoise.cpp; path = ../../include/src/SubNoise.cpp; sourceTree = "<group>"; };
+		2248D4E41B15F3EB0056F8B2 /* VoicForm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VoicForm.cpp; path = ../../include/src/VoicForm.cpp; sourceTree = "<group>"; };
+		2248D4E51B15F3EB0056F8B2 /* WaveLoop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = WaveLoop.cpp; path = ../../include/src/WaveLoop.cpp; sourceTree = "<group>"; };
+		2248D4E61B15F3EB0056F8B2 /* WvIn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = WvIn.cpp; path = ../../include/src/WvIn.cpp; sourceTree = "<group>"; };
+		2FBBEAE508F335360078DB84 /* absmax~.mxo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "absmax~.mxo"; path = "voice_form~.mxo"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2FBBEADC08F335360078DB84 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2248D3081B14FC350056F8B2 /* MaxAudioAPI.framework in Frameworks */,
+				2248D30A1B14FC430056F8B2 /* JitterAPI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		089C166AFE841209C02AAC07 /* iterator */ = {
+			isa = PBXGroup;
+			children = (
+				2248D3021B14FBC50056F8B2 /* maxmspsdk.xcconfig */,
+				2248D3061B14FC0F0056F8B2 /* Info.plist */,
+				2248D3041B14FBF90056F8B2 /* voice_form~.cpp */,
+				2248D4D31B15F3EB0056F8B2 /* ADSR.cpp */,
+				2248D4D41B15F3EB0056F8B2 /* BiQuad.cpp */,
+				2248D4D51B15F3EB0056F8B2 /* Delay.cpp */,
+				2248D4D61B15F3EB0056F8B2 /* DelayA.cpp */,
+				2248D4D71B15F3EB0056F8B2 /* Envelope.cpp */,
+				2248D4D81B15F3EB0056F8B2 /* Filter.cpp */,
+				2248D4D91B15F3EB0056F8B2 /* FormSwep.cpp */,
+				2248D4DA1B15F3EB0056F8B2 /* Generator.cpp */,
+				2248D4DB1B15F3EB0056F8B2 /* Instrmnt.cpp */,
+				2248D4DC1B15F3EB0056F8B2 /* Modulate.cpp */,
+				2248D4DD1B15F3EB0056F8B2 /* Noise.cpp */,
+				2248D4DE1B15F3EB0056F8B2 /* OnePole.cpp */,
+				2248D4DF1B15F3EB0056F8B2 /* OneZero.cpp */,
+				2248D4E01B15F3EB0056F8B2 /* Phonemes.cpp */,
+				2248D4E11B15F3EB0056F8B2 /* SingWave.cpp */,
+				2248D4E21B15F3EB0056F8B2 /* Stk.cpp */,
+				2248D4E31B15F3EB0056F8B2 /* SubNoise.cpp */,
+				2248D4E41B15F3EB0056F8B2 /* VoicForm.cpp */,
+				2248D4E51B15F3EB0056F8B2 /* WaveLoop.cpp */,
+				2248D4E61B15F3EB0056F8B2 /* WvIn.cpp */,
+				2248D3071B14FC350056F8B2 /* MaxAudioAPI.framework */,
+				2248D3091B14FC430056F8B2 /* JitterAPI.framework */,
+				19C28FB4FE9D528D11CA2CBB /* Products */,
+			);
+			name = iterator;
+			sourceTree = "<group>";
+		};
+		19C28FB4FE9D528D11CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2FBBEAE508F335360078DB84 /* absmax~.mxo */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		2FBBEAD708F335360078DB84 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		2FBBEAD608F335360078DB84 /* max-external */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2FBBEAE008F335360078DB84 /* Build configuration list for PBXNativeTarget "max-external" */;
+			buildPhases = (
+				2FBBEAD708F335360078DB84 /* Headers */,
+				2FBBEAD808F335360078DB84 /* Resources */,
+				2FBBEADA08F335360078DB84 /* Sources */,
+				2FBBEADC08F335360078DB84 /* Frameworks */,
+				2FBBEADF08F335360078DB84 /* Rez */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "max-external";
+			productName = iterator;
+			productReference = 2FBBEAE508F335360078DB84 /* absmax~.mxo */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		089C1669FE841209C02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0610;
+			};
+			buildConfigurationList = 2FBBEACF08F335010078DB84 /* Build configuration list for PBXProject "voice_form~" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 089C166AFE841209C02AAC07 /* iterator */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2FBBEAD608F335360078DB84 /* max-external */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2FBBEAD808F335360078DB84 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2248D3031B14FBC50056F8B2 /* maxmspsdk.xcconfig in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXRezBuildPhase section */
+		2FBBEADF08F335360078DB84 /* Rez */ = {
+			isa = PBXRezBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXRezBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2FBBEADA08F335360078DB84 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2248D4FA1B15F3EB0056F8B2 /* WvIn.cpp in Sources */,
+				2248D4ED1B15F3EB0056F8B2 /* FormSwep.cpp in Sources */,
+				2248D4F51B15F3EB0056F8B2 /* SingWave.cpp in Sources */,
+				2248D4F01B15F3EB0056F8B2 /* Modulate.cpp in Sources */,
+				2248D3051B14FBF90056F8B2 /* voice_form~.cpp in Sources */,
+				2248D4EA1B15F3EB0056F8B2 /* DelayA.cpp in Sources */,
+				2248D4F81B15F3EB0056F8B2 /* VoicForm.cpp in Sources */,
+				2248D4F31B15F3EB0056F8B2 /* OneZero.cpp in Sources */,
+				2248D4F11B15F3EB0056F8B2 /* Noise.cpp in Sources */,
+				2248D4F71B15F3EB0056F8B2 /* SubNoise.cpp in Sources */,
+				2248D4E91B15F3EB0056F8B2 /* Delay.cpp in Sources */,
+				2248D4F61B15F3EB0056F8B2 /* Stk.cpp in Sources */,
+				2248D4EC1B15F3EB0056F8B2 /* Filter.cpp in Sources */,
+				2248D4E81B15F3EB0056F8B2 /* BiQuad.cpp in Sources */,
+				2248D4EF1B15F3EB0056F8B2 /* Instrmnt.cpp in Sources */,
+				2248D4F91B15F3EB0056F8B2 /* WaveLoop.cpp in Sources */,
+				2248D4EE1B15F3EB0056F8B2 /* Generator.cpp in Sources */,
+				2248D4E71B15F3EB0056F8B2 /* ADSR.cpp in Sources */,
+				2248D4F21B15F3EB0056F8B2 /* OnePole.cpp in Sources */,
+				2248D4F41B15F3EB0056F8B2 /* Phonemes.cpp in Sources */,
+				2248D4EB1B15F3EB0056F8B2 /* Envelope.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		2FBBEAD008F335010078DB84 /* Development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2248D3021B14FBC50056F8B2 /* maxmspsdk.xcconfig */;
+			buildSettings = {
+			};
+			name = Development;
+		};
+		2FBBEAD108F335010078DB84 /* Deployment */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2248D3021B14FBC50056F8B2 /* maxmspsdk.xcconfig */;
+			buildSettings = {
+			};
+			name = Deployment;
+		};
+		2FBBEAE108F335360078DB84 /* Development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2248D3021B14FBC50056F8B2 /* maxmspsdk.xcconfig */;
+			buildSettings = {
+				C74SUPPORT = "$(SRCROOT)/../../maxsdk/source/c74support";
+				COPY_PHASE_STRIP = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../../c74support/jit-includes\"",
+					"\"$(SRCROOT)/../../../c74support/msp-includes\"",
+					"/Users/tim/Code/percolate/source/maxsdk/source/c74support/msp-includes",
+					"/Users/tim/Code/percolate/source/maxsdk/source/c74support/jit-includes",
+				);
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INFOPLIST_FILE = "$(C74SUPPORT)/../Info.plist";
+				OTHER_LDFLAGS = "$(C74_SYM_LINKER_FLAGS)";
+			};
+			name = Development;
+		};
+		2FBBEAE208F335360078DB84 /* Deployment */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2248D3021B14FBC50056F8B2 /* maxmspsdk.xcconfig */;
+			buildSettings = {
+				C74SUPPORT = "$(SRCROOT)/../../maxsdk/source/c74support";
+				COPY_PHASE_STRIP = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../../c74support/jit-includes\"",
+					"\"$(SRCROOT)/../../../c74support/msp-includes\"",
+					"/Users/tim/Code/percolate/source/maxsdk/source/c74support/msp-includes",
+					"/Users/tim/Code/percolate/source/maxsdk/source/c74support/jit-includes",
+				);
+				INFOPLIST_FILE = "$(C74SUPPORT)/../Info.plist";
+				OTHER_LDFLAGS = "$(C74_SYM_LINKER_FLAGS)";
+			};
+			name = Deployment;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2FBBEACF08F335010078DB84 /* Build configuration list for PBXProject "voice_form~" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2FBBEAD008F335010078DB84 /* Development */,
+				2FBBEAD108F335010078DB84 /* Deployment */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Development;
+		};
+		2FBBEAE008F335360078DB84 /* Build configuration list for PBXNativeTarget "max-external" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2FBBEAE108F335360078DB84 /* Development */,
+				2FBBEAE208F335360078DB84 /* Deployment */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Development;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 089C1669FE841209C02AAC07 /* Project object */;
+}
