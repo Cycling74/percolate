@@ -5,7 +5,7 @@
 	<SYSBUILD Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\sysbuild\win_debug_x64</SYSBUILD>
 	<SYSBUILD Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\sysbuild\win_release</SYSBUILD>
 	<SYSBUILD Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\sysbuild\win_release_x64</SYSBUILD>
-    <C74SUPPORT>$(ProjectDir)..\..\c74support\</C74SUPPORT>
+    <C74SUPPORT>$(ProjectDir)..\..\maxsdk\source\c74support\</C74SUPPORT>
 	<C74_ROOT>$(SYSBUILD)\resources</C74_ROOT>
 	<EXTERNALS_ROOT>$(C74_ROOT)\externals</EXTERNALS_ROOT>
 	<EXTENSIONS_ROOT>$(C74_ROOT)\extensions</EXTENSIONS_ROOT>
@@ -13,7 +13,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
-    <OutDir>$(C74SUPPORT)..\..\externals\</OutDir>
+    <OutDir>$(C74SUPPORT)..\..\..\..\externals\</OutDir>
     <IntDir>..\..\sysbuild\intermediate\$(Configuration)_$(PlatformName)\$(ProjectName)\</IntDir>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
