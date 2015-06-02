@@ -14,17 +14,18 @@ typedef struct _sigabsmax
 } t_sigabsmax;
 
 void *sigabsmax_new(double val);
-t_int *offset_perform(t_int *w);
-t_int *sigabsmax2_perform(t_int *w);
+void offset_perform64(t_sigabsmax *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+void sigabsmax2_perform64(t_sigabsmax *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 void sigabsmax_float(t_sigabsmax *x, double f);
 void sigabsmax_int(t_sigabsmax *x, long n);
 void sigabsmax_dsp(t_sigabsmax *x, t_signal **sp, short *count);
+void sigabsmax_dsp64(t_sigabsmax *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
 void sigabsmax_assist(t_sigabsmax *x, void *b, long m, long a, char *s);
 
 void ext_main(void* p)
 {
     setup((t_messlist **)&sigabsmax_class, (method)sigabsmax_new, (method)dsp_free, (short)sizeof(t_sigabsmax), 0L, A_DEFFLOAT, 0);
-    addmess((method)sigabsmax_dsp, "dsp", A_CANT, 0);
+    addmess((method)sigabsmax_dsp64, "dsp64", A_CANT, 0);
     addfloat((method)sigabsmax_float);
     addint((method)sigabsmax_int);
     addmess((method)sigabsmax_assist,"assist",A_CANT,0);
@@ -77,17 +78,13 @@ void sigabsmax_int(t_sigabsmax *x, long n)
 	x->x_val = (float)n;
 }
 
-t_int *offset_perform(t_int *w)
+void offset_perform64(t_sigabsmax *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-    t_float *in = (t_float *)(w[1]);
-    t_float *out = (t_float *)(w[2]);
-	t_sigabsmax *x = (t_sigabsmax *)(w[3]);
-	float val2 = fabs(x->x_val);
-	float val1;
-	int n = (int)(w[4]);
-	
-	if (x->x_obj.z_disabled)
-		goto out;
+    double *in = ins[0];
+    double *out = outs[0];
+	double val2 = fabs(x->x_val);
+	double val1;
+	int n = sampleframes;
 	
 	while (--n) {
 		val1 = *++in;
@@ -98,24 +95,18 @@ t_int *offset_perform(t_int *w)
     		*++out = val2;
     	}
 	}
-    
-out:
-    return (w+5);
 }
 
-t_int *sigabsmax2_perform(t_int *w)
+void sigabsmax2_perform64(t_sigabsmax *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_float *in1,*in2,*out;
+	double *in1,*in2,*out;
 	int n;
-	float val1, val2;
+	double val1, val2;
 
-	if (*(long *)(w[1]))
-	    goto out;
-
-	in1 = (t_float *)(w[2]);
-	in2 = (t_float *)(w[3]);
-	out = (t_float *)(w[4]);
-	n = (int)(w[5]);
+	in1 = ins[0];
+	in2 = ins[1];
+	out = outs[0];
+	n = sampleframes;
 	while (--n) {
 		val1 = *++in1;
 		val2 = *++in2;
@@ -126,19 +117,17 @@ t_int *sigabsmax2_perform(t_int *w)
     		*++out = val2;
     	}
 	}
-out:
-	return (w+6);
-}		
+}
 
-void sigabsmax_dsp(t_sigabsmax *x, t_signal **sp, short *count)
+void sigabsmax_dsp64(t_sigabsmax *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	long i;
 		
 	if (!count[0])
-		dsp_add(offset_perform, 4, sp[1]->s_vec-1, sp[2]->s_vec-1, x, sp[0]->s_n+1);
+		object_method(dsp64, gensym("dsp_add64"), (t_object*)x, offset_perform64, 0, NULL);
 	else if (!count[1])
-		dsp_add(offset_perform, 4, sp[0]->s_vec-1, sp[2]->s_vec-1, x, sp[0]->s_n+1);
+		object_method(dsp64, gensym("dsp_add64"), (t_object*)x, offset_perform64, 0, NULL);
 	else
-		dsp_add(sigabsmax2_perform, 5, &x->x_obj.z_disabled, sp[0]->s_vec-1, sp[1]->s_vec-1, sp[2]->s_vec-1, sp[0]->s_n+1);
+		object_method(dsp64, gensym("dsp_add64"), (t_object*)x, sigabsmax2_perform64, 0, NULL);
 }
 
