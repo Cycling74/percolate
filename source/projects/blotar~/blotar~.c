@@ -397,12 +397,12 @@ void setmic(t_blotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (int)argv[i].a_w.w_long;
-				x->mic = temp % 12;
+				x->mic = abs(temp % 12);
     			post("blotar: setting mic: %d", x->mic);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_long;
-				x->mic = temp % 12;
+				x->mic = abs(temp % 12);
     			post("blotar: setting mic: %d", x->mic);
 				break;
 		}
