@@ -15,8 +15,7 @@ t_class *terrain_class;
 typedef struct _terrain
 {
     t_pxobject l_obj;
-    t_symbol *l_sym;
-    t_buffer *l_buf;
+    t_buffer_ref *l_buffer;
     long l_framesize;
     long l_numframes;
     float l_hopsize;
@@ -26,6 +25,8 @@ float FConstrain(float v, float lo, float hi);
 long IConstrain(long v, long lo, long hi);
 
 void *terrain_new(t_symbol *s, long n, long f);
+void terrain_free(t_terrain *x);
+t_max_err terrain_notify(t_terrain *x, t_symbol *s, t_symbol *msg, void *sender, void *data);
 void terrain_assist(t_terrain *x, void *b, long m, long a, char *s);
 
 // dsp stuff
@@ -60,11 +61,12 @@ float FConstrain(float v, float lo, float hi)
 
 void ext_main(void* p)
 {
-    t_class *c = class_new("terrain~", (method)terrain_new, (method)dsp_free, (long)sizeof(t_terrain), 0L, A_SYM, A_DEFLONG, A_DEFLONG, 0);
+    t_class *c = class_new("terrain~", (method)terrain_new, (method)terrain_free, (long)sizeof(t_terrain), 0L, A_SYM, A_DEFLONG, A_DEFLONG, 0);
     
     class_addmethod(c, (method)terrain_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)terrain_dsp64, "dsp64", A_CANT, 0);
-    
+	class_addmethod(c, (method)terrain_notify, "notify", A_CANT, 0);
+ 
 	class_addmethod(c, (method)terrain_set, "set", A_SYM, 0);
 	class_addmethod(c, (method)terrain_size, "size", A_DEFLONG, 0);
 	class_addmethod(c, (method)terrain_frames, "frames", A_DEFLONG, 0);
@@ -80,7 +82,7 @@ void *terrain_new(t_symbol *s, long n, long f)
 	t_terrain *x = (t_terrain *)object_alloc(terrain_class);
 	dsp_setup((t_pxobject *)x, 2);
 	outlet_new((t_object *)x, "signal");
-	x->l_sym = s;
+	terrain_set(x, s);
 	x->l_framesize = 512;
 	x->l_numframes = 2;
 	if(n) x->l_framesize = n;
@@ -88,6 +90,20 @@ void *terrain_new(t_symbol *s, long n, long f)
 	x->l_hopsize = 1./(float)(x->l_numframes-1);
 	return (x);
 }
+
+
+void terrain_free(t_terrain *x)
+{
+	dsp_free((t_pxobject *)x);
+	object_free(x->l_buffer);
+}
+
+
+t_max_err terrain_notify(t_terrain *x, t_symbol *s, t_symbol *msg, void *sender, void *data)
+{
+	return buffer_ref_notify(x->l_buffer, s, msg, sender, data);
+}
+
 
 void terrain_assist(t_terrain *x, void *b, long m, long a, char *s)
 {
@@ -115,15 +131,10 @@ void terrain_assist(t_terrain *x, void *b, long m, long a, char *s)
 
 void terrain_set(t_terrain *x, t_symbol *s)
 {
-	t_buffer *b;
-	
-	x->l_sym = s;
-	if ((b = (t_buffer *)(s->s_thing)) && ob_sym(b) == ps_buffer) {
-		x->l_buf = b;
-	} else {
-		error("terrain~: no buffer~ %s", s->s_name);
-		x->l_buf = 0;
-	}
+	if (!x->l_buffer)
+		x->l_buffer = buffer_ref_new((t_object *)x, s);
+	else
+		buffer_ref_set(x->l_buffer, s);
 }
 
 void terrain_size(t_terrain *x, long size)
@@ -148,7 +159,6 @@ void terrain_frames(t_terrain *x, long frames)
 
 void terrain_dsp64(t_terrain *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-    terrain_set(x,x->l_sym);
     object_method(dsp64, gensym("dsp_add64"), x, terrain_perform64, 0, NULL);
 }
 
@@ -159,22 +169,18 @@ void terrain_perform64(t_terrain *x, t_object *dsp64, double **ins, long numins,
     t_double *out = (t_double *)(outs[0]);
     
     int n = sampleframes;
-	t_buffer *b = x->l_buf;
 	float *tab;
 	float x_coords, y_coords, hopsize;
 	long index, index2, frames,nc,fsize, nframes;
 	register short p,q;
+	t_buffer_obj *buffer = buffer_ref_getobject(x->l_buffer);
 	
-	if (x->l_obj.z_disabled)
-		return;
-	if (!b)
+	tab = buffer_locksamples(buffer);
+	if (!tab)
 		goto zero;
-	if (!b->b_valid)
-		goto zero;
-    
-	tab = b->b_samples;
-	frames = b->b_frames;
-	nc = b->b_nchans;
+	
+	frames = buffer_getframecount(buffer);
+	nc = buffer_getchannelcount(buffer);
 	fsize=x->l_framesize;
 	nframes = x->l_numframes;
 	hopsize = x->l_hopsize;
@@ -208,6 +214,7 @@ void terrain_perform64(t_terrain *x, t_object *dsp64, double **ins, long numins,
 		y_coords = (y_coords*(nframes-1))-p;
 		*++out = ((1.-y_coords)*tab[index])+(y_coords*tab[index2]); // this is wrong -- y_coords amp isn't scaling yet.
 	}
+	buffer_unlocksamples(buffer);
 	return;
 zero:
 	while (--n) *++out = 0.;
