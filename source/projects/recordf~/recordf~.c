@@ -11,8 +11,7 @@ t_class *recordf_class;
 typedef struct _recordf
 {
     t_pxobject l_obj;
-    t_symbol *l_sym;
-    t_buffer *l_buf;
+    t_buffer_ref *l_buffer;
     long l_chan;
     long length;
     long loop_start, loop_end;
@@ -29,6 +28,8 @@ typedef struct _recordf
 long Constrain(long v, long lo, long hi);
 void recordf_set(t_recordf *x, t_symbol *s);
 void *recordf_new(t_symbol *s, long chan);
+void recordf_free(t_recordf *x);
+t_max_err recordf_notify(t_recordf *x, t_symbol *s, t_symbol *msg, void *sender, void *data);
 void recordf_in1(t_recordf *x, long n);
 void recordf_in2(t_recordf *x, long n);
 void recordf_in0(t_recordf *x, long n);
@@ -47,11 +48,12 @@ t_symbol *ps_buffer;
 
 void ext_main(void* p)
 {
-    t_class *c = class_new("recordf~", (method)recordf_new, (method)dsp_free, (long)sizeof(t_recordf), 0L, A_SYM, A_DEFLONG, 0);
+    t_class *c = class_new("recordf~", (method)recordf_new, (method)recordf_free, (long)sizeof(t_recordf), 0L, A_SYM, A_DEFLONG, 0);
     
     class_addmethod(c, (method)recordf_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)recordf_dsp64, "dsp64", A_CANT, 0);
-    
+	class_addmethod(c, (method)recordf_notify, "notify", A_CANT, 0);
+	
     class_addmethod(c, (method)recordf_in1, "in1", A_LONG, 0);
     class_addmethod(c, (method)recordf_in2, "in2", A_LONG, 0);
     class_addmethod(c, (method)recordf_in0, "int", A_LONG, 0);
@@ -77,7 +79,7 @@ void *recordf_new(t_symbol *s, long chan)
     intin((t_object *)x, 2);
 	dsp_setup((t_pxobject *)x, 2);
 	outlet_new((t_object *)x, "signal");
-	x->l_sym = s;
+
 	x->index = 0;
 	x->record = 0;
 	x->reset = 0;
@@ -91,6 +93,20 @@ void *recordf_new(t_symbol *s, long chan)
 	//x->l_obj.z_misc = Z_NO_INPLACE;
 	return (x);
 }
+
+
+void recordf_free(t_recordf *x)
+{
+	dsp_free((t_pxobject *)x);
+	object_free(x->l_buffer);
+}
+
+
+t_max_err recordf_notify(t_recordf *x, t_symbol *s, t_symbol *msg, void *sender, void *data)
+{
+	return buffer_ref_notify(x->l_buffer, s, msg, sender, data);
+}
+
 
 void recordf_assist(t_recordf *x, void *b, long m, long a, char *s)
 {
@@ -113,10 +129,7 @@ void recordf_assist(t_recordf *x, void *b, long m, long a, char *s)
 
 void recordf_dblclick(t_recordf *x)
 {
-	t_buffer *b;
-	
-	if ((b = (t_buffer *)(x->l_sym->s_thing)) && ob_sym(b) == ps_buffer)
-		mess0((struct object *)b,gensym("dblclick"));
+	buffer_view(buffer_ref_getobject(x->l_buffer));
 }
 
 long Constrain(long v, long lo, long hi)
@@ -131,17 +144,14 @@ long Constrain(long v, long lo, long hi)
 
 void recordf_set(t_recordf *x, t_symbol *s)
 {
-	t_buffer *b;
-	
-	x->l_sym = s;
-	if ((b = (t_buffer *)(s->s_thing)) && ob_sym(b) == ps_buffer) {
-		x->l_buf = b;
-		x->loop_end = b->b_frames;
+	if (!x->l_buffer)
+		x->l_buffer = buffer_ref_new((t_object *)x, s);
+	else
+		buffer_ref_set(x->l_buffer, s);
+
+	if (buffer_ref_exists(x->l_buffer)) {
+		x->loop_end = buffer_getframecount(buffer_ref_getobject(x->l_buffer));
 		x->loop_start  = 0;
-		//post("recordf~: setting record end point to %d", x->loop_end);
-	} else {
-		error("recordf~: no buffer~ %s", s->s_name);
-		x->l_buf = 0;
 	}
 }
 
@@ -227,7 +237,6 @@ void recordf_dsp64(t_recordf *x, t_object *dsp64, short *count, double samplerat
 {
     x->srate = samplerate;
     x->srate_ms = (float)x->srate * .001;
-    recordf_set(x,x->l_sym);
     
     object_method(dsp64, gensym("dsp_add64"), x, recordf_perform64, 0, NULL);
 }
@@ -238,26 +247,20 @@ void recordf_perform64(t_recordf *x, t_object *dsp64, double **ins, long numins,
     t_double *fcoeff = (t_double *)(ins[1]);
     t_double *out = (t_double *)(outs[0]);
     int n = sampleframes;
-    
-	t_buffer *b = x->l_buf;
-	float *tab;
-    
-	t_double input, coeff;
+ 	t_double input, coeff;
 	t_double chan, frames, nc, one_over_length;
 	long index;
 	t_double loop_start, loop_end;
+	t_buffer_obj *buffer = buffer_ref_getobject(x->l_buffer);
+	t_float *tab;
 	
-	if (x->l_obj.z_disabled)
-		return;
-	if (!b)
-		return;
-	if (!b->b_valid)
-		return;
-	
-	tab = b->b_samples;
+	tab = buffer_locksamples(buffer);
+	if (!tab)
+		goto zero;
+
 	chan = (t_double)x->l_chan;
-	frames = (t_double)b->b_frames;
-	nc = (t_double)b->b_nchans;
+	frames = (t_double)buffer_getframecount(buffer);
+	nc = (t_double)buffer_getchannelcount(buffer);
 	
 	if(!x->reset) {
 		loop_start = (t_double)x->loop_start * x->srate_ms;
@@ -302,4 +305,11 @@ void recordf_perform64(t_recordf *x, t_object *dsp64, double **ins, long numins,
             
 		}
 	} else while (n--) *out++ =  ((t_double)x->index - loop_start) * one_over_length; //needs to be sync val (0-1);
+	
+	buffer_unlocksamples(buffer);
+	return;
+zero:
+	while (n--)
+		*out++ = 0.0;
+
 }
