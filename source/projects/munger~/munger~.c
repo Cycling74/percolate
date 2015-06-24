@@ -121,8 +121,8 @@ typedef struct _munger
     int num_channels;
     
     //external record buffer vars
-    t_symbol *l_sym;
-    t_buffer *l_buf;
+    //t_symbol *l_sym;
+    t_buffer_ref *l_buffer;
     long l_chan;
     short externalBuffer;
     
@@ -146,6 +146,7 @@ typedef struct _munger
 //void *munger_new(double val);
 void *munger_new(double maxdelay, long channels);
 void munger_free(t_munger *x);
+t_max_err munger_notify(t_munger *x, t_symbol *s, t_symbol *msg, void *sender, void *data);
 void munger_assist(t_munger *x, void *b, long m, long a, char *s);
 
 void munger_float(t_munger *x, double f);
@@ -163,13 +164,13 @@ float getSamp(t_munger *x, double where); 		//get sample, using linear interpola
 
 //grain funcs
 int findVoice(t_munger *x);						//tries to find an available voice
-float newSetup(t_munger *x, int whichVoice);	//creates a new start position for a new grain
+float newSetup(t_munger *x, int whichVoice, double frames);	//creates a new start position for a new grain
 float newSize(t_munger *x, int whichVoice);		//creates a size for a new grain
 int newDirection(t_munger *x);
 float envelope(t_munger *x, int whichone, float sample);
 
 //note funcs
-float newNote(t_munger *x, int whichVoice, int newNote);			//creates a new start position for a new note (oneshot grain)
+float newNote(t_munger *x, int whichVoice, int newNote, double frames);			//creates a new start position for a new note (oneshot grain)
 float newNoteSize(t_munger *x, int whichVoice, int newNote);		//creates a size for a new note
 
 //window funcs
@@ -225,7 +226,7 @@ void munger_poststate(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //external buffer funcs
 void munger_setbuffer(t_munger *x, t_symbol *s);
-float getExternalSamp(t_munger *x, double where);
+float getExternalSamp(t_munger *x, double where, t_float *tab, double frames, double nc);
 
 
 /****FUNCTIONS****/
@@ -252,20 +253,20 @@ float win_tick(t_munger *x, int whichone)
 //external buffer stuff
 void munger_setbuffer(t_munger *x, t_symbol *s)
 {
-	t_buffer *b;
-	
-	x->l_sym = s;
-	if ((b = (t_buffer *)(s->s_thing)) && ob_sym(b) == ps_buffer) {
-		x->l_buf = b;
+	if (!x->l_buffer)
+		x->l_buffer = buffer_ref_new((t_object *)x, s);
+	else
+		buffer_ref_set(x->l_buffer, s);
+		
+	if (buffer_ref_exists(x->l_buffer)) {
 		x->externalBuffer = 1;
 		x->l_chan = 0;
-		post("munger~: using channel 0 of %s", s->s_name);
-	} else {
-		post("munger~: no buffer~ %s; using internal buffer", s->s_name);
-		x->l_buf = 0;
+	}
+	else {
 		x->externalBuffer = 0;
 	}
 }
+
 
 //grain funcs
 float envelope(t_munger *x, int whichone, float sample)
@@ -300,11 +301,10 @@ int findVoice(t_munger *x)
 //creates a new (random) start position for a new grain, returns beginning start sample
 //sets up size and direction
 //max grain size is BUFLENGTH / 3, to avoid recording into grains while they are playing
-float newSetup(t_munger *x, int whichVoice)
+float newSetup(t_munger *x, int whichVoice, double frames)
 {
 	float newPosition;
 	int i;
-	t_buffer *b = x->l_buf;
 	
 	x->gvoiceSize[whichVoice] 		= newSize(x, whichVoice);
 	x->gvoiceDirection[whichVoice] 	= newDirection(x);
@@ -392,9 +392,9 @@ float newSetup(t_munger *x, int whichVoice)
 	}
 	else {
 		if (x->position == -1.) {
-			newPosition = (float)rand() * ONE_OVER_MAXRAND * (double)b->b_frames;
+			newPosition = (float)rand() * ONE_OVER_MAXRAND * frames;
 		} else if (x->position >= 0.) {
-            newPosition = x->position * (double)b->b_frames;
+            newPosition = x->position * frames;
         } else {
             newPosition = 0.0;
         }
@@ -455,11 +455,10 @@ int newDirection(t_munger *x)
 }
 
 
-float newNote(t_munger *x, int whichVoice, int newNote)
+float newNote(t_munger *x, int whichVoice, int newNote, double frames)
 {
 	float newPosition;
 	int i, temp;
-	t_buffer *b = x->l_buf;
 	
 	x->gvoiceSize[whichVoice] 		= newNoteSize(x, whichVoice, newNote);
 	//x->gvoiceDirection[whichVoice] 	= newDirection(x);	 
@@ -554,9 +553,9 @@ float newNote(t_munger *x, int whichVoice, int newNote)
 	}
 	else {
 		if (x->position == -1.) {
-			newPosition = (float)rand() * ONE_OVER_MAXRAND * (double)b->b_frames;
+			newPosition = (float)rand() * ONE_OVER_MAXRAND * frames;
 		}
-		else  if (x->position >= 0.) newPosition = x->position * (double)b->b_frames;
+		else  if (x->position >= 0.) newPosition = x->position * frames;
 	}
 	
 	return newPosition;
@@ -640,23 +639,11 @@ float getSamp(t_munger *x, double where)
 	
 }
 
-float getExternalSamp(t_munger *x, double where)
+float getExternalSamp(t_munger *x, double where, t_float *tab, double frames, double nc)
 {
 	double alpha, om_alpha, output;
 	long first;
-	
-	t_buffer *b = x->l_buf;
-	float *tab;
-	double frames, sampNum, nc;
-	
-	tab = b->b_samples;
-	if (!b)
-		goto zero;
-	if (!b->b_valid)
-		goto zero;
-
-	frames = (double)b->b_frames;
-	nc = (double)b->b_nchans; 		//== buffer~ framesize...
+	double sampNum;
 	
 	if (where < 0.) where = 0.;
 	else if (where >= frames) where = 0.;
@@ -673,9 +660,6 @@ float getExternalSamp(t_munger *x, double where)
 	output += tab[first] * alpha;
 	
 	return (float)output;
-	
-	zero: return 0.;
-	
 }
 
 //primary MSP funcs
@@ -685,7 +669,8 @@ void ext_main(void *f)
     
     class_addmethod(c, (method)munger_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)munger_dsp64, "dsp64", A_CANT, 0);
-    
+	class_addmethod(c, (method)munger_notify, "notify", A_CANT, 0);
+	
     class_addmethod(c, (method)munger_float, "float", A_FLOAT, 0);
     class_addmethod(c, (method)munger_assist,"assist",A_CANT,0);
     class_addmethod(c, (method)munger_setramp, "ramptime", A_GIMME, 0);
@@ -796,9 +781,6 @@ void munger_spat(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 
 void munger_note(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
-
-	int i, temp;
-
 	if(argc < 8) {
 		post("munger: need 8 args -- transposition, gain, pan, attkT, decayT, susLevel, relT, direction [-1/1]");
 		return;
@@ -1244,11 +1226,19 @@ void munger_clear(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 void munger_free(t_munger *x)
 {
 	dsp_free((t_pxobject *)x);
+	object_free(x->l_buffer);
 	if (x->recordBuf)
 		//t_freebytes(x->recordBuf, BUFLENGTH * sizeof(float));
 		//t_freebytes(x->recordBuf, x->initbuflen * sizeof(float));
 		sysmem_freeptr(x->recordBuf);
 }
+
+
+t_max_err munger_notify(t_munger *x, t_symbol *s, t_symbol *msg, void *sender, void *data)
+{
+	return buffer_ref_notify(x->l_buffer, s, msg, sender, data);
+}
+
 
 void munger_assist(t_munger *x, void *b, long m, long a, char *s)
 {
@@ -1461,9 +1451,8 @@ void munger_perform64(t_munger *x, t_object *dsp64, double **ins, long numins, d
 	t_double gpitch_var	= x->gpitch_var_connected? 	*(t_double *)(ins[5]) : x->gpitch_var;
 	t_double gpan_spread= x->gpan_spread_connected? *(t_double *)(ins[6]) : x->gpan_spread;
 	
-	t_double gimme;
 	t_double outsamp[MAXCHANNELS], samp;
-	int newvoice, i, j, state;
+	int newvoice, i, j;
 	long n;
 	t_double *out[MAXCHANNELS];
 	//t_double *outL = (t_double *)(w[10]);
@@ -1497,8 +1486,18 @@ void munger_perform64(t_munger *x, t_object *dsp64, double **ins, long numins, d
 				*out[i]++ = 0.;
 			}
 		}
-	} else {
-	
+	}
+	else {
+		t_buffer_obj	*buffer = buffer_ref_getobject(x->l_buffer);
+		t_float			*tab = buffer_locksamples(buffer);
+		double			frames = 0;
+		double			nc = 0;
+
+		if (tab) {
+			frames = buffer_getframecount(buffer);
+			nc = buffer_getchannelcount(buffer);
+		}
+		
 		while(n--) {
 			//outsampL = outsampR = 0.;
 			for(i=0;i<x->num_channels;i++) outsamp[i] = 0.;
@@ -1511,7 +1510,7 @@ void munger_perform64(t_munger *x, t_object *dsp64, double **ins, long numins, d
 			while(x->newnote > 0) {
 				newvoice = findVoice(x);
 				if(newvoice >= 0) {
-					x->gvoiceCurrent[newvoice] = newNote(x, newvoice, x->newnote);
+					x->gvoiceCurrent[newvoice] = newNote(x, newvoice, x->newnote, frames);
 				}
 				x->newnote--;
 			}
@@ -1522,7 +1521,7 @@ void munger_perform64(t_munger *x, t_object *dsp64, double **ins, long numins, d
 					x->time = 0;
 					newvoice = findVoice(x);
 					if(newvoice >= 0) {
-						x->gvoiceCurrent[newvoice] = newSetup(x, newvoice);
+						x->gvoiceCurrent[newvoice] = newSetup(x, newvoice, frames);
 					}
 					grate = grate + ((t_double)rand() - RAND_MAX * 0.5) * ONE_OVER_HALFRAND * grate_var;
 					x->gimme = x->srate_ms * grate; //grate is actually time-distance between grains
@@ -1535,7 +1534,7 @@ void munger_perform64(t_munger *x, t_object *dsp64, double **ins, long numins, d
 			//for(i=0; i<x->voices; i++) {
 				if(x->gvoiceOn[i]) {
 					//get a sample, envelope it
-					if(x->externalBuffer) samp = getExternalSamp(x, x->gvoiceCurrent[i]);
+					if(x->externalBuffer) samp = getExternalSamp(x, x->gvoiceCurrent[i], tab, frames, nc);
 					else samp = getSamp(x, x->gvoiceCurrent[i]);
 					if (!x->gvoiceADSRon[i]) samp = envelope(x, i, samp) * x->gvoiceGain[i];
 					else samp = samp * ADSR_ADRtick(&x->gvoiceADSR[i]) * x->gvoiceGain[i];
@@ -1565,6 +1564,8 @@ void munger_perform64(t_munger *x, t_object *dsp64, double **ins, long numins, d
 				*out[i]++ = outsamp[i];
 			}
 		}
+		if (tab)
+			buffer_unlocksamples(buffer);
 	}
 }
 
