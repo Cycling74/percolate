@@ -7,10 +7,13 @@
 //
 //	objects and source are provided without warranty of any kind, express or implied.
 //
+// updated for Max 7 by Darwin Grosse and Tim Place
+// -------------------------------------------------
 
 /* the required include files */
-#include "ext.h"
 #include <math.h>
+#include "ext.h"
+#include "ext_obex.h"
 
 // maximum number of harmonics specified in a list -- if you make it larger you better 
 // allocated the memory dynamically (right now it's using built-in memory)...
@@ -21,7 +24,7 @@
 // object definition structure...
 typedef struct gen17
 {
-	Object g_ob;				// required header
+	t_object g_ob;				// required header
 	void *g_out;				// an outlet
 	long g_numharmonics;		// number of harmonics
 	long g_buffsize;			// size of buffer
@@ -29,42 +32,43 @@ typedef struct gen17
 	float g_args[MAXSIZE];		// array for the harmonic fields
 	float *g_table;				// internal array for computing the transfer function
 	long g_rescale;				// flag to rescale array
-} Gen17;
+} t_gen17;
 
 /* global that holds the class definition */
-void *class;
+t_class *gen17_class;
 
 // function prototypes here...
-void gen17_list(Gen17 *x, Symbol *s, short ac, Atom *av);
-void gen17_assist(Gen17 *x, void *b, long m, long a, char *s);
-void gen17_bang(Gen17 *x);
-void gen17_offset(Gen17 *x, long n);
-void gen17_size(Gen17 *x, long n);
-void gen17_rescale(Gen17 *x, long n);
+void gen17_list(t_gen17 *x, t_symbol *s, short ac, t_atom *av);
+void gen17_assist(t_gen17 *x, void *b, long m, long a, char *s);
+void gen17_bang(t_gen17 *x);
+void gen17_offset(t_gen17 *x, long n);
+void gen17_size(t_gen17 *x, long n);
+void gen17_rescale(t_gen17 *x, long n);
 void *gen17_new(long n, long o);
-void *gen17_free(Gen17 *x);
-void DoTheDo(Gen17 *x);
+void gen17_free(t_gen17 *x);
+void DoTheDo(t_gen17 *x);
 
 // init routine...
 void ext_main(void *f)
 {
-	
-	// define the class
-	setup((t_messlist **)&class, (method)gen17_new, (method)gen17_free, (short)sizeof(Gen17), 0L, A_DEFLONG, A_DEFLONG, 0);
-	// methods, methods, methods...
-	addbang((method)gen17_bang); /* put out the same shit */
-	addmess((method)gen17_size, "size", A_DEFLONG, 0); /* change buffer size */
-	addmess((method)gen17_offset, "offset", A_DEFLONG, 0); /* change buffer offset */
-	addmess((method)gen17_rescale, "rescale", A_DEFLONG, 0); /* change array rescaling */
-	addmess((method)gen17_list, "list", A_GIMME, 0); /* the goods... */
-	addmess((method)gen17_assist,"assist",A_CANT,0); /* help */
-	
+	t_class *c;
+    
+	c = class_new("gen17", (method)gen17_new, (method)gen17_free, sizeof(t_gen17), 0L, A_DEFLONG, A_DEFLONG, 0);
+	class_addmethod(c, (method)gen17_bang,		"bang",		0);             // the method it uses when it gets a bang in the left inlet
+	class_addmethod(c, (method)gen17_size,       "size",     A_DEFLONG, 0);  /* change buffer */
+	class_addmethod(c, (method)gen17_offset,     "offset",   A_DEFLONG, 0);  /* change buffer offset */
+	class_addmethod(c, (method)gen17_rescale,    "rescale",  A_DEFLONG, 0);  /* change array rescaling */
+	class_addmethod(c, (method)gen17_list,       "list",     A_GIMME, 0);    /* the goods... */
+	class_addmethod(c, (method)gen17_assist,     "assist",	A_CANT, 0);	// (optional) assistance method needs to be declared like this
+    
+	class_register(CLASS_BOX, c);
+	gen17_class = c;
 	post("gen17: by r. luke dubois, cmc");
 }
 
 // those methods
 
-void gen17_bang(Gen17 *x)
+void gen17_bang(t_gen17 *x)
 {
 						
 	DoTheDo(x);
@@ -72,7 +76,7 @@ void gen17_bang(Gen17 *x)
 }
 
 
-void gen17_size(Gen17 *x, long n)
+void gen17_size(t_gen17 *x, long n)
 {
 	
 	x->g_buffsize = n; // resize buffer
@@ -80,14 +84,14 @@ void gen17_size(Gen17 *x, long n)
 
 }
 
-void gen17_offset(Gen17 *x, long n)
+void gen17_offset(t_gen17 *x, long n)
 {
 	
 	x->g_offset = n; // change buffer offset
 
 }
 
-void gen17_rescale(Gen17 *x, long n)
+void gen17_rescale(t_gen17 *x, long n)
 {
 	if(n>1) n = 1;
 	if(n<0) n = 0;
@@ -98,7 +102,7 @@ void gen17_rescale(Gen17 *x, long n)
 
 // instance creation...
 
-void gen17_list(Gen17 *x, Symbol *s, short argc, Atom *argv)
+void gen17_list(t_gen17 *x, t_symbol *s, short argc, t_atom *argv)
 {
 
 	// parse the list of incoming harmonics...
@@ -115,10 +119,10 @@ void gen17_list(Gen17 *x, Symbol *s, short argc, Atom *argv)
 	DoTheDo(x);
 }
 
-void DoTheDo(Gen17 *x)
+void DoTheDo(t_gen17 *x)
 {
-	register short i,j;
-	Atom thestuff[2];
+	short i,j;
+	t_atom thestuff[2];
 	float Tn, Tn1, Tn2, v,d;
 	float wmax, xmax=0.0;
 	
@@ -136,17 +140,17 @@ void DoTheDo(Gen17 *x)
 			Tn=2*v*Tn1-Tn2;
 		}
 	}
-
-if(x->g_rescale) {
-	// rescale the function to make sure it stays between -1. and 1.
-	for(j = 0; j < x->g_buffsize; j++) {
-		if ((wmax = fabs(x->g_table[j])) > xmax) xmax = wmax;
-	}
-	for(j = 0; j < x->g_buffsize; j++) {
-		x->g_table[j] /= xmax;
-	}
-}
-
+    
+    if(x->g_rescale) {
+        // rescale the function to make sure it stays between -1. and 1.
+        for(j = 0; j < x->g_buffsize; j++) {
+            if ((wmax = fabs(x->g_table[j])) > xmax) xmax = wmax;
+        }
+        for(j = 0; j < x->g_buffsize; j++) {
+            x->g_table[j] /= xmax;
+        }
+    }
+    
 	// output the transfer function in index/amplitude pairs...
 	for(i=0;i<x->g_buffsize;i++) {
 		SETLONG(thestuff,i+(x->g_offset*x->g_buffsize));
@@ -157,49 +161,47 @@ if(x->g_rescale) {
 
 void *gen17_new(long n, long o)
 {
-	Gen17 *x;
-	register short c;
+	t_gen17 *x;
+	short c;
 	
-	x = newobject(class);		// get memory for the object
-
+	x = (t_gen17 *)object_alloc(gen17_class);		// get memory for the object
+    
 	x->g_offset = 0;
 	if (o) {
 		x->g_offset = o;
 	}
-
+    
 	for(c=0;c<MAXSIZE;c++) // initialize harmonics array (static memory)
 	{
 		x->g_args[c] =0.0;
 	}
-
-// initialize function table size (must allocate memory)
+    
+    // initialize function table size (must allocate memory)
 	x->g_buffsize=512;
 	
 	x->g_rescale=1;
-
-if (n) {
-	x->g_buffsize=n;
-	if (x->g_buffsize>BUFFER) x->g_buffsize=BUFFER; // size the function array
+    
+    if (n) {
+        x->g_buffsize=n;
+        if (x->g_buffsize>BUFFER) x->g_buffsize=BUFFER; // size the function array
 	}
-
+    
 	x->g_table=NULL;
 	x->g_table = (float*) sysmem_newptr(sizeof(float) * BUFFER);
 	if (x->g_table == NULL) {
 		error("memory allocation error"); // whoops, out of memory...
 		return (x);
 	}
-
+    
 	for(c=0;c<x->g_buffsize;c++)
 	{
 		x->g_table[c]=0.0;
 	}
 	x->g_out = listout(x);				// create a list outlet
 	return (x);							// return newly created object and go go go...
-
-
 }
 
-void *gen17_free(Gen17 *x)
+void gen17_free(t_gen17 *x)
 {
 	if (x != NULL) {
 		if (x->g_table != NULL) {
@@ -208,7 +210,7 @@ void *gen17_free(Gen17 *x)
 	}
 }
 
-void gen17_assist(Gen17 *x, void *b, long msg, long arg, char *dst)
+void gen17_assist(t_gen17 *x, void *b, long msg, long arg, char *dst)
 {
 	switch(msg) {
 		case 1: // inlet

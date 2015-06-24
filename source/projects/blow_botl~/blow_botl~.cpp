@@ -1,26 +1,28 @@
-//blow_botl; from the STK
+// blow_botl; from the STK
 //
-//dt 2005; yet another PeRColate hack
+// dt 2005; yet another PeRColate hack
 //
-
-
-extern "C" {
-#include "ext.h"
-#include "z_dsp.h"
-#include "ext_strings.h"
-}
+// updated for Max 7 by Darwin Grosse and Tim Place
+// -------------------------------------------------
 
 #include <math.h>
 //#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+extern "C" {
+#include "ext.h"
+#include "ext_obex.h"
+#include "ext_strings.h"
+#include "z_dsp.h"
+}
+
 #include "BlowBotl.h"
 
 #define MAX_INPUTS 10 	//arbitrary
 #define MAX_OUTPUTS 10	//also arbitrary
 
-void *blow_botl_class;
+t_class *blow_botl_class;
 
 typedef struct _blow_botl
 {
@@ -28,19 +30,18 @@ typedef struct _blow_botl
     t_pxobject x_obj;
     
     //variables specific to this object
-    float srate, one_over_srate;  	//sample rate vars
+    double srate, one_over_srate;  	//sample rate vars
     long num_inputs, num_outputs; 	//number of inputs and outputs
-    float in[MAX_INPUTS];			//values of input variables
-    float in_connected[MAX_INPUTS]; //booleans: true if signals connected to the input in question
+    double in[MAX_INPUTS];			//values of input variables
+    double in_connected[MAX_INPUTS]; //booleans: true if signals connected to the input in question
     //we use this "connected" boolean so that users can connect *either* signals or floats
     //to the various inputs; sometimes it's easier just to have floats, but other times
     //it's essential to have signals.... but we have to know. 
     
     BlowBotl 	*myBotl;
 
-    short fm_type; //which instrument
-    
-    short power;					//i like objects, especially CPU intensive ones, to have their own
+    long fm_type; //which instrument
+    long power;					//i like objects, especially CPU intensive ones, to have their own
     								//"power" messages so that you can bypass them individually
 
     
@@ -53,19 +54,21 @@ typedef struct _blow_botl
 //args that the user can input, in which case blow_botl_new will have to change
 void *blow_botl_new(long num_inputs, long num_outputs);
 void blow_botl_free(t_blow_botl *x);
-void blow_botl_dsp(t_blow_botl *x, t_signal **sp, short *count); 
-t_int *blow_botl_perform(t_int *w);
 void blow_botl_assist(t_blow_botl *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void blow_botl_dsp64(t_blow_botl *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void blow_botl_perform64(t_blow_botl *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 //for getting floats at inputs
 void blow_botl_float(t_blow_botl *x, double f);
 
 //for custom messages
-void blow_botl_setpower(t_blow_botl *x, Symbol *s, short argc, Atom *argv);
-void blow_botl_controlchange(t_blow_botl *x, Symbol *s, short argc, Atom *argv);
-void blow_botl_noteon(t_blow_botl *x, Symbol *s, short argc, Atom *argv);
-void blow_botl_noteoff(t_blow_botl *x, Symbol *s, short argc, Atom *argv);
-void blow_botl_settype(t_blow_botl *x, Symbol *s, short argc, Atom *argv);
+void blow_botl_setpower(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv);
+void blow_botl_controlchange(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv);
+void blow_botl_noteon(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv);
+void blow_botl_noteoff(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv);
+void blow_botl_settype(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv);
 
 
 /****FUNCTIONS****/
@@ -75,23 +78,21 @@ void ext_main(void* p)
 {
 	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
 	//change these if you want different user args
-    setup((struct messlist **)&blow_botl_class, (method)blow_botl_new, (method)blow_botl_free, (short)sizeof(t_blow_botl), 0L, A_DEFLONG, A_DEFLONG, 0);
+    t_class *c = class_new("blow_botl~", (method)blow_botl_new, (method)blow_botl_free, (long)sizeof(t_blow_botl), 0L, A_DEFLONG, A_DEFLONG, 0);
    
-	//standard messages; don't change these  
-    addmess((method)blow_botl_dsp, "dsp", A_CANT, 0);
-    addmess((method)blow_botl_assist,"assist", A_CANT,0);
+    class_addmethod(c, (method)blow_botl_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)blow_botl_float, "float", A_FLOAT, 0);
+
+    class_addmethod(c, (method)blow_botl_setpower, "power", A_GIMME, 0);
+    class_addmethod(c, (method)blow_botl_controlchange, "control", A_GIMME, 0);
+    class_addmethod(c, (method)blow_botl_noteon, "noteon", A_GIMME, 0);
+    class_addmethod(c, (method)blow_botl_noteoff, "noteoff", A_GIMME, 0);
+
+    class_addmethod(c, (method)blow_botl_dsp64, "dsp64", A_CANT, 0);
+    class_dspinit(c);
     
-    //our own messages
-    addmess((method)blow_botl_setpower, "power", A_GIMME, 0);
-    addmess((method)blow_botl_controlchange, "control", A_GIMME, 0);
-    addmess((method)blow_botl_noteon, "noteon", A_GIMME, 0);
-    addmess((method)blow_botl_noteoff, "noteoff", A_GIMME, 0);
-    
-    //so we know what to do with floats that we receive at the inputs
-    addfloat((method)blow_botl_float);
-    
-    //gotta have this one....
-    dsp_initclass();
+    class_register(CLASS_BOX, c);
+    blow_botl_class = c;
 }
 
 //this gets called when the object is created; everytime the user types in new args, this will get called
@@ -100,160 +101,70 @@ void *blow_botl_new(long xD, long yD)
 	int i;
 	
 	//leave this; creates our object
-    t_blow_botl *x = (t_blow_botl *)newobject(blow_botl_class);
+    t_blow_botl *x = (t_blow_botl *)object_alloc(blow_botl_class);
     
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
-        for(i=sizeof(t_pxobject);i<sizeof(t_blow_botl);i++)  
-                ((char *)x)[i]=0; 
-	} 
+        for(i=sizeof(t_pxobject);i<sizeof(t_blow_botl);i++) {
+            ((char *)x)[i]=0;
+        }
 
-	x->num_inputs = 1;
-	x->num_outputs = 1;
+        //if you just need one input for message (not using audio), you can just set num_inputs = 1
+        //i don't think this causes a performance hit.
+        x->num_inputs = 1;
+        x->num_outputs = 1;
 
-	//setup up inputs and outputs, for audio
-	
-	//inputs
-    dsp_setup((t_pxobject *)x, x->num_inputs);
-    //if you just need one input for message (not using audio), you can just set num_inputs = 1
-    //i don't think this causes a performance hit.
-    
-    //outputs
-    for (i=0;i<x->num_outputs;i++) {
-    	outlet_new((t_object *)x, "signal");
-    }   
-    //can use intin, floatout, listout, etc... for setting up non-audio ins and outs.
-    //but, the order in which you call these funcs is important.
-    //for instance, from gQ~
-    /*    
-    x->outfloat = floatout((t_object *)x);
-    x->outlist = listout((t_object *)x);
-    outlet_new((t_object *)x, "signal");
-    outlet_new((t_object *)x, "signal");
-   */
-   //this will create four outputs, *rightmost* created first, so the outlets, from left to right, will look like
-   //(signal) (signal) (list) (float)
-   //when you instantiate gQ~ in Max/MSP.
-    
-    //initialize some variables; important to do this!
-    for (i=0;i<x->num_inputs;i++){
-    	x->in[i] = 0.;
-    	x->in_connected[i] = 0;
+        //setup up inputs and outputs, for audio
+        
+        //inputs
+        dsp_setup((t_pxobject *)x, x->num_inputs);
+        
+        //outputs
+        for (i=0;i<x->num_outputs;i++) {
+            outlet_new((t_object *)x, "signal");
+        }
+        
+        //initialize some variables; important to do this!
+        for (i=0;i<x->num_inputs;i++){
+            x->in[i] = 0.;
+            x->in_connected[i] = 0;
+        }
+        x->power = 1;
+
+        //occasionally this line is necessary if you are doing weird asynchronous things with the in/out vectors
+        //x->x_obj.z_misc = Z_NO_INPLACE;
+        //Stk::setRawwavePath("../../rawwaves/");
+
+        x->myBotl = new BlowBotl();
     }
-    x->power = 1;
-
-	//occasionally this line is necessary if you are doing weird asynchronous things with the in/out vectors
-	//x->x_obj.z_misc = Z_NO_INPLACE;
-	
-	//Stk::setRawwavePath("../../rawwaves/");
-
-	x->myBotl = new BlowBotl(); 	
-
 
     return (x);
 }
-
 
 //this gets called when an object is destroyed. do stuff here if you need to clean up.
 void blow_botl_free(t_blow_botl *x)
 {
 	//gotta call this one, *before* you free other resources! thanks to Rob Sussman for pointing this out to me.
 	dsp_free((t_pxobject *)x);
-	
 	delete x->myBotl;
-
 }
-
-
-//this gets called everytime audio is started; even when audio is running, if the user
-//changes anything (like deletes a patch cord), audio will be turned off and
-//then on again, calling this func.
-//this adds the "perform" method to the DSP chain, and also tells us
-//where the audio vectors are and how big they are
-void blow_botl_dsp(t_blow_botl *x, t_signal **sp, short *count)
-{
-	void *dsp_add_args[MAX_INPUTS + MAX_OUTPUTS + 2];
-	int i;
-
-	//set sample rate vars
-	x->srate = sp[0]->s_sr;
-	x->one_over_srate = 1./x->srate;
-	
-	Stk::setSampleRate(x->srate);
-	
-	//check to see if there are signals connected to the various inputs
-	for(i=0;i<x->num_inputs;i++) x->in_connected[i]	= count[i];
-	
-	//construct the array of vectors and stuff
-	dsp_add_args[0] = x; //the object itself
-    for(i=0;i< (x->num_inputs + x->num_outputs); i++) { //pointers to the input and output vectors
-    	dsp_add_args[i+1] = sp[i]->s_vec;
-    }
-    dsp_add_args[x->num_inputs + x->num_outputs + 1] = (void *)sp[0]->s_n; //pointer to the vector size
-	dsp_addv(blow_botl_perform, (x->num_inputs + x->num_outputs + 2), dsp_add_args); //add them to the signal chain
-	
-}
-
-//this is where the action is
-//we get vectors of samples (n samples per vector), process them and send them out
-t_int *blow_botl_perform(t_int *w)
-{
-	t_blow_botl *x = (t_blow_botl *)(w[1]);
-
-	float *in[MAX_INPUTS]; 		//pointers to the input vectors
-	float *out[MAX_OUTPUTS];	//pointers to the output vectors
-
-	long n = w[x->num_inputs + x->num_outputs + 2];	//number of samples per vector
-	
-	//random local vars
-	int i;
-	float temp;
-	
-	//check to see if we should skip this routine if the patcher is "muted"
-	//i also setup of "power" messages for expensive objects, so that the
-	//object itself can be turned off directly. this can be convenient sometimes.
-	//in any case, all audio objects should have this
-	if (x->x_obj.z_disabled || (x->power == 0)) goto out;
-	
-	//check to see if we have a signal or float message connected to input
-	//then assign the pointer accordingly
-	for (i=0;i<x->num_inputs;i++) {
-		in[i] = x->in_connected[i] ? (float *)(w[i+2]) : &x->in[i];
-	}
-	
-	//assign the output vectors
-	for (i=0;i<x->num_outputs;i++) {
-		out[i] = (float *)(w[x->num_inputs+i+2]);
-	}
-
-	while(n--) {	
-		*out[0]++ = x->myBotl->tick();
-	}
-
-
-	//return a pointer to the next object in the signal chain.
-out:
-	return w + x->num_inputs + x->num_outputs + 3;
-}	
-
 
 //tells the user about the inputs/outputs when mousing over them
 void blow_botl_assist(t_blow_botl *x, void *b, long m, long a, char *s)
 {
-	int i, j;
+	int i;
 	
 	//could use switch/case inside for loops, to give more informative assist info....
 	if (m==1) {
-		for(i=0;i<x->num_inputs;i++) 
+		for(i=0; i<x->num_inputs; i++)
 			if (a==i) std::sprintf(s, "control messages");
 	}
 	if (m==2) {
-		for(i=0;i<x->num_outputs;i++)
+		for(i=0; i<x->num_outputs; i++)
 			if (a==i) std::sprintf(s, "output (signal)");
 	}
 	
 }
-
 
 //this gets called when ever a float is received at *any* input
 void blow_botl_float(t_blow_botl *x, double f)
@@ -261,21 +172,20 @@ void blow_botl_float(t_blow_botl *x, double f)
 	int i;
 	
 	//check to see which input the float came in, then set the appropriate variable value
-	for(i=0;i<x->num_inputs;i++) {
+	for(i=0; i<x->num_inputs; i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
 			post("blow_botl~: setting in[%d] =  %f", i, f);
-		} 
+		}
 	}
 }
 
-
 //what to do when we get the message "mymessage" and a value (or list of values)
-void blow_botl_setpower(t_blow_botl *x, Symbol *s, short argc, Atom *argv)
+void blow_botl_setpower(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
 {
-	short i;
+	long i;
 	float temp;
-	long temp2; 
+	long temp2;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
@@ -290,19 +200,19 @@ void blow_botl_setpower(t_blow_botl *x, Symbol *s, short argc, Atom *argv)
 				break;
 		}
 	}
-
+    
 }
 
-void blow_botl_controlchange(t_blow_botl *x, Symbol *s, short argc, Atom *argv)
+void blow_botl_controlchange(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
 {
-	short i;
+	long i;
 	float temp[2];
-
+    
 	if(argc<2) {
 		post("blow_botl~ error: need two arguments, control number and control value\n");
 		return;
 	}
-
+    
 	for(i=0;i<2;i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
@@ -315,21 +225,21 @@ void blow_botl_controlchange(t_blow_botl *x, Symbol *s, short argc, Atom *argv)
 				//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
-	}	
+	}
 	
 	x->myBotl->controlChange(temp[0], temp[1]);
 }
 
-void blow_botl_noteon(t_blow_botl *x, Symbol *s, short argc, Atom *argv)
+void blow_botl_noteon(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
 {
-	short i;
+	long i;
 	float temp[2];
-
+    
 	if(argc<2) {
 		post("blow_botl~ error: need two arguments, frequency and amplitude\n");
 		return;
 	}
-
+    
 	for(i=0;i<2;i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
@@ -346,10 +256,10 @@ void blow_botl_noteon(t_blow_botl *x, Symbol *s, short argc, Atom *argv)
 	x->myBotl->noteOn(temp[0], temp[1]);
 }
 
-void blow_botl_noteoff(t_blow_botl *x, Symbol *s, short argc, Atom *argv)
+void blow_botl_noteoff(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
 {
-	short i;
-	float temp = 0.; 
+	long i;
+	float temp = 0.;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
@@ -362,4 +272,61 @@ void blow_botl_noteoff(t_blow_botl *x, Symbol *s, short argc, Atom *argv)
 	}
 	x->myBotl->noteOff(temp);
 }
+
+void blow_botl_dsp64(t_blow_botl *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
+{
+	int i;
+    
+	//set sample rate vars
+	x->srate = samplerate;
+	x->one_over_srate = 1./x->srate;
+	Stk::setSampleRate(x->srate);
+	
+	//check to see if there are signals connected to the various inputs
+	for(i=0;i<x->num_inputs;i++) {
+        x->in_connected[i]	= count[i];
+    }
+    
+    object_method(dsp64, gensym("dsp_add64"), x, blow_botl_perform64, 0, NULL);
+}
+
+void blow_botl_perform64(t_blow_botl *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+	double *in[MAX_INPUTS]; 		//pointers to the input vectors
+	double *out[MAX_OUTPUTS];	//pointers to the output vectors
+    
+	long n = sampleframes;	//number of samples per vector
+	
+	//random local vars
+	long i;
+	
+	//check to see if we should skip this routine if the patcher is "muted"
+	//i also setup of "power" messages for expensive objects, so that the
+	//object itself can be turned off directly. this can be convenient sometimes.
+	//in any case, all audio objects should have this
+	if (x->power == 0) {
+        while (n--)
+            *outs[0]++ = *ins[0]++;
+        return;
+    }
+	
+	//check to see if we have a signal or float message connected to input
+	//then assign the pointer accordingly
+	for (i=0; i<x->num_inputs; i++) {
+		in[i] = x->in_connected[i] ? (double *)(ins[i]) : &x->in[i];
+	}
+	
+	//assign the output vectors
+	for (i=0;i<x->num_outputs;i++) {
+		out[i] = (double *)(outs[i]);
+	}
+    
+	while(n--) {
+		*out[0]++ = x->myBotl->tick();
+	}
+}
+
+
+
+
 

@@ -1,16 +1,22 @@
-#include "ext.h"
-#include "z_dsp.h"
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// -------------------------------------------------
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+
+#include "ext.h"
+#include "ext_obex.h"
+#include "z_dsp.h"
+
 //#define TWOPI 6.283185307
 #define MAXBANKS 31
 #define PEAKNOTCH 0
 #define LOWSHELF 1
 #define HIGHSHELF 2
 
-void *gq_class;
+t_class *gq_class;
 
 typedef struct _gq
 {
@@ -18,10 +24,10 @@ typedef struct _gq
     t_pxobject x_obj;
     
     //user controlled vars
-    float x_cf[MAXBANKS];			//centerfreq	
-    float x_bw[MAXBANKS];			//bandwidth
-    float x_bt[MAXBANKS]; 			//boost
-    float x_rf[MAXBANKS]; 			//response freq	
+    double x_cf[MAXBANKS];			//centerfreq	
+    double x_bw[MAXBANKS];			//bandwidth
+    double x_bt[MAXBANKS]; 			//boost
+    double x_rf[MAXBANKS]; 			//response freq	
     
     short x_type[MAXBANKS];			//what type of filter (peaknotch, lowshelf, highshelf)
     
@@ -32,11 +38,11 @@ typedef struct _gq
     short x_rfconnected;
     
     //filter stuff
-    float inputs[2][MAXBANKS], outputs[2][MAXBANKS];
-    float inputsL[2][MAXBANKS],  inputsR[2][MAXBANKS];
-    float outputsL[2][MAXBANKS], outputsR[2][MAXBANKS];    
-    float zeroCoeffs[2][MAXBANKS], poleCoeffs[2][MAXBANKS];
-    float x_gn[MAXBANKS];	//gain;
+    double inputs[2][MAXBANKS], outputs[2][MAXBANKS];
+    double inputsL[2][MAXBANKS],  inputsR[2][MAXBANKS];
+    double outputsL[2][MAXBANKS], outputsR[2][MAXBANKS];    
+    double zeroCoeffs[2][MAXBANKS], poleCoeffs[2][MAXBANKS];
+    double x_gn[MAXBANKS];	//gain;
     
     long currentbank;
     long numbanks;
@@ -48,28 +54,30 @@ typedef struct _gq
     short power;
     
     //stuff
-    float srate, one_over_srate;
-    float cf_save[MAXBANKS], bw_save[MAXBANKS], bt_save[MAXBANKS], rf_save[MAXBANKS];
+    double srate, one_over_srate;
+    double cf_save[MAXBANKS], bw_save[MAXBANKS], bt_save[MAXBANKS], rf_save[MAXBANKS];
 } t_gq;
 
 /****PROTOTYPES****/
 
 //setup funcs
 void *gq_new(double val);
-void gq_dsp(t_gq *x, t_signal **sp, short *count);
 void gq_float(t_gq *x, double f);
 void gq_int(t_gq *x, int f);
 void gq_assist(t_gq *x, void *b, long m, long a, char *s);
-void gq_setbank(t_gq *x, Symbol *s, short argc, Atom *argv);
-void gq_numbanks(t_gq *x, Symbol *s, short argc, Atom *argv);
-void gq_clear(t_gq *x, Symbol *s, short argc, Atom *argv);
-void gq_clearsettings(t_gq *x, Symbol *s, short argc, Atom *argv);
-void gq_updatebank(t_gq *x, Symbol *s, short argc, Atom *argv);
-t_int *gq_performMono(t_int *w);
-t_int *gq_performStereo(t_int *w);
+
+void gq_dsp64(t_gq *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void gq_performMo64(t_gq *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+void gq_performSt64(t_gq *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
+void gq_setbank(t_gq *x, t_symbol *s, long argc, t_atom *argv);
+void gq_numbanks(t_gq *x, t_symbol *s, long argc, t_atom *argv);
+void gq_clear(t_gq *x, t_symbol *s, long argc, t_atom *argv);
+void gq_clearsettings(t_gq *x, t_symbol *s, long argc, t_atom *argv);
+void gq_updatebank(t_gq *x, t_symbol *s, long argc, t_atom *argv);
 void updateResponse(t_gq *x, double f);
 
-void gq_setpower(t_gq *x, Symbol *s, short argc, Atom *argv);
+void gq_setpower(t_gq *x, t_symbol *s, long argc, t_atom *argv);
 
 void gq_setpeaknotch(t_gq *x, double f);
 void gq_sethighshelf(t_gq *x, double f);
@@ -206,36 +214,73 @@ void setFreqBoostBandwidth(t_gq *x, float freq, float boost, float thisBandwidth
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&gq_class, (method)gq_new, (method)dsp_free, (short)sizeof(t_gq), 0L, A_DEFFLOAT, 0);
-    addmess((method)gq_dsp, "dsp", A_CANT, 0);
-    addmess((method)gq_assist,"assist",A_CANT,0);
-    addmess((method)gq_setpower, "power", A_GIMME, 0);
-    addmess((method)gq_setbank, "currentbank", A_GIMME, 0);
-    addmess((method)gq_numbanks, "numbanks", A_GIMME, 0);
-    addmess((method)gq_clear, "clear", A_GIMME, 0);
-    addmess((method)gq_clearsettings, "clearsettings", A_GIMME, 0);
-    addmess((method)gq_updatebank, "setbank", A_GIMME, 0);
-    addmess((method)gq_setpeaknotch, "peaknotch", A_GIMME, 0);
-    addmess((method)gq_sethighshelf, "highshelf", A_GIMME, 0);
-    addmess((method)gq_setlowshelf, "lowshelf", A_GIMME, 0);
-    addfloat((method)gq_float);
-    addint((method)gq_int);
-    dsp_initclass();
-    rescopy('STR#',9800);
+    post("Verifying update.");
+    t_class *c = class_new("gq~", (method)gq_new, (method)dsp_free, (long)sizeof(t_gq), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)gq_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)gq_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)gq_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)gq_int, "int", A_LONG, 0);
+    
+    class_addmethod(c, (method)gq_setpower, "power", A_GIMME, 0);
+    class_addmethod(c, (method)gq_setbank, "currentbank", A_GIMME, 0);
+    class_addmethod(c, (method)gq_numbanks, "numbanks", A_GIMME, 0);
+    class_addmethod(c, (method)gq_clear, "clear", A_GIMME, 0);
+    class_addmethod(c, (method)gq_clearsettings, "clearsettings", A_GIMME, 0);
+    class_addmethod(c, (method)gq_updatebank, "setbank", A_GIMME, 0);
+    class_addmethod(c, (method)gq_setpeaknotch, "peaknotch", A_GIMME, 0);
+    class_addmethod(c, (method)gq_sethighshelf, "highshelf", A_GIMME, 0);
+    class_addmethod(c, (method)gq_setlowshelf, "lowshelf", A_GIMME, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    gq_class = c;
 }
 
 void gq_assist(t_gq *x, void *b, long m, long a, char *s)
 {
-	assist_string(9800,m,a,1,7,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 2:
+                sprintf(s,"(signal/float) center frequency");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) bandwidth");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) boost");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) response frequency");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
+
+void gq_float(t_gq *x, double f)
+{
+	if (x->x_obj.z_in == 2) {
+		x->x_cf[x->currentbank] = f;
+	} else if (x->x_obj.z_in == 3) {
+		x->x_bw[x->currentbank] = f;
+	} else if (x->x_obj.z_in == 4) {
+		x->x_bt[x->currentbank] = f;
+	} else if (x->x_obj.z_in == 5) {
+		x->x_rf[x->currentbank] = f;
+		updateResponse(x, f);
+	}
+}
 
 void gq_int(t_gq *x, int f)
 {
 	gq_float(x, (double)f);
 }
 
-void gq_setpower(t_gq *x, Symbol *s, short argc, Atom *argv)
+void gq_setpower(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -257,12 +302,12 @@ void gq_setpower(t_gq *x, Symbol *s, short argc, Atom *argv)
 }
 
 
-void gq_setbank(t_gq *x, Symbol *s, short argc, Atom *argv)
+void gq_setbank(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
 	float banksettings[4];
-	Atom outlist[4];
+	t_atom outlist[4];
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
@@ -293,7 +338,7 @@ void gq_setbank(t_gq *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void gq_numbanks(t_gq *x, Symbol *s, short argc, Atom *argv)
+void gq_numbanks(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -318,7 +363,7 @@ void gq_numbanks(t_gq *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void gq_updatebank(t_gq *x, Symbol *s, short argc, Atom *argv)
+void gq_updatebank(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 {
 	long bank, banksave, type;
 	float cf, bw, mult;
@@ -381,7 +426,7 @@ void gq_updatebank(t_gq *x, Symbol *s, short argc, Atom *argv)
 	
 }
 
-void gq_clear(t_gq *x, Symbol *s, short argc, Atom *argv)
+void gq_clear(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 {
 	int i;
 	post("gQ: clearing delay lines");
@@ -399,7 +444,7 @@ void gq_clear(t_gq *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void gq_clearsettings(t_gq *x, Symbol *s, short argc, Atom *argv)
+void gq_clearsettings(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 {
 	int i;
 	post("gQ: clearing settings and delay lines");
@@ -452,25 +497,11 @@ void gq_setlowshelf(t_gq *x, double f)
 	setFreqBoostBandwidth(x, x->x_cf[x->currentbank], x->x_bt[x->currentbank], x->x_bw[x->currentbank]);
 }
 
-void gq_float(t_gq *x, double f)
-{
-	if (x->x_obj.z_in == 2) {
-		x->x_cf[x->currentbank] = f;
-	} else if (x->x_obj.z_in == 3) {
-		x->x_bw[x->currentbank] = f;
-	} else if (x->x_obj.z_in == 4) {
-		x->x_bt[x->currentbank] = f;
-	} else if (x->x_obj.z_in == 5) {
-		x->x_rf[x->currentbank] = f;
-		updateResponse(x, f);
-	} 
-}
-
 void *gq_new(double initial_coeff)
 {
 	int i;
 
-    t_gq *x = (t_gq *)newobject(gq_class);
+    t_gq *x = (t_gq *)object_alloc(gq_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_gq);i++)  
@@ -526,51 +557,46 @@ void *gq_new(double initial_coeff)
     return (x);
 }
 
-
-void gq_dsp(t_gq *x, t_signal **sp, short *count)
+void gq_dsp64(t_gq *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->x_cfconnected = count[2];
 	x->x_bwconnected = count[3];
 	x->x_btconnected = count[4];
 	x->x_rfconnected = count[5];
 	
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
     x->one_over_srate = 1./x->srate;
-
-	if(count[1])						//inL			inR			cf				bw			  boost			rf			  outL			outR			
-		dsp_add(gq_performStereo, 10, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[7]->s_vec, sp[0]->s_n);	
-	else 								//in		   cf			bw			boost			rf			out				
-		dsp_add(gq_performMono, 8, x, sp[0]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[0]->s_n);	
-		//dsp_add(gq_performStereo, 10, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[7]->s_vec, sp[0]->s_n);	
+    
+    if (count[1]) {
+        object_method(dsp64, gensym("dsp_add64"), x, gq_performSt64, 0, NULL);
+    } else {
+        object_method(dsp64, gensym("dsp_add64"), x, gq_performMo64, 0, NULL);
+    }
 }
 
-
-t_int *gq_performMono(t_int *w)
+void gq_performMo64(t_gq *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_gq *x = (t_gq *)(w[1]);
+	double *in = (double *)(ins[2]);
+    
+	double cf = x->x_cfconnected? *(double *)(ins[2]) : x->x_cf[x->currentbank];
+	double bw = x->x_bwconnected? *(double *)(ins[3]) : x->x_bw[x->currentbank];
+	double bt = x->x_btconnected? *(double *)(ins[4]) : x->x_bt[x->currentbank];
+	double rf = x->x_rfconnected? *(double *)(ins[5]) : x->x_rf[x->currentbank];
 	
-	float *in = (float *)(w[2]);
-
-	float cf = x->x_cfconnected? *(float *)(w[3]) : x->x_cf[x->currentbank];
-	float bw = x->x_bwconnected? *(float *)(w[4]) : x->x_bw[x->currentbank];
-	float bt = x->x_btconnected? *(float *)(w[5]) : x->x_bt[x->currentbank];
-	float rf = x->x_rfconnected? *(float *)(w[6]) : x->x_rf[x->currentbank];
+	double *out = (double *)(outs[0]);
+    
+	long n = sampleframes;
 	
-	float *out = (float *)(w[7]);
-
-	long n = w[8];
+	double temp, outputs, outputsSave;
+	double gain[MAXBANKS];
+	double inputs[2][MAXBANKS];
+	double poleCoeffs[2][MAXBANKS];
+	double zeroCoeffs[2][MAXBANKS];
 	
-	float temp, outputs, outputsSave;
-	float gain[MAXBANKS];
-	float inputs[2][MAXBANKS];
-	float poleCoeffs[2][MAXBANKS];
-	float zeroCoeffs[2][MAXBANKS];
-	
-	float response;
 	int i;
 	long numbanks = x->numbanks;
 	
-	if (x->x_obj.z_disabled || (x->power == 0)) goto out;
+	if (x->power == 0) return;
 	
 	for(i=0;i<numbanks;i++) {
 		inputs[0][i] 	= x->inputs[0][i];
@@ -597,17 +623,17 @@ t_int *gq_performMono(t_int *w)
 		x->bt_save[x->currentbank] = bt;
 		setFreqBoostBandwidth(x, cf, bt, bw);
 	}
-
+    
 	while(n--) {
 		
-	    outputsSave = *in++; 
-		    
+	    outputsSave = *in++;
+        
 		//run the filters in series
-		for(i=0;i<numbanks;i++) { 
-		
-			temp = outputsSave;			//feed output of last filter in to next filter     
-			            
-																/* Here's the math for the  */
+		for(i=0;i<numbanks;i++) {
+            
+			temp = outputsSave;			//feed output of last filter in to next filter
+            
+            /* Here's the math for the  */
 		    temp += inputs[0][i] * poleCoeffs[0][i];          	/* version which implements */
 		    temp += inputs[1][i] * poleCoeffs[1][i];          	/* only 2 state variables.  */
 		    
@@ -620,45 +646,41 @@ t_int *gq_performMono(t_int *w)
 		    outputsSave = outputs;  	//filters are in series
 		    
 		}
-
+        
 	    *out++ = outputsSave;
 	}
 	for(i=0;i<numbanks;i++) {
 		x->inputs[0][i] = inputs[0][i];
 		x->inputs[1][i] = inputs[1][i];
 	}
-out:
-	return w + 9;
-}	
+}
 
-t_int *gq_performStereo(t_int *w)
+void gq_performSt64(t_gq *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_gq *x = (t_gq *)(w[1]);
+	double *inL = (double *)(ins[2]);
+	double *inR = (double *)(ins[3]);
+    
+	double cf = x->x_cfconnected? *(double *)(ins[4]) : x->x_cf[x->currentbank];
+	double bw = x->x_bwconnected? *(double *)(ins[5]) : x->x_bw[x->currentbank];
+	double bt = x->x_btconnected? *(double *)(ins[6]) : x->x_bt[x->currentbank];
+	double rf = x->x_rfconnected? *(double *)(ins[7]) : x->x_rf[x->currentbank];
 	
-	float *inL = (float *)(w[2]);
-	float *inR = (float *)(w[3]);
-
-	float cf = x->x_cfconnected? *(float *)(w[4]) : x->x_cf[x->currentbank];
-	float bw = x->x_bwconnected? *(float *)(w[5]) : x->x_bw[x->currentbank];
-	float bt = x->x_btconnected? *(float *)(w[6]) : x->x_bt[x->currentbank];
-	float rf = x->x_rfconnected? *(float *)(w[7]) : x->x_rf[x->currentbank];
+	double *outL = (double *)(outs[8]);
+	double *outR = (double *)(outs[9]);
 	
-	float *outL = (float *)(w[8]); 
-	float *outR = (float *)(w[9]); 
+	double response;
 	
-	float response;
-	
-	long n = w[10];
+	long n = sampleframes;
 	int i;
 	int numbanks = x->numbanks;
 	
-	float temp, outputs, outputsLsave, outputsRsave;
-	float gain[MAXBANKS];
-	float inputsL[2][MAXBANKS], inputsR[2][MAXBANKS];
-	float poleCoeffs[2][MAXBANKS];
-	float zeroCoeffs[2][MAXBANKS];
+	double temp, outputs, outputsLsave, outputsRsave;
+	double gain[MAXBANKS];
+	double inputsL[2][MAXBANKS], inputsR[2][MAXBANKS];
+	double poleCoeffs[2][MAXBANKS];
+	double zeroCoeffs[2][MAXBANKS];
 	
-	if (x->x_obj.z_disabled || (x->power == 0)) goto out2;
+	if (x->power == 0) return;
 	
 	for (i=0;i<numbanks;i++){
 		inputsL[0][i] = x->inputsL[0][i];
@@ -671,9 +693,9 @@ t_int *gq_performStereo(t_int *w)
 		zeroCoeffs[0][i] = x->zeroCoeffs[0][i];
 		zeroCoeffs[1][i] = x->zeroCoeffs[1][i];
 		gain[i] = x->x_gn[i];
-	
+        
 	}
-		
+    
 	if(x->cf_save[x->currentbank] != cf) {
 		x->cf_save[x->currentbank] = cf;
 		setFreqBoostBandwidth(x, cf, bt, bw);
@@ -688,15 +710,15 @@ t_int *gq_performStereo(t_int *w)
 		x->bt_save[x->currentbank] = bt;
 		setFreqBoostBandwidth(x, cf, bt, bw);
 	}
-
+    
 	while(n--) {
-			    
+        
 	    //left channel
-	    outputsLsave = *inL++;                       			  
+	    outputsLsave = *inL++;
 	    for(i=0;i<numbanks;i++) {
-	    
+            
 	    	temp = outputsLsave;
-	    														/* Here's the math for the  */
+            /* Here's the math for the  */
 		    temp += inputsL[0][i] * poleCoeffs[0][i];         	/* version which implements */
 		    temp += inputsL[1][i] * poleCoeffs[1][i];         	/* only 2 state variables.  */
 		    
@@ -710,11 +732,11 @@ t_int *gq_performStereo(t_int *w)
 	    }
 	    
 	    //right channel
-        outputsRsave = *inR++;          											
+        outputsRsave = *inR++;
 	    for(i=0;i<numbanks;i++) {
-	    
+            
 	    	temp = outputsRsave;
-	    														/* Here's the math for the  */
+            /* Here's the math for the  */
 		    temp += inputsR[0][i] * poleCoeffs[0][i];         	/* version which implements */
 		    temp += inputsR[1][i] * poleCoeffs[1][i];         	/* only 2 state variables.  */
 		    
@@ -726,19 +748,17 @@ t_int *gq_performStereo(t_int *w)
 		    
 		    outputsRsave = outputs;
 		}
-
+        
 	    //outputs
 	    *outL++ = outputsLsave;
 	    *outR++ = outputsRsave;
 	}
-
+    
 	for(i=0;i<numbanks;i++){
 		x->inputsL[0][i] = inputsL[0][i];
 		x->inputsL[1][i] = inputsL[1][i];
 		x->inputsR[0][i] = inputsR[0][i];
 		x->inputsR[1][i] = inputsR[1][i];
 	}
-out2:
-	return w + 11;
-}	
+}
 

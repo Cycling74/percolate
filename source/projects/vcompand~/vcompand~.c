@@ -1,12 +1,15 @@
 //applies uniform linear compression/expansion on freq bins
 //another PeRColate hack, inspired by some of paul koonce's work: dan trueman, 2002
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 //#define TWOPI 6.283185307
 #define RSRC_ID 12107
 
@@ -23,45 +26,54 @@ typedef struct _vectorcompand
 
 //setup funcs
 void *vectorcompand_new(double val);
-void vectorcompand_dsp(t_vectorcompand *x, t_signal **sp, short *count); 
-t_int *vectorcompand_perform(t_int *w);
 void vectorcompand_assist(t_vectorcompand *x, void *b, long m, long a, char *s);
 
-void vectorcompand_setcompthresh(t_vectorcompand *x, Symbol *s, short argc, Atom *argv);
-void vectorcompand_setcompratio(t_vectorcompand *x, Symbol *s, short argc, Atom *argv);
-void vectorcompand_setexpthresh(t_vectorcompand *x, Symbol *s, short argc, Atom *argv);
-void vectorcompand_setexpratio(t_vectorcompand *x, Symbol *s, short argc, Atom *argv);
+// dsp stuff
+void vectorcompand_dsp64(t_vectorcompand *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void vectorcompand_perform64(t_vectorcompand *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
+void vectorcompand_setcompthresh(t_vectorcompand *x, t_symbol *s, long argc, t_atom *argv);
+void vectorcompand_setcompratio(t_vectorcompand *x, t_symbol *s, long argc, t_atom *argv);
+void vectorcompand_setexpthresh(t_vectorcompand *x, t_symbol *s, long argc, t_atom *argv);
+void vectorcompand_setexpratio(t_vectorcompand *x, t_symbol *s, long argc, t_atom *argv);
 
 
 //t_symbol *ps_spvector;
-void *vectorcompand_class;
+t_class *vectorcompand_class;
 
 
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&vectorcompand_class, (method)vectorcompand_new, (method)dsp_free, (short)sizeof(t_vectorcompand), 0L, A_GIMME, 0);
-    addmess((method)vectorcompand_dsp, "dsp", A_CANT, 0);
-    addmess((method)vectorcompand_assist,"assist",A_CANT,0);
-    addmess((method)vectorcompand_setcompthresh, "compthresh", A_GIMME, 0);
-    addmess((method)vectorcompand_setcompratio, "compratio", A_GIMME, 0);
-    addmess((method)vectorcompand_setexpthresh, "expthresh", A_GIMME, 0);
-    addmess((method)vectorcompand_setexpratio, "expratio", A_GIMME, 0);
-    dsp_initclass();
- 
-    rescopy('STR#',RSRC_ID);
+    t_class *c = class_new("vectorcompand~", (method)vectorcompand_new, (method)dsp_free, (long)sizeof(t_vectorcompand), 0L, A_GIMME, 0);
+    
+    class_addmethod(c, (method)vectorcompand_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)vectorcompand_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)vectorcompand_setcompthresh, "compthresh", A_GIMME, 0);
+    class_addmethod(c, (method)vectorcompand_setcompratio, "compratio", A_GIMME, 0);
+    class_addmethod(c, (method)vectorcompand_setexpthresh, "expthresh", A_GIMME, 0);
+    class_addmethod(c, (method)vectorcompand_setexpratio, "expratio", A_GIMME, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    vectorcompand_class = c;
 }
 
 void vectorcompand_assist(t_vectorcompand *x, void *b, long m, long a, char *s)
 {
-	assist_string(RSRC_ID,m,a,1,2,s);
+	if (m == ASSIST_INLET) {
+		sprintf(s,"(signal) input");
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void *vectorcompand_new(double initial_coeff)
 {
 	int i;
 
-    t_vectorcompand *x = (t_vectorcompand *)newobject(vectorcompand_class);
+    t_vectorcompand *x = (t_vectorcompand *)object_alloc(vectorcompand_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_vectorcompand);i++)  
@@ -82,44 +94,7 @@ void *vectorcompand_new(double initial_coeff)
 }
 
 
-void vectorcompand_dsp(t_vectorcompand *x, t_signal **sp, short *count)
-{
-		dsp_add(vectorcompand_perform, 4, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n);	
-}
-
-t_int *vectorcompand_perform(t_int *w)
-{
-	t_vectorcompand *x = (t_vectorcompand *)(w[1]);
-
-	long i;
-
-	float *in = (float *)(w[2]);
-	float *out = (float *)(w[3]);
-	long n = w[4];
-	
-	float temp;
-	
-	if (x->x_obj.z_disabled)
-		goto out;
-	
-	while (n--) {
-		temp = *in++;
-		
-		if(temp > x->compthresh) {
-			temp = x->compthresh + (x->compamp*(temp - x->compthresh));
-		} else if(temp < x->expthresh) {
-			temp = x->expthresh - (x->expamp*(x->expthresh - temp));
-			if (temp < 0.) temp = 0.;
-		}
-		
-		*out++ = temp;
-	}
-
-out:
-	return w + 5;
-}	
-
-void vectorcompand_setcompthresh(t_vectorcompand *x, Symbol *s, short argc, Atom *argv)
+void vectorcompand_setcompthresh(t_vectorcompand *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -139,7 +114,7 @@ void vectorcompand_setcompthresh(t_vectorcompand *x, Symbol *s, short argc, Atom
 	}
 }
 
-void vectorcompand_setcompratio(t_vectorcompand *x, Symbol *s, short argc, Atom *argv)
+void vectorcompand_setcompratio(t_vectorcompand *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -161,7 +136,7 @@ void vectorcompand_setcompratio(t_vectorcompand *x, Symbol *s, short argc, Atom 
 	}
 }
 
-void vectorcompand_setexpthresh(t_vectorcompand *x, Symbol *s, short argc, Atom *argv)
+void vectorcompand_setexpthresh(t_vectorcompand *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -181,7 +156,7 @@ void vectorcompand_setexpthresh(t_vectorcompand *x, Symbol *s, short argc, Atom 
 	}
 }
 
-void vectorcompand_setexpratio(t_vectorcompand *x, Symbol *s, short argc, Atom *argv)
+void vectorcompand_setexpratio(t_vectorcompand *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -202,3 +177,37 @@ void vectorcompand_setexpratio(t_vectorcompand *x, Symbol *s, short argc, Atom *
 		}
 	}
 }
+
+
+void vectorcompand_dsp64(t_vectorcompand *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
+{
+    object_method(dsp64, gensym("dsp_add64"), x, vectorcompand_perform64, 0, NULL);
+}
+
+void vectorcompand_perform64(t_vectorcompand *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+	long i;
+    
+	t_double *in = (t_double *)(ins[0]);
+	t_double *out = (t_double *)(outs[0]);
+	long n = sampleframes;
+	
+	t_double temp;
+	
+	if (x->x_obj.z_disabled)
+		return;
+	
+	while (n--) {
+		temp = *in++;
+		
+		if(temp > x->compthresh) {
+			temp = x->compthresh + (x->compamp*(temp - x->compthresh));
+		} else if(temp < x->expthresh) {
+			temp = x->expthresh - (x->expamp*(x->expthresh - temp));
+			if (temp < 0.) temp = 0.;
+		}
+		
+		*out++ = temp;
+	}
+}
+

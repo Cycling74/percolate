@@ -3,6 +3,9 @@
 //retaining some of the flute potentials of the blotar~
 //
 //dt 2004; yet another PeRColate hack
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 //messages: 	  pluck string amp position;
 //		    	  vibfreq string frequency; vibamp string value;
@@ -17,9 +20,10 @@
 //				  post-distortion output gain;
 
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include "ext_strings.h"
-#include <math.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -35,7 +39,7 @@
 #define MAX_INPUTS 10 	//arbitrary
 #define MAX_OUTPUTS 10	//also arbitrary
 
-void *ublotar_class;
+t_class *ublotar_class;
 
 typedef struct _blostring
 {
@@ -78,7 +82,7 @@ typedef struct _ublotar
     //variables specific to this object
     float srate, one_over_srate;  	//sample rate vars
     long num_inputs, num_outputs; 	//number of inputs and outputs
-    float in[MAX_INPUTS];			//values of input variables
+    t_double in[MAX_INPUTS];			//values of input variables
     float in_connected[MAX_INPUTS]; //booleans: true if signals connected to the input in question
     //we use this "connected" boolean so that users can connect *either* signals or floats
     //to the various inputs; sometimes it's easier just to have floats, but other times
@@ -105,7 +109,6 @@ typedef struct _ublotar
     //feedback/jet delayline
     DLineL jetDelay;
     short resetJetDelay;
-    
 } t_ublotar;
 
 
@@ -115,26 +118,28 @@ typedef struct _ublotar
 //args that the user can input, in which case ublotar_new will have to change
 void *ublotar_new(long num_inputs, long num_outputs);
 void ublotar_free(t_ublotar *x);
-void ublotar_dsp(t_ublotar *x, t_signal **sp, short *count); 
-t_int *ublotar_perform(t_int *w);
 void ublotar_assist(t_ublotar *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void ublotar_dsp64(t_ublotar *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void ublotar_perform64(t_ublotar *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 //for getting floats at inputs
 void ublotar_float(t_ublotar *x, double f);
 
-void ublotar_setpower(t_ublotar *x, Symbol *s, short argc, Atom *argv);
+void ublotar_setpower(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
 
 //message prototypes
-void ublotar_pluck(t_ublotar *x, Symbol *s, short argc, Atom *argv);
-void ublotar_vib(t_ublotar *x, Symbol *s, short argc, Atom *argv);
-void ublotar_breathpressure(t_ublotar *x, Symbol *s, short argc, Atom *argv);
-void ublotar_noisegain(t_ublotar *x, Symbol *s, short argc, Atom *argv);
-void ublotar_setlimit(t_ublotar *x, Symbol *s, short argc, Atom *argv);
-void ublotar_setsustain(t_ublotar *x, Symbol *s, short argc, Atom *argv);
-void ublotar_lowpasscross(t_ublotar *x, Symbol *s, short argc, Atom *argv);
-void ublotar_feedfreq(t_ublotar *x, Symbol *s, short argc, Atom *argv);
-void ublotar_feedgain(t_ublotar *x, Symbol *s, short argc, Atom *argv);
-void ublotar_distortgain(t_ublotar *x, Symbol *s, short argc, Atom *argv);
+void ublotar_pluck(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
+void ublotar_vib(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
+void ublotar_breathpressure(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
+void ublotar_noisegain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
+void ublotar_setlimit(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
+void ublotar_setsustain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
+void ublotar_lowpasscross(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
+void ublotar_feedfreq(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
+void ublotar_feedgain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
+void ublotar_distortgain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv);
 
 //string-bore functions
 float blostring_tick(t_ublotar *x, BloString *blostring, float sample);
@@ -153,7 +158,7 @@ void setJetDelay(t_ublotar *x, float frequency);
 float blostring_tick(t_ublotar *x, BloString *blostring, float sample)  
 {
 
-	float temp, tempsave, randPressure;
+	float temp, tempsave;
 	
 	temp = DLineL_tick(&blostring->boreDelay, sample + blostring->er * blostring->last_output);
 	/*
@@ -272,13 +277,11 @@ void setJetDelay(t_ublotar *x, float frequency)
 //primary MSP funcs
 void ext_main(void* p)
 {
-	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
-	//change these if you want different user args
-    setup((struct messlist **)&ublotar_class, (method)ublotar_new, (method)ublotar_free, (short)sizeof(t_ublotar), 0L, A_DEFLONG, A_DEFLONG, 0);
-   
-	//standard messages; don't change these  
-    addmess((method)ublotar_dsp, "dsp", A_CANT, 0);
-    addmess((method)ublotar_assist,"assist", A_CANT,0);
+    t_class *c = class_new("ublotar~", (method)ublotar_new, (method)ublotar_free, (long)sizeof(t_ublotar), 0L, A_DEFLONG, A_DEFLONG, 0);
+    
+    class_addmethod(c, (method)ublotar_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)ublotar_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)ublotar_float, "float", A_FLOAT, 0);
     
     //messages: 	  pluck string amp position;
 	//		    	  vibfreq string frequency; vibamp string value;
@@ -289,23 +292,21 @@ void ext_main(void* p)
 	//				  feedfreq frequency;
 	//				  feedgain value;
 	//				  distortgain value;
-    addmess((method)ublotar_pluck, 			"pluck", A_GIMME, 0);
-    addmess((method)ublotar_vib, 			"vibrato", A_GIMME, 0);
-    //addmess((method)ublotar_breathpressure, "breathpressure", A_GIMME, 0);
-    addmess((method)ublotar_noisegain, 		"noise", A_GIMME, 0);
-    addmess((method)ublotar_setlimit, 		"limit", A_GIMME, 0);
-    addmess((method)ublotar_setsustain, 	"setsustain", A_GIMME, 0);
-    addmess((method)ublotar_lowpasscross, 	"lowpasscross", A_GIMME, 0);
-    //addmess((method)ublotar_feedfreq, 		"feedfreq", A_GIMME, 0);
-    addmess((method)ublotar_feedgain, 		"feedgain", A_GIMME, 0);
-    addmess((method)ublotar_distortgain, 	"distortgain", A_GIMME, 0);
-    addmess((method)ublotar_setpower, 		"power", A_GIMME, 0);
+    class_addmethod(c, (method)ublotar_pluck, 			"pluck", A_GIMME, 0);
+    class_addmethod(c, (method)ublotar_vib, 			"vibrato", A_GIMME, 0);
+    //class_addmethod(c, (method)ublotar_breathpressure, "breathpressure", A_GIMME, 0);
+    class_addmethod(c, (method)ublotar_noisegain, 		"noise", A_GIMME, 0);
+    class_addmethod(c, (method)ublotar_setlimit, 		"limit", A_GIMME, 0);
+    class_addmethod(c, (method)ublotar_setsustain, 	"setsustain", A_GIMME, 0);
+    class_addmethod(c, (method)ublotar_lowpasscross, 	"lowpasscross", A_GIMME, 0);
+    //class_addmethod(c, (method)ublotar_feedfreq, 		"feedfreq", A_GIMME, 0);
+    class_addmethod(c, (method)ublotar_feedgain, 		"feedgain", A_GIMME, 0);
+    class_addmethod(c, (method)ublotar_distortgain, 	"distortgain", A_GIMME, 0);
+    class_addmethod(c, (method)ublotar_setpower, 		"power", A_GIMME, 0);
+    class_dspinit(c);
     
-    //so we know what to do with floats that we receive at the inputs
-    addfloat((method)ublotar_float);
-    
-    //gotta have this one....
-    dsp_initclass();
+    class_register(CLASS_BOX, c);
+    ublotar_class = c;
 }
 
 //this gets called when the object is created; everytime the user types in new args, this will get called
@@ -314,7 +315,7 @@ void *ublotar_new(long num_inputs, long num_outputs)
 	int i;
 	
 	//leave this; creates our object
-    t_ublotar *x = (t_ublotar *)newobject(ublotar_class);
+    t_ublotar *x = (t_ublotar *)object_alloc(ublotar_class);
     
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
@@ -415,61 +416,379 @@ void ublotar_free(t_ublotar *x)
 }
 
 
-//this gets called everytime audio is started; even when audio is running, if the user
-//changes anything (like deletes a patch cord), audio will be turned off and
-//then on again, calling this func.
-//this adds the "perform" method to the DSP chain, and also tells us
-//where the audio vectors are and how big they are
-void ublotar_dsp(t_ublotar *x, t_signal **sp, short *count)
-{
-	void *dsp_add_args[MAX_INPUTS + MAX_OUTPUTS + 2];
-	int i;
 
+
+//tells the user about the inputs/outputs when mousing over them
+void ublotar_assist(t_ublotar *x, void *b, long m, long a, char *s)
+{
+	int i;
+	//could use switch/case inside for loops, to give more informative assist info....
+	if (m==1) {
+		if (a==0)  sprintf(s, "input %ld: string/bore 1 frequency", a);
+		if (a==1)  sprintf(s, "input %ld: string/bore 2 frequency", a);
+		if (a==2)  sprintf(s, "input %ld: string/bore 3 frequency", a);
+		if (a==3)  sprintf(s, "input %ld: string/bore 4 frequency", a);
+		if (a==4)  sprintf(s, "input %ld: string/bore 5 frequency", a);
+		if (a==5)  sprintf(s, "input %ld: string/bore 6 frequency", a);
+		if (a==6)  sprintf(s, "input %ld: feedback/jet frequency", a);
+		if (a==7)  sprintf(s, "input %ld: predistortion output level", a);
+		if (a==8)  sprintf(s, "input %ld: postdistortion output level", a);
+		if (a==9)  sprintf(s, "input %ld: breath pressure", a);
+	}
+	if (m==2) {
+		for(i=0;i<x->num_outputs;i++)
+			if (a==i)  sprintf(s, "output mix");
+	}
+}
+
+
+//this gets called when ever a float is received at *any* input
+void ublotar_float(t_ublotar *x, double f)
+{
+	int i;
+	
+	//check to see which input the float came in, then set the appropriate variable value
+	for(i=0;i<x->num_inputs;i++) {
+		if (x->x_obj.z_in == i) {
+			x->in[i] = f;
+			//post("ublotar~: setting in[%d] =  %f", i, f);
+		}
+	}
+}
+
+//messages
+//				  pluck string amp position;
+void ublotar_pluck(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+	short i;
+	float temp[10], amp, position, width;
+	short stringtopluck;
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+	
+	if (argc < 3) temp[2] = temp[3] = -1.;
+	
+	stringtopluck = (short)temp[0];
+	amp = temp[1];
+	position = temp[2];
+	width = temp[3];
+	dopluck(x, &x->blo_string[stringtopluck], amp, position, width);
+    
+}
+
+//		    	  vib string frequency amp;
+void ublotar_vib(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+    
+	short i;
+	float temp[10], freq;
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+	
+	//string = (short)temp[0];
+	freq = temp[0];
+	x->blo_string[0].va = temp[1];
+	setVibFreq(x, &x->blo_string[0], freq);
+    
+}
+
+//				  breathpressure string value;
+void ublotar_breathpressure(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+    
+	short i;
+	float temp[10];
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+	
+	//need to set this up so that string = -1 will set *all* string vals
+	//string = (short)temp[0];
+	x->blo_string[0].bp = temp[0];
+	//post("bp = %f", x->blo_string[0].bp);
+	
+}
+
+void ublotar_noisegain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+    
+	short i;
+	float temp[10];
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+	
+	//need to set this up so that string = -1 will set *all* string vals
+	//string = (short)temp[0];
+	x->blo_string[0].ng = temp[0];
+	//post("ng = %f",  x->blo_string[0].ng);
+	
+}
+
+//			      setfreq string frequency;
+void ublotar_setlimit(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+    
+	short i;
+	float temp[10];
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+	
+	x->limit = temp[0];
+    
+}
+
+//				  setsustain string value;
+void ublotar_setsustain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+    
+	short i;
+	float temp[10];
+	short string;
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+	
+	string = (short)temp[0];
+	if(string >=0) x->blo_string[string].er = temp[1];
+	else for(i=0;i<NUM_STRINGS;i++) {
+		x->blo_string[i].er = temp[1];
+	}
+    
+}
+
+//				  lowpasscross string;
+void ublotar_lowpasscross(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+    
+	short i;
+	float temp[10];
+	short string;
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+	
+	string = (short)temp[0];
+	if(string >=0) {
+		x->blo_string[string].filterRatio = temp[1];
+		x->blo_string[string].filterRatioInv = 1. - temp[1];
+	} else for(i=0;i<NUM_STRINGS;i++) {
+		x->blo_string[i].filterRatio = temp[1];
+		x->blo_string[i].filterRatioInv = 1. - temp[1];
+	}
+    
+}
+
+//				  feedfreq frequency
+void ublotar_feedfreq(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+    
+	short i;
+	float temp[10];
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+	
+	x->resetJetDelay = 1;
+	x->x_jd = temp[0];
+	
+}
+
+//				  feedgain value;
+void ublotar_feedgain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+    
+	short i;
+	float temp[10];
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+    
+	x->x_jr = temp[0];
+	//post ("x_jr = %f", x->x_jr);
+    
+}
+
+//				  distortgain value;
+void ublotar_distortgain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+	short i;
+	float temp[10];
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+	
+	x->predistortion_gain = temp[0];
+	//post("predistortion_gain set to %f", x->predistortion_gain);
+    
+    
+}
+
+void ublotar_setpower(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+	short i;
+	float temp[10];
+	if (argc>10) argc = 10;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp[i] = (float)argv[i].a_w.w_long;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+			case A_FLOAT:
+				temp[i] = argv[i].a_w.w_float;
+    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
+				break;
+		}
+	}
+	
+	x->power = (short)temp[0];
+	post("ublotar: power = %d", x->power);
+}
+
+
+void ublotar_dsp64(t_ublotar *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
+{
+	int i;
+    
 	//set sample rate vars
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
 	x->one_over_srate = 1./x->srate;
 	
 	//check to see if there are signals connected to the various inputs
 	for(i=0;i<x->num_inputs;i++) x->in_connected[i]	= count[i];
-	
-	//construct the array of vectors and stuff
-	dsp_add_args[0] = x; //the object itself
-    for(i=0;i< (x->num_inputs + x->num_outputs); i++) { //pointers to the input and output vectors
-    	dsp_add_args[i+1] = sp[i]->s_vec;
-    }
-    dsp_add_args[x->num_inputs + x->num_outputs + 1] = (void *)sp[0]->s_n; //pointer to the vector size
-	dsp_addv(ublotar_perform, (x->num_inputs + x->num_outputs + 2), dsp_add_args); //add them to the signal chain
-	
+    
+    object_method(dsp64, gensym("dsp_add64"), x, ublotar_perform64, 0, NULL);
 }
 
-
-t_int *ublotar_perform(t_int *w)
+void ublotar_perform64(t_ublotar *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_ublotar *x = (t_ublotar *)(w[1]);
-
-	float *in[MAX_INPUTS]; 		//pointers to the input vectors
-	float *out[MAX_OUTPUTS];	//pointers to the output vectors
-
-	long n = w[x->num_inputs + x->num_outputs + 2];	//number of samples per vector
+	t_double *in[MAX_INPUTS]; 		//pointers to the input vectors
+	t_double *out[MAX_OUTPUTS];	//pointers to the output vectors
+    
+	long n = sampleframes;	//number of samples per vector
 	
 	//random local vars
-	long i, j, k;
-	float inputs[MAX_INPUTS];
-	float string_bore_output, distortion_output, outmix, temp, pressureDiff, randPressure;
-	float fr[NUM_STRINGS], jd;
-	float pwidth, pstart;
+	long i, j;
+	t_double inputs[MAX_INPUTS];
+	t_double string_bore_output, distortion_output, temp, pressureDiff, randPressure;
+	t_double fr[NUM_STRINGS], jd;
+	t_double pwidth;
 	
-	if (x->x_obj.z_disabled || !x->power) goto out;
+	if (x->x_obj.z_disabled || !x->power) return;
 	
-	//check to see if we have a signal or float message connected to input
+	//check to see if we have a signal or t_double message connected to input
 	//then assign the pointer accordingly
 	for (i=0;i<x->num_inputs;i++) {
-		in[i] = x->in_connected[i] ? (float *)(w[i+2]) : &x->in[i];
+		in[i] = x->in_connected[i] ? (t_double *)(ins[i]) : &x->in[i];
 	}
 	
 	//assign the output vectors
 	for (i=0;i<x->num_outputs;i++) {
-		out[i] = (float *)(w[x->num_inputs+i+2]);
+		out[i] = (t_double *)(outs[i]);
 	}
 	
 	for(j=0;j<NUM_STRINGS;j++) {
@@ -479,26 +798,26 @@ t_int *ublotar_perform(t_int *w)
 				for (i=0;i<x->blo_string[j].boreDelay.length;i++) {
 					x->blo_string[j].boreDelay.inputs[i] = Noise_tick() * x->blo_string[j].pluckAmp;
 				}
-			} else {/*				
-				//pluck with a hammer, in a particular position with a particular width
-				pwidth = (float)x->blo_string[j].boreDelay.length*x->blo_string[j].pluckWidth;
-				pstart = (float)x->blo_string[j].boreDelay.length*x->blo_string[j].pluckPos*0.5;
-				
-				for(i=(long)pstart;i<(long)(pwidth+pstart);i++) {
-					while(i>x->blo_string[j].boreDelay.length) i -= x->blo_string[j].boreDelay.length;
-					x->blo_string[j].boreDelay.inputs[i] = x->blo_string[j].pluckAmp;
-				}
-				
-				for(i=0;i<x->blo_string[j].boreDelay.length * 0.5;i++) {
-					if(i>(long)pstart && i<(long)(pstart+pwidth)) {
-						x->blo_string[j].boreDelay.inputs[i] = x->blo_string[j].pluckAmp;
-						x->blo_string[j].boreDelay.inputs[x->blo_string[j].boreDelay.length-i] = -x->blo_string[j].pluckAmp;
-					} else {
-						x->blo_string[j].boreDelay.inputs[i] = 0.;
-						x->blo_string[j].boreDelay.inputs[x->blo_string[j].boreDelay.length-i] = 0.;
-					}
-				}
-				*/
+			} else {/*
+                     //pluck with a hammer, in a particular position with a particular width
+                     pwidth = (float)x->blo_string[j].boreDelay.length*x->blo_string[j].pluckWidth;
+                     pstart = (float)x->blo_string[j].boreDelay.length*x->blo_string[j].pluckPos*0.5;
+                     
+                     for(i=(long)pstart;i<(long)(pwidth+pstart);i++) {
+                     while(i>x->blo_string[j].boreDelay.length) i -= x->blo_string[j].boreDelay.length;
+                     x->blo_string[j].boreDelay.inputs[i] = x->blo_string[j].pluckAmp;
+                     }
+                     
+                     for(i=0;i<x->blo_string[j].boreDelay.length * 0.5;i++) {
+                     if(i>(long)pstart && i<(long)(pstart+pwidth)) {
+                     x->blo_string[j].boreDelay.inputs[i] = x->blo_string[j].pluckAmp;
+                     x->blo_string[j].boreDelay.inputs[x->blo_string[j].boreDelay.length-i] = -x->blo_string[j].pluckAmp;
+                     } else {
+                     x->blo_string[j].boreDelay.inputs[i] = 0.;
+                     x->blo_string[j].boreDelay.inputs[x->blo_string[j].boreDelay.length-i] = 0.;
+                     }
+                     }
+                     */
 				//load with noise
 				for (i=0;i<x->blo_string[j].boreDelay.length;i++) {
 					x->blo_string[j].boreDelay.inputs[i] = DCBlock_tick(&x->pluckblock, Noise_tick() * x->blo_string[j].pluckAmp);
@@ -538,8 +857,8 @@ t_int *ublotar_perform(t_int *w)
 			}
 			string_bore_output += blostring_tick(x, &x->blo_string[i], x->x_jr * x->last_output);
 		}
-		pressureDiff = x->blo_string[0].bp + randPressure - string_bore_output*ONE_OVER_NUMSTRINGS;	
-
+		pressureDiff = x->blo_string[0].bp + randPressure - string_bore_output*ONE_OVER_NUMSTRINGS;
+        
 		//reset the feedback delay time, if necessary
 		if(jd != x->x_jd) {
 			setJetDelay(x, jd);
@@ -556,350 +875,5 @@ t_int *ublotar_perform(t_int *w)
 		*out[0]++ =  x->predistortion_outgain*string_bore_output + x->postdistortion_outgain*distortion_output;
 		
 	}
-	
-//return a pointer to the next object in the signal chain.
-out:
-	return w + x->num_inputs + x->num_outputs + 3;
-}	
-
-
-//tells the user about the inputs/outputs when mousing over them
-void ublotar_assist(t_ublotar *x, void *b, long m, long a, char *s)
-{
-	int i;
-	//could use switch/case inside for loops, to give more informative assist info....
-	if (m==1) {
-		if (a==0)  sprintf(s, "input %d: string/bore 1 frequency", a);
-		if (a==1)  sprintf(s, "input %d: string/bore 2 frequency", a);
-		if (a==2)  sprintf(s, "input %d: string/bore 3 frequency", a);
-		if (a==3)  sprintf(s, "input %d: string/bore 4 frequency", a);
-		if (a==4)  sprintf(s, "input %d: string/bore 5 frequency", a);
-		if (a==5)  sprintf(s, "input %d: string/bore 6 frequency", a);
-		if (a==6)  sprintf(s, "input %d: feedback/jet frequency", a);
-		if (a==7)  sprintf(s, "input %d: predistortion output level", a);
-		if (a==8)  sprintf(s, "input %d: postdistortion output level", a);
-		if (a==9)  sprintf(s, "input %d: breath pressure", a);
-
-	}
-	if (m==2) {
-		for(i=0;i<x->num_outputs;i++)
-			if (a==i)  sprintf(s, "output mix");
-	}
-}
-
-
-//this gets called when ever a float is received at *any* input
-void ublotar_float(t_ublotar *x, double f)
-{
-	int i;
-	
-	//check to see which input the float came in, then set the appropriate variable value
-	for(i=0;i<x->num_inputs;i++) {
-		if (x->x_obj.z_in == i) {
-			x->in[i] = f;
-			//post("ublotar~: setting in[%d] =  %f", i, f);
-		} 
-	}
-}
-
-//messages
-//				  pluck string amp position;
-void ublotar_pluck(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	float temp[10], amp, position, width;
-	short stringtopluck;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-	
-	if (argc < 3) temp[2] = temp[3] = -1.;
-	
-	stringtopluck = (short)temp[0];
-	amp = temp[1];
-	position = temp[2];
-	width = temp[3];
-	dopluck(x, &x->blo_string[stringtopluck], amp, position, width);
-
-}
-
-//		    	  vib string frequency amp;
-void ublotar_vib(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-
-	short i;
-	float temp[10], freq, amp;
-	short string;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-	
-	//string = (short)temp[0];
-	freq = temp[0];
-	x->blo_string[0].va = temp[1]; 
-	setVibFreq(x, &x->blo_string[0], freq);
-
-}
-
-//				  breathpressure string value;
-void ublotar_breathpressure(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-
-	short i;
-	float temp[10], amp;
-	short string;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-	
-	//need to set this up so that string = -1 will set *all* string vals
-	//string = (short)temp[0];
-	x->blo_string[0].bp = temp[0]; 
-	//post("bp = %f", x->blo_string[0].bp);
-	
-}
-
-void ublotar_noisegain(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-
-	short i;
-	float temp[10], amp;
-	short string;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-	
-	//need to set this up so that string = -1 will set *all* string vals
-	//string = (short)temp[0];
-	x->blo_string[0].ng = temp[0]; 
-	//post("ng = %f",  x->blo_string[0].ng);
-	
-}
-
-//			      setfreq string frequency;
-void ublotar_setlimit(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-
-	short i;
-	float temp[10], freq;
-	short string;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-	
-	x->limit = temp[0];
-
-}
-
-//				  setsustain string value;
-void ublotar_setsustain(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-
-	short i;
-	float temp[10], amp;
-	short string;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-	
-	string = (short)temp[0];
-	if(string >=0) x->blo_string[string].er = temp[1]; 
-	else for(i=0;i<NUM_STRINGS;i++) {
-		x->blo_string[i].er = temp[1];
-	}
-
-}
-
-//				  lowpasscross string;
-void ublotar_lowpasscross(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-
-	short i;
-	float temp[10], amp;
-	short string;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-	
-	string = (short)temp[0];
-	if(string >=0) {
-		x->blo_string[string].filterRatio = temp[1]; 
-		x->blo_string[string].filterRatioInv = 1. - temp[1]; 
-	} else for(i=0;i<NUM_STRINGS;i++) {
-		x->blo_string[i].filterRatio = temp[1]; 
-		x->blo_string[i].filterRatioInv = 1. - temp[1]; 
-	}
-
-}
-
-//				  feedfreq frequency
-void ublotar_feedfreq(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-
-	short i;
-	float temp[10], amp;
-	short string;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-	
-	x->resetJetDelay = 1;
-	x->x_jd = temp[0];
-	
-}
-
-//				  feedgain value;
-void ublotar_feedgain(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-
-	short i;
-	float temp[10], amp;
-	short string;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-
-	x->x_jr = temp[0]; 
-	//post ("x_jr = %f", x->x_jr);
-
-}
-
-//				  distortgain value;
-void ublotar_distortgain(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	float temp[10], amp;
-	short string;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-	
-	x->predistortion_gain = temp[0];
-	//post("predistortion_gain set to %f", x->predistortion_gain); 
-
-
-}
-
-void ublotar_setpower(t_ublotar *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	float temp[10], amp;
-	short string;
-	if (argc>10) argc = 10;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-			case A_FLOAT:
-				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
-				break;
-		}
-	}
-	
-	x->power = (short)temp[0];
-	post("ublotar: power = %d", x->power);
 }
 

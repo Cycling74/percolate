@@ -9,12 +9,15 @@
 /*  assigned to Stanford, bearing the     */
 /*  names of Karplus and/or Strong.       */
 /******************************************/
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 #include "stk_c.h"
 #include <math.h> 
 #define LENGTH 1024 	//44100/LOWFREQ + 1 --plucked length
 
-void *plucked_class;
+t_class *plucked_class;
 
 typedef struct _plucked
 {
@@ -43,7 +46,7 @@ typedef struct _plucked
     float loopGain;
     short pluck;
 
-    float srate, one_over_srate;
+    t_double srate, one_over_srate;
 } t_plucked;
 
 /****PROTOTYPES****/
@@ -51,11 +54,14 @@ typedef struct _plucked
 //setup funcs
 void *plucked_new(double val);
 void plucked_free(t_plucked *x);
-void plucked_dsp(t_plucked *x, t_signal **sp, short *count);
+void plucked_assist(t_plucked *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void plucked_dsp64(t_plucked *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void plucked_perform64(t_plucked *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
 void plucked_float(t_plucked *x, double f);
 void plucked_bang(t_plucked *x);
-t_int *plucked_perform(t_int *w);
-void plucked_assist(t_plucked *x, void *b, long m, long a, char *s);
 
 //plucked functions
 void setFreq(t_plucked *x, float frequency);
@@ -95,18 +101,33 @@ void pluck(t_plucked *x, float amplitude)
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&plucked_class, (method)plucked_new, (method)plucked_free, (short)sizeof(t_plucked), 0L, A_DEFFLOAT, 0);
-    addmess((method)plucked_dsp, "dsp", A_CANT, 0);
-    addmess((method)plucked_assist,"assist",A_CANT,0);
-    addfloat((method)plucked_float);
-    addbang((method)plucked_bang);
-    dsp_initclass();
-    rescopy('STR#',9980);
+    t_class *c = class_new("plucked~", (method)plucked_new, (method)plucked_free, (long)sizeof(t_plucked), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)plucked_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)plucked_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)plucked_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)plucked_bang, "bang", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    plucked_class = c;
 }
 
 void plucked_assist(t_plucked *x, void *b, long m, long a, char *s)
 {
-	assist_string(9980,m,a,1,3,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) pluck amplitude");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) frequency");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void plucked_float(t_plucked *x, double f)
@@ -122,7 +143,7 @@ void *plucked_new(double initial_coeff)
 {
 	int i;
 
-    t_plucked *x = (t_plucked *)newobject(plucked_class);
+    t_plucked *x = (t_plucked *)object_alloc(plucked_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_plucked);i++)  
@@ -163,44 +184,44 @@ void plucked_free(t_plucked *x)
 	DLineA_free(&x->delayLine);
 }
 
-void plucked_dsp(t_plucked *x, t_signal **sp, short *count)
+void plucked_dsp64(t_plucked *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->x_pluckAmpconnected = count[0];
 	x->x_frconnected = count[1];
-
-	x->srate = sp[0]->s_sr;
+    
+	x->srate = samplerate;
     x->one_over_srate = 1./x->srate;
-	dsp_add(plucked_perform, 5, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);	
+    
+    object_method(dsp64, gensym("dsp_add64"), x, plucked_perform64, 0, NULL);
 }
 
-t_int *plucked_perform(t_int *w)
+void plucked_perform64(t_plucked *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_plucked *x = (t_plucked *)(w[1]);
-	
-	float pluckAmp = x->x_pluckAmpconnected? *(float *)(w[2]) : x->x_pluckAmp;
-	float fr = x->x_frconnected? *(float *)(w[3]) : x->x_fr;
-	float *out = (float *)(w[4]);
-	long n = w[5];
-
-	float temp;	
-
+	t_double pluckAmp = x->x_pluckAmpconnected? *(t_double *)(ins[0]) : x->x_pluckAmp;
+	t_double fr = x->x_frconnected? *(t_double *)(ins[1]) : x->x_fr;
+	t_double *out = (t_double *)(outs[0]);
+	long n = sampleframes;
+    
+	t_double temp;
+    
 	if(fr != x->fr_save) {
 		setFreq(x, fr);
 		x->fr_save = fr;
-	} 
+	}
 	
 	if(x->pluck) {
 		pluck(x, pluckAmp);
 		x->pluck = 0;
 	}
-
+    
 	while(n--) {
 		/* check this out */
   		/* here's the whole inner loop of the instrument!!  */
-  		temp = 	DLineA_tick(&x->delayLine, 
-  			 	OneZero_tick(&x->loopFilt,
-  			 	x->delayLine.lastOutput * x->loopGain)); 
+  		temp = 	DLineA_tick(&x->delayLine,
+                            OneZero_tick(&x->loopFilt,
+                                         x->delayLine.lastOutput * x->loopGain));
 		*out++ = temp * 3.;
 	}
-	return w + 6;
-}	
+
+}
+

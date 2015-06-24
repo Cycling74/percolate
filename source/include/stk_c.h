@@ -28,6 +28,8 @@
 /*												*/
 /************************************************/
 #include "ext.h"
+#include "ext_obex.h"
+
 #include "z_dsp.h"
 #ifdef WIN_VERSION
 #include <sys/stat.h>

@@ -10,11 +10,14 @@
 /*		  		  MOD_WHEEL= vibAmt        	*/
 /********************************************/
 
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
+
 #include "stk_c.h"
 #include <math.h> 
 #include "marmstk1.h"
 
-void *vibraphone_class;
+t_class *vibraphone_class;
 
 typedef struct _vibraphone
 {
@@ -22,14 +25,14 @@ typedef struct _vibraphone
     t_pxobject x_obj;
     
     //user controlled vars
-    float x_sh;			//stick hardness	
-    float x_spos;		//stick position
-    float x_sa; 		//amplitude
-    float x_vf; 		//vib freq
-    float x_va; 		//vib amount
-    float x_fr;			//frequency	
+    t_double x_sh;			//stick hardness	
+    t_double x_spos;		//stick position
+    t_double x_sa; 		//amplitude
+    t_double x_vf; 		//vib freq
+    t_double x_va; 		//vib amount
+    t_double x_fr;			//frequency	
 
-    float fr_save, sh_save, spos_save, sa_save;
+    t_double fr_save, sh_save, spos_save, sa_save;
     
     Modal4 modal;
     
@@ -43,7 +46,7 @@ typedef struct _vibraphone
 
     //stuff
     int multiStrike;
-    float srate, one_over_srate;
+    t_double srate, one_over_srate;
 } t_vibraphone;
 
 /****PROTOTYPES****/
@@ -51,10 +54,13 @@ typedef struct _vibraphone
 //setup funcs
 void *vibraphone_new(double val);
 void vibraphone_free(t_vibraphone *x);
-void vibraphone_dsp(t_vibraphone *x, t_signal **sp, short *count);
-void vibraphone_float(t_vibraphone *x, double f);
-t_int *vibraphone_perform(t_int *w);
 void vibraphone_assist(t_vibraphone *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void vibraphone_dsp64(t_vibraphone *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void vibraphone_perform64(t_vibraphone *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
+void vibraphone_float(t_vibraphone *x, double f);
 
 //vib funcs
 void setVibFreq(t_vibraphone *x, float freq);
@@ -91,14 +97,18 @@ void Vibraphone_setStrikePosition(t_vibraphone *x, float position)
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&vibraphone_class, (method)vibraphone_new, (method)vibraphone_free, (short)sizeof(t_vibraphone), 0L, A_DEFFLOAT, 0);
-    addmess((method)vibraphone_dsp, "dsp", A_CANT, 0);
-    addmess((method)vibraphone_assist,"assist",A_CANT,0);
-    addmess((method)vibraphone_noteon, "noteon", A_GIMME, 0);
-    addmess((method)vibraphone_noteoff, "noteoff", A_GIMME, 0);
-    addfloat((method)vibraphone_float);
-    dsp_initclass();
-    rescopy('STR#',9279);
+    t_class *c = class_new("vibraphone~", (method)vibraphone_new, (method)vibraphone_free, (long)sizeof(t_vibraphone), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)vibraphone_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)vibraphone_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)vibraphone_noteon, "noteon", A_GIMME, 0);
+    class_addmethod(c, (method)vibraphone_noteoff, "noteoff", A_GIMME, 0);
+    class_addmethod(c, (method)vibraphone_float, "float", A_FLOAT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    vibraphone_class = c;
 }
 
 void vibraphone_noteon(t_vibraphone *x)
@@ -113,7 +123,30 @@ void vibraphone_noteoff(t_vibraphone *x)
 
 void vibraphone_assist(t_vibraphone *x, void *b, long m, long a, char *s)
 {
-	assist_string(9279,m,a,1,7,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) stick hardness");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) stick position");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) stick amplitude");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) vibrato frequency");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) vibrato amount");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) frequency");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void vibraphone_float(t_vibraphone *x, double f)
@@ -138,7 +171,7 @@ void *vibraphone_new(double initial_coeff)
 	int i;
 	char file[128];
 
-    t_vibraphone *x = (t_vibraphone *)newobject(vibraphone_class);
+    t_vibraphone *x = (t_vibraphone *)object_alloc(vibraphone_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_vibraphone);i++)  
@@ -181,7 +214,8 @@ void vibraphone_free(t_vibraphone *x)
 	HeaderSnd_free(&x->modal.vibr);
 }
 
-void vibraphone_dsp(t_vibraphone *x, t_signal **sp, short *count)
+
+void vibraphone_dsp64(t_vibraphone *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->x_shconnected = count[0];
 	x->x_sposconnected = count[1];
@@ -189,26 +223,24 @@ void vibraphone_dsp(t_vibraphone *x, t_signal **sp, short *count)
 	x->x_vfconnected = count[3];
 	x->x_vaconnected = count[4];
 	x->x_frconnected = count[5];
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
     x->one_over_srate = 1./x->srate;
-	dsp_add(vibraphone_perform, 9, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[0]->s_n);	
-	
+    
+    object_method(dsp64, gensym("dsp_add64"), x, vibraphone_perform64, 0, NULL);
 }
 
-t_int *vibraphone_perform(t_int *w)
+void vibraphone_perform64(t_vibraphone *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_vibraphone *x = (t_vibraphone *)(w[1]);
+	t_double sh = x->x_shconnected      ? *(t_double *)(ins[0]) : x->x_sh;
+	t_double spos = x->x_sposconnected  ? *(t_double *)(ins[1]) : x->x_spos;
+	t_double sa = x->x_saconnected      ? *(t_double *)(ins[2]) : x->x_sa;
+	t_double vf = x->x_vfconnected      ? *(t_double *)(ins[3]) : x->x_vf;
+	t_double va = x->x_vaconnected      ? *(t_double *)(ins[4]) : x->x_va;
+	t_double fr = x->x_frconnected      ? *(t_double *)(ins[5]) : x->x_fr;
 	
-	float sh = x->x_shconnected? *(float *)(w[2]) : x->x_sh;
-	float spos = x->x_sposconnected? *(float *)(w[3]) : x->x_spos;
-	float sa = x->x_saconnected? *(float *)(w[4]) : x->x_sa;
-	float vf = x->x_vfconnected? *(float *)(w[5]) : x->x_vf;
-	float va = x->x_vaconnected? *(float *)(w[6]) : x->x_va;
-	float fr = x->x_frconnected? *(float *)(w[7]) : x->x_fr;
-	
-	float *out = (float *)(w[8]);
-	long n = w[9];	
-
+	t_double *out = (t_double *)(outs[0]);
+	long n = sampleframes;
+    
 	if(fr != x->fr_save) {
 		Modal4_setFreq(&x->modal, fr);
 		x->fr_save = fr;
@@ -231,10 +263,10 @@ t_int *vibraphone_perform(t_int *w)
 	
 	HeaderSnd_setFreq(&x->modal.vibr, vf, x->srate);
 	x->modal.vibrGain = va;
-
+    
 	while(n--) {
-			
+        
 		*out++ = Modal4_tick(&x->modal);
 	}
-	return w + 10;
-}	
+}
+

@@ -1,6 +1,11 @@
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
+
+
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
-#include <math.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -28,7 +33,7 @@
 #define TAMB_CYMB_FREQ2 8100
 #define TAMB_CYMB_RESON 0.99
 
-void *tamb_class;
+t_class *tamb_class;
 
 typedef struct _tamb
 {
@@ -78,12 +83,15 @@ typedef struct _tamb
 
 //setup funcs
 void *tamb_new(double val);
-void tamb_dsp(t_tamb *x, t_signal **sp, short *count);
+void tamb_assist(t_tamb *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void tamb_dsp64(t_tamb *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void tamb_perform64(t_tamb *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
 void tamb_float(t_tamb *x, double f);
 void tamb_int(t_tamb *x, int f);
 void tamb_bang(t_tamb *x);
-t_int *tamb_perform(t_int *w);
-void tamb_assist(t_tamb *x, void *b, long m, long a, char *s);
 
 void tamb_setup(t_tamb *x);
 float tamb_tick(t_tamb *x);
@@ -172,19 +180,48 @@ float noise_tick()
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&tamb_class, (method)tamb_new, (method)dsp_free, (short)sizeof(t_tamb), 0L, A_DEFFLOAT, 0);
-    addmess((method)tamb_dsp, "dsp", A_CANT, 0);
-    addmess((method)tamb_assist,"assist",A_CANT,0);
-    addfloat((method)tamb_float);
-    addint((method)tamb_int);
-    addbang((method)tamb_bang);
-    dsp_initclass();
-    rescopy('STR#',9335);
+	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
+	//change these if you want different user args
+    t_class *c = class_new("tamb~", (method)tamb_new, (method)dsp_free, (long)sizeof(t_tamb), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)tamb_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)tamb_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)tamb_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)tamb_int, "int", A_LONG, 0);
+    class_addmethod(c, (method)tamb_bang, "bang", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    tamb_class = c;
 }
 
 void tamb_assist(t_tamb *x, void *b, long m, long a, char *s)
 {
-	assist_string(9335,m,a,1,7,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) number of items");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) resonant frequency");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) damping");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) maximum shake");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) resonance freq 1");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) resonance freq 2");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void tamb_float(t_tamb *x, double f)
@@ -234,7 +271,7 @@ void *tamb_new(double initial_coeff)
 {
 	int i;
 	
-    t_tamb *x = (t_tamb *)newobject(tamb_class);
+    t_tamb *x = (t_tamb *)object_alloc(tamb_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_tamb);i++)  
@@ -278,7 +315,7 @@ void *tamb_new(double initial_coeff)
 }
 
 
-void tamb_dsp(t_tamb *x, t_signal **sp, short *count)
+void tamb_dsp64(t_tamb *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->num_objectsConnected = count[0];
 	x->shake_dampConnected = count[1];
@@ -287,68 +324,62 @@ void tamb_dsp(t_tamb *x, t_signal **sp, short *count)
 	x->res_freq1Connected = count[4];
 	x->res_freq2Connected = count[5];
 	
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
 	x->one_over_srate = 1./x->srate;
-	
-	dsp_add(tamb_perform, 9, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, \
-								sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[0]->s_n);	
-	
+    object_method(dsp64, gensym("dsp_add64"), x, tamb_perform64, 0, NULL);
 }
 
-t_int *tamb_perform(t_int *w)
+void tamb_perform64(t_tamb *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_tamb *x = (t_tamb *)(w[1]);
+	t_double num_objects	= x->num_objectsConnected	? 	*(t_double *)(ins[0]) : x->num_objects;
+	t_double shake_damp 	= x->shake_dampConnected	? 	*(t_double *)(ins[1]) : x->shake_damp;
+	t_double shake_max      = x->shake_maxConnected		? 	*(t_double *)(ins[2]) : x->shake_max;
+	t_double res_freq 		= x->res_freqConnected		? 	*(t_double *)(ins[3]) : x->res_freq;
+	t_double res_freq1      = x->res_freq1Connected		? 	*(t_double *)(ins[4]) : x->res_freq1;
+	t_double res_freq2      = x->res_freq2Connected		? 	*(t_double *)(ins[5]) : x->res_freq2;
 	
-	float num_objects	= x->num_objectsConnected	? 	*(float *)(w[2]) : x->num_objects;
-	float shake_damp 	= x->shake_dampConnected	? 	*(float *)(w[3]) : x->shake_damp;
-	float shake_max 	= x->shake_maxConnected		? 	*(float *)(w[4]) : x->shake_max;
-	float res_freq 		= x->res_freqConnected		? 	*(float *)(w[5]) : x->res_freq;
-	float res_freq1 	= x->res_freq1Connected		? 	*(float *)(w[6]) : x->res_freq1;
-	float res_freq2 	= x->res_freq2Connected		? 	*(float *)(w[7]) : x->res_freq2;
-	
-	float *out = (float *)(w[8]);
-	long n = w[9];
+	t_double *out = (t_double *)(outs[0]);
+	long n = sampleframes;
+	t_double lastOutput;
+    
+    if(num_objects != x->num_objectsSave) {
+        if(num_objects < 1.) num_objects = 1.;
+        x->num_objects = (long)num_objects;
+        x->num_objectsSave = (long)num_objects;
+        x->gain = 24.0 / x->num_objects;
+    }
+    
+    if(res_freq != x->res_freqSave) {
+        x->res_freqSave = x->res_freq = res_freq;
+        x->coeffs[0] = -0.96 * 2.0 * cos(res_freq * TWO_PI / x->srate);
+    }
+    
+    if(shake_damp != x->shake_dampSave) {
+        x->shake_dampSave = x->shake_damp = shake_damp;
+        x->systemDecay = .998 + (shake_damp * .002);
+    }
+    
+    if(shake_max != x->shake_maxSave) {
+        x->shake_maxSave = x->shake_max = shake_max;
+        x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
+        if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
+    }
+    
+    if(res_freq1 != x->res_freq1Save) {
+        x->res_freq1Save = x->res_freq1 = res_freq1;
+        //x->coeffs1[0] = -TAMB_CYMB_RESON * 2.0 * cos(res_freq1 * TWO_PI / x->srate);
+    }
+    
+    if(res_freq2 != x->res_freq2Save) {
+        x->res_freq2Save = x->res_freq2 = res_freq2;
+        //x->coeffs2[0] = -TAMB_CYMB_RESON * 2.0 * cos(res_freq2 * TWO_PI / x->srate);
+    }	
+    
+    while(n--) {
+        lastOutput = tamb_tick(x);		
+        *out++ = lastOutput;
+    }
 
-	float lastOutput, temp;
-	long temp2;
+}
 
-		if(num_objects != x->num_objectsSave) {
-			if(num_objects < 1.) num_objects = 1.;
-			x->num_objects = (long)num_objects;
-			x->num_objectsSave = (long)num_objects;
-			x->gain = 24.0 / x->num_objects;
-		}
-		
-		if(res_freq != x->res_freqSave) {
-			x->res_freqSave = x->res_freq = res_freq;
-			x->coeffs[0] = -0.96 * 2.0 * cos(res_freq * TWO_PI / x->srate);
-		}
-		
-		if(shake_damp != x->shake_dampSave) {
-			x->shake_dampSave = x->shake_damp = shake_damp;
-			x->systemDecay = .998 + (shake_damp * .002);
-		}
-		
-		if(shake_max != x->shake_maxSave) {
-			x->shake_maxSave = x->shake_max = shake_max;
-		 	x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
-	    	if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-		}	
-
-		if(res_freq1 != x->res_freq1Save) {
-			x->res_freq1Save = x->res_freq1 = res_freq1;
-			//x->coeffs1[0] = -TAMB_CYMB_RESON * 2.0 * cos(res_freq1 * TWO_PI / x->srate);
-		}
-		
-		if(res_freq2 != x->res_freq2Save) {
-			x->res_freq2Save = x->res_freq2 = res_freq2;
-			//x->coeffs2[0] = -TAMB_CYMB_RESON * 2.0 * cos(res_freq2 * TWO_PI / x->srate);
-		}	
-		
-		while(n--) {
-			lastOutput = tamb_tick(x);		
-			*out++ = lastOutput;
-		}
-	return w + 10;
-}	
 

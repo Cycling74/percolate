@@ -15,14 +15,17 @@
 /*                MOD_WHEEL= vibrGain     */
 /*                                        */
 /******************************************/
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
+#include <math.h>
 #include "stk_c.h"
-#include <math.h> 
+
 #define LENGTH 882 	//44100/LOWFREQ + 1 --bowed length
 #define BRIDGELENGTH (LENGTH >> 1)
 #define VIBLENGTH 1024
 
-void *bowed_class;
+t_class *bowed_class;
 
 typedef struct _bowed
 {
@@ -30,13 +33,13 @@ typedef struct _bowed
     t_pxobject x_obj;
     
     //user controlled vars
-    float x_bp;			//bow pressure	
+    float x_bp;			//bow pressure
     float x_bpos;		//bow position
     float x_bv; 		//bow velocity
     float x_vf; 		//vib freq
     float x_va; 		//vib amount
-    float x_fr;			//frequency	
-
+    float x_fr;			//frequency
+    
     float fr_save;
     
     //signals connected? or controls...
@@ -86,6 +89,10 @@ float vib_tick(t_bowed *x);
 //bowed functions
 void setFreq(t_bowed *x, float freq);
 
+// dsp stuff
+void bowed_dsp64(t_bowed *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void bowed_perform64(t_bowed *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
 
 /****FUNCTIONS****/
 
@@ -124,17 +131,115 @@ float vib_tick(t_bowed *x)
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((t_messlist **)&bowed_class, (method)bowed_new, (method)bowed_free, (short)sizeof(t_bowed), 0L, A_DEFFLOAT, 0);
-    addmess((method)bowed_dsp, "dsp", A_CANT, 0);
-    addmess((method)bowed_assist,"assist",A_CANT,0);
-    addfloat((method)bowed_float);
-    dsp_initclass();
-    rescopy('STR#',9978);
+	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
+	//change these if you want different user args
+    t_class *c = class_new("bowed~", (method)bowed_new, (method)bowed_free, (long)sizeof(t_bowed), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)bowed_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)bowed_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)bowed_dsp64, "dsp64", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    bowed_class = c;
+}
+
+void *bowed_new(double initial_coeff)
+{
+	int i;
+    
+    t_bowed *x = (t_bowed *)object_alloc(bowed_class);
+    
+    //zero out the struct, to be careful (takk to jkclayton)
+    if (x) {
+        for(i=sizeof(t_pxobject);i<sizeof(t_bowed);i++) {
+            ((char *)x)[i]=0;
+        }
+        //x->x_obj.z_misc  = Z_NO_INPLACE;
+        
+        dsp_setup((t_pxobject *)x,6);
+        outlet_new((t_object *)x, "signal");
+        x->x_bp = 0.5;
+        x->x_bpos = 0.15;
+        x->x_bv = 0.5;
+        x->x_vf = 0.5;
+        x->x_va = 0.05;
+        x->x_fr = 440.;
+        
+        x->srate = sys_getsr();
+        x->one_over_srate = 1./x->srate;
+        
+        DLineL_alloc(&x->neckDelay, LENGTH);
+        DLineL_alloc(&x->bridgeDelay, BRIDGELENGTH);
+        
+        for(i=0; i<VIBLENGTH; i++) x->vibTable[i] = sin(i*TWO_PI/VIBLENGTH);
+        x->vibRate = 1.;
+        x->vibTime = 0.;
+        
+        //clear stuff
+        DLineL_clear(&x->neckDelay);
+        DLineL_clear(&x->bridgeDelay);
+        OnePole_init(&x->reflFilt);
+        
+        //initialize things
+        x->bowTabl.slope = 3.0;
+        DLineL_setDelay(&x->neckDelay, 100.);
+        DLineL_setDelay(&x->bridgeDelay, 29.);
+        
+        OnePole_setPole(&x->reflFilt, 0.6 - (0.1 * 22050. / x->srate));
+        OnePole_setGain(&x->reflFilt, .95);
+        
+        BiQuad_init(&x->bodyFilt);
+        BiQuad_setFreqAndReson(&x->bodyFilt, 500., .85, x->srate);
+        BiQuad_setEqualGainZeroes(&x->bodyFilt);
+        BiQuad_setGain(&x->bodyFilt, 0.2);
+        
+        setFreq(x, x->x_fr);
+        setVibFreq(x, 5.925);
+        
+        x->betaRatio = 0.127236;
+        
+        x->fr_save = x->x_fr;
+        
+        post("scritch, scritch, SCRITCH...");
+    }
+    
+    return (x);
+}
+
+void bowed_free(t_bowed *x)
+{
+	dsp_free((t_pxobject *)x);
+	DLineL_free(&x->bridgeDelay);
+	DLineL_free(&x->neckDelay);
 }
 
 void bowed_assist(t_bowed *x, void *b, long m, long a, char *s)
 {
-	assist_string(9978,m,a,1,7,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) bow pressure");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) bow position");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) bow velocity");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) vibrato frequency");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) bivrato amount");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) frequency");
+                break;
+		}
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void bowed_float(t_bowed *x, double f)
@@ -154,76 +259,7 @@ void bowed_float(t_bowed *x, double f)
 	}
 }
 
-void *bowed_new(double initial_coeff)
-{
-	int i;
-
-    t_bowed *x = (t_bowed *)newobject(bowed_class);
-    
-    //zero out the struct, to be careful (takk to jkclayton)
-    if (x) { 
-        for(i=sizeof(t_pxobject);i<sizeof(t_bowed);i++)  
-                ((char *)x)[i]=0; 
-	} 
-	//x->x_obj.z_misc  = Z_NO_INPLACE;
-	
-    dsp_setup((t_pxobject *)x,6);
-    outlet_new((t_object *)x, "signal");
-    x->x_bp = 0.5;
-    x->x_bpos = 0.15;
-    x->x_bv = 0.5;
-    x->x_vf = 0.5;
-    x->x_va = 0.05;
-    x->x_fr = 440.;
-    
-    x->srate = sys_getsr();
-    x->one_over_srate = 1./x->srate;
-    
-    DLineL_alloc(&x->neckDelay, LENGTH);
-    DLineL_alloc(&x->bridgeDelay, BRIDGELENGTH);
-    
-    for(i=0; i<VIBLENGTH; i++) x->vibTable[i] = sin(i*TWO_PI/VIBLENGTH);
-    x->vibRate = 1.;
-    x->vibTime = 0.;
-    
-    //clear stuff
-    DLineL_clear(&x->neckDelay);
-    DLineL_clear(&x->bridgeDelay);
-    OnePole_init(&x->reflFilt);
-    
-    //initialize things
-    x->bowTabl.slope = 3.0;
-    DLineL_setDelay(&x->neckDelay, 100.);
-    DLineL_setDelay(&x->bridgeDelay, 29.);
-    
-    OnePole_setPole(&x->reflFilt, 0.6 - (0.1 * 22050. / x->srate));
-    OnePole_setGain(&x->reflFilt, .95);
-	
-	BiQuad_init(&x->bodyFilt);
-	BiQuad_setFreqAndReson(&x->bodyFilt, 500., .85, x->srate);
-	BiQuad_setEqualGainZeroes(&x->bodyFilt);
-	BiQuad_setGain(&x->bodyFilt, 0.2);
-	
-    setFreq(x, x->x_fr);
-    setVibFreq(x, 5.925);
-    
-    x->betaRatio = 0.127236;
-
-    x->fr_save = x->x_fr;
-    
-    post("scritch, scritch, SCRITCH...");
-    
-    return (x);
-}
-
-void bowed_free(t_bowed *x)
-{
-	dsp_free((t_pxobject *)x);
-	DLineL_free(&x->bridgeDelay);
-	DLineL_free(&x->neckDelay);
-}
-
-void bowed_dsp(t_bowed *x, t_signal **sp, short *count)
+void bowed_dsp64(t_bowed *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->x_bpconnected = count[0];
 	x->x_bposconnected = count[1];
@@ -231,62 +267,58 @@ void bowed_dsp(t_bowed *x, t_signal **sp, short *count)
 	x->x_vfconnected = count[3];
 	x->x_vaconnected = count[4];
 	x->x_frconnected = count[5];
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
     x->one_over_srate = 1./x->srate;
+    
     OnePole_setPole(&x->reflFilt, 0.6 - (0.1 * 22050. / x->srate));
-	dsp_add(bowed_perform, 9, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, \
-								 sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[0]->s_n);	
-	
+    object_method(dsp64, gensym("dsp_add64"), x, bowed_perform64, 0, NULL);
 }
 
-t_int *bowed_perform(t_int *w)
+void bowed_perform64(t_bowed *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_bowed *x = (t_bowed *)(w[1]);
+	double bp = x->x_bpconnected     ? *(double *)(ins[2]) : x->x_bp;
+	double bpos = x->x_bposconnected ? *(double *)(ins[3]) : x->x_bpos;
+	double bv = x->x_bvconnected     ? *(double *)(ins[4]) : x->x_bv;
+	double vf = x->x_vfconnected     ? *(double *)(ins[5]) : x->x_vf;
+	double va = x->x_vaconnected     ? *(double *)(ins[6]) : x->x_va;
+	double fr = x->x_frconnected     ? *(double *)(ins[7]) : x->x_fr;
 	
-	float bp = x->x_bpconnected? *(float *)(w[2]) : x->x_bp;
-	float bpos = x->x_bposconnected? *(float *)(w[3]) : x->x_bpos;
-	float bv = x->x_bvconnected? *(float *)(w[4]) : x->x_bv;
-	float vf = x->x_vfconnected? *(float *)(w[5]) : x->x_vf;
-	float va = x->x_vaconnected? *(float *)(w[6]) : x->x_va;
-	float fr = x->x_frconnected? *(float *)(w[7]) : x->x_fr;
-	
-	float *out = (float *)(w[8]);
-	long n = w[9];
-
-	float temp, nutRefl, newVel, velDiff, stringVel, bridgeRefl;	
-
+	double *out = (double *)(outs[0]);
+	long n = sampleframes;
+    
+	double nutRefl, newVel, velDiff, stringVel, bridgeRefl;
+    
 	if(fr != x->fr_save) {
 		setFreq(x, fr);
 		x->fr_save = fr;
 	}
-
-	x->vibRate = VIBLENGTH * x->one_over_srate * vf; 
+    
+	x->vibRate = VIBLENGTH * x->one_over_srate * vf;
 	
 	x->bowTabl.slope = bp;
-
+    
 	if(bpos != x->betaRatio) {
 		x->betaRatio = bpos;
 		DLineL_setDelay(&x->bridgeDelay, x->baseDelay * x->betaRatio); /* bow to bridge length   */
     	DLineL_setDelay(&x->neckDelay, x->baseDelay * (1. - x->betaRatio));	/* bow to nut (finger) length   */
   	}
-
+    
 	while(n--) {
 		
-		bridgeRefl = -OnePole_tick(&x->reflFilt, 
-			x->bridgeDelay.lastOutput);		/* Bridge Reflection      */
+		bridgeRefl = -OnePole_tick(&x->reflFilt,
+                                   x->bridgeDelay.lastOutput);		/* Bridge Reflection      */
 		nutRefl = x->neckDelay.lastOutput; 	/* Nut Reflection         */
 		stringVel = bridgeRefl + nutRefl; 	/* Sum is String Velocity */
 		velDiff = bv - stringVel;			/* Differential Velocity  */
 		newVel = velDiff * BowTabl_lookup(&x->bowTabl, velDiff);	 /* Non-Lin Bow Function   */
-		DLineL_tick(&x->neckDelay, bridgeRefl + newVel); /* Do string              */   
+		DLineL_tick(&x->neckDelay, bridgeRefl + newVel); /* Do string              */
 		DLineL_tick(&x->bridgeDelay, nutRefl + newVel);  /*   propagations         */
-    
+        
   		if (va > 0.)  {
-  			DLineL_setDelay(&x->neckDelay, (x->baseDelay * (1.0 - x->betaRatio)) + 
+  			DLineL_setDelay(&x->neckDelay, (x->baseDelay * (1.0 - x->betaRatio)) +
             			    (x->baseDelay * va * vib_tick(x)));
     	}
-
+        
 		*out++ = BiQuad_tick(&x->bodyFilt, x->bridgeDelay.lastOutput);
 	}
-	return w + 10;
 }	

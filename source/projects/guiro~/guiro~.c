@@ -1,9 +1,14 @@
-#include "ext.h"
-#include "z_dsp.h"
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+
+#include "ext.h"
+#include "ext_obex.h"
+#include "z_dsp.h"
+
 #define TWO_PI 6.283185307
 //#define ONE_OVER_RANDLIMIT 0.00006103516 // constant = 1. / 16384.0
 #define ONE_OVER_RANDLIMIT 1./RAND_MAX
@@ -23,7 +28,7 @@
 
 /****************************  GUIRO  ***********************/
 
-void *guiro_class;
+t_class *guiro_class;
 
 typedef struct _guiro
 {
@@ -71,12 +76,13 @@ typedef struct _guiro
 
 //setup funcs
 void *guiro_new(double val);
-void guiro_dsp(t_guiro *x, t_signal **sp, short *count);
 void guiro_float(t_guiro *x, double f);
 void guiro_int(t_guiro *x, int f);
 void guiro_bang(t_guiro *x);
-t_int *guiro_perform(t_int *w);
 void guiro_assist(t_guiro *x, void *b, long m, long a, char *s);
+
+void guiro_dsp64(t_guiro *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void guiro_perform64(t_guiro *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 void guiro_setup(t_guiro *x);
 float guiro_tick(t_guiro *x);
@@ -146,19 +152,43 @@ float noise_tick()
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&guiro_class, (method)guiro_new, (method)dsp_free, (short)sizeof(t_guiro), 0L, A_DEFFLOAT, 0);
-    addmess((method)guiro_dsp, "dsp", A_CANT, 0);
-    addmess((method)guiro_assist,"assist",A_CANT,0);
-    addfloat((method)guiro_float);
-    addint((method)guiro_int);
-    addbang((method)guiro_bang);
-    dsp_initclass();
-    rescopy('STR#',9333);
+    t_class *c = class_new("guiro~", (method)guiro_new, (method)dsp_free, (long)sizeof(t_guiro), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)guiro_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)guiro_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)guiro_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)guiro_int, "int", A_LONG, 0);
+    class_addmethod(c, (method)guiro_bang, "bang", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    guiro_class = c;
 }
 
 void guiro_assist(t_guiro *x, void *b, long m, long a, char *s)
 {
-	assist_string(9333,m,a,1,6,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) number of items");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) resonant frequency");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) damping");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) maximum shake");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) resonance frequency 2");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void guiro_float(t_guiro *x, double f)
@@ -183,7 +213,6 @@ void guiro_int(t_guiro *x, int f)
 
 void guiro_bang(t_guiro *x)
 {
-	int i;
 	post("guiro: scraping");
 	x->guiroScrape = 0.;
 	/*
@@ -209,7 +238,7 @@ void *guiro_new(double initial_coeff)
 {
 	int i;
 
-    t_guiro *x = (t_guiro *)newobject(guiro_class);
+    t_guiro *x = (t_guiro *)object_alloc(guiro_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_guiro);i++)  
@@ -252,81 +281,74 @@ void *guiro_new(double initial_coeff)
     return (x);
 }
 
-
-void guiro_dsp(t_guiro *x, t_signal **sp, short *count)
+void guiro_dsp64(t_guiro *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->num_objectsConnected = count[0];
 	x->shake_dampConnected = count[1];
 	x->shake_maxConnected = count[2];
 	x->res_freqConnected = count[3];
 	x->res_freq2Connected = count[4];
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
 	x->one_over_srate = 1./x->srate;
-	
-	dsp_add(guiro_perform, 8, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, \
-								sp[4]->s_vec, sp[5]->s_vec, sp[0]->s_n);	
-	
+    
+    object_method(dsp64, gensym("dsp_add64"), x, guiro_perform64, 0, NULL);
 }
 
-t_int *guiro_perform(t_int *w)
+void guiro_perform64(t_guiro *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_guiro *x = (t_guiro *)(w[1]);
+	double num_objects	= x->num_objectsConnected	? 	*(double *)(ins[0]) : x->num_objects;
+	double shake_damp 	= x->shake_dampConnected	? 	*(double *)(ins[1]) : x->shake_damp;
+	double shake_max 	= x->shake_maxConnected		? 	*(double *)(ins[2]) : x->shake_max;
+	double res_freq 	= x->res_freqConnected		? 	*(double *)(ins[3]) : x->res_freq;
+	double res_freq2 	= x->res_freq2Connected		? 	*(double *)(ins[4]) : x->res_freq2;
 	
-	float num_objects	= x->num_objectsConnected	? 	*(float *)(w[2]) : x->num_objects;
-	float shake_damp 	= x->shake_dampConnected	? 	*(float *)(w[3]) : x->shake_damp;
-	float shake_max 	= x->shake_maxConnected		? 	*(float *)(w[4]) : x->shake_max;
-	float res_freq 		= x->res_freqConnected		? 	*(float *)(w[5]) : x->res_freq;
-	float res_freq2 	= x->res_freq2Connected		? 	*(float *)(w[6]) : x->res_freq2;
-	
-	float *out = (float *)(w[7]);
-	long n = w[8];
-
-	float lastOutput, temp;
-	long temp2;
-
-		if(num_objects != x->num_objectsSave) {
-			if(num_objects < 1.) num_objects = 1.;
-			x->num_objects = (long)num_objects;
-			x->num_objectsSave = (long)num_objects;
-			x->gain = log(num_objects) * 30.0 / (float) num_objects;
-		}
-		
-		if(res_freq != x->res_freqSave) {
-			x->res_freqSave = x->res_freq = res_freq;
-			x->coeffs[0] = -GUIR_GOURD_RESON * 2.0 * cos(res_freq * TWO_PI / x->srate);
-		}
-		
-		if(shake_damp != x->shake_dampSave) {
-			x->shake_dampSave = x->shake_damp = shake_damp;
-			//x->systemDecay = .998 + (shake_damp * .002);
-			//x->ratchetDelta = shake_damp;
-			x->scrapeVel = shake_damp;
-		}
-		
-		if(shake_max != x->shake_maxSave) {
-			x->shake_maxSave = x->shake_max = shake_max;
-		 	//x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
-	    	//if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-	    	x->guiroScrape = shake_max;
-		}	
-
-		if(res_freq2 != x->res_freq2Save) {
-			x->res_freq2Save = x->res_freq2 = res_freq2;
-			x->coeffs2[0] = -GUIR_GOURD_RESON2 * 2.0 * cos(res_freq2 * TWO_PI / x->srate);
-		}	
-		
-		
-		while(n--) {
-		  if (x->guiroScrape < 1.0)      {
+	double *out = (double *)(outs[0]);
+	long n = sampleframes;
+    
+	double lastOutput;
+    
+    if(num_objects != x->num_objectsSave) {
+        if(num_objects < 1.) num_objects = 1.;
+        x->num_objects = (long)num_objects;
+        x->num_objectsSave = (long)num_objects;
+        x->gain = log(num_objects) * 30.0 / (double) num_objects;
+    }
+    
+    if(res_freq != x->res_freqSave) {
+        x->res_freqSave = x->res_freq = res_freq;
+        x->coeffs[0] = -GUIR_GOURD_RESON * 2.0 * cos(res_freq * TWO_PI / x->srate);
+    }
+    
+    if(shake_damp != x->shake_dampSave) {
+        x->shake_dampSave = x->shake_damp = shake_damp;
+        //x->systemDecay = .998 + (shake_damp * .002);
+        //x->ratchetDelta = shake_damp;
+        x->scrapeVel = shake_damp;
+    }
+    
+    if(shake_max != x->shake_maxSave) {
+        x->shake_maxSave = x->shake_max = shake_max;
+        //x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
+        //if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
+        x->guiroScrape = shake_max;
+    }
+    
+    if(res_freq2 != x->res_freq2Save) {
+        x->res_freq2Save = x->res_freq2 = res_freq2;
+        x->coeffs2[0] = -GUIR_GOURD_RESON2 * 2.0 * cos(res_freq2 * TWO_PI / x->srate);
+    }
+    
+    
+    while(n--) {
+        if (x->guiroScrape < 1.0)      {
 	      	x->guiroScrape += x->scrapeVel;
 	      	x->totalEnergy = x->guiroScrape;
 	      	x->ratchet -= (x->ratchetDelta + (0.002*x->totalEnergy));
 	      	if (x->ratchet<0.0) x->ratchet = 1.0;
 	      	lastOutput = guiro_tick(x);
-	    	}
-	      else lastOutput = 0.0;
-	      *out++ = lastOutput;
-		}
-	return w + 9;
-}	
+        }
+        else lastOutput = 0.0;
+        *out++ = lastOutput;
+    }
+}
 

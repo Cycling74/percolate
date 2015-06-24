@@ -1,13 +1,18 @@
 //PeRColate hack. by dan trueman from perry cook's code. 
 //applies 12 pole filters based on LPC anals of Nbody analysis
 //see help patch and http://music.princeton.edu/~dan/nbody for more information
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 #include "ext.h"
+#include "ext_obex.h"
+
 #include "z_dsp.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+
 #define SQRT_TWO 1.414213562
 #define BUFSIZE 8192 //4*2048
 
@@ -26,7 +31,7 @@
 #define HARDANGER 5
 #define ARCHTOP 6
 
-void *nbody_class;
+t_class *nbody_class;
 
 typedef struct _nbody
 {
@@ -55,16 +60,22 @@ typedef struct _nbody
     short shake_dampConnected;
     short shake_maxConnected;
    
-    float srate, one_over_srate;
+    double srate, one_over_srate;
 } t_nbody;
 
 /****PROTOTYPES****/
 
 //setup funcs
 void *nbody_new(double val);
-void nbody_dsp(t_nbody *x, t_signal **sp, short *count);
+void nbody_assist(t_nbody *x, void *b, long m, long a, char *s);
+
 void nbody_float(t_nbody *x, double f);
 void nbody_int(t_nbody *x, int f);
+void nbody_bang(t_nbody *x);
+
+// dsp stuff
+void nbody_dsp64(t_nbody *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void nbody_perform64(t_nbody *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 void nbody_guitar1(t_nbody *x, double f);
 void nbody_guitar2(t_nbody *x, double f);
@@ -72,10 +83,6 @@ void nbody_mandolin(t_nbody *x, double f);
 void nbody_violin(t_nbody *x, double f);
 void nbody_hardanger(t_nbody *x, double f);
 void nbody_archtop(t_nbody *x, double f);
-
-void nbody_bang(t_nbody *x);
-t_int *nbody_perform(t_int *w);
-void nbody_assist(t_nbody *x, void *b, long m, long a, char *s);
 
 void nbody_setup(t_nbody *x);
 float nbody_tick(t_nbody *x);
@@ -120,7 +127,7 @@ void setPoleCoeffs(t_nbody *x, float *coeffs)
 
 float ap_tick(t_nbody *x, float sample)
 {
-	int i, tempcount;			      		
+	int i;
     float temp;                          
 
     temp = sample * x->ap_gain;             
@@ -136,35 +143,53 @@ float ap_tick(t_nbody *x, float sample)
 }
 
 void nbody_setup(t_nbody *x) {
-  
 }
 
 float nbody_tick(t_nbody *x) {
-  
+    return 0.0;
 }
 
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&nbody_class, (method)nbody_new, (method)dsp_free, (short)sizeof(t_nbody), 0L, A_DEFFLOAT, 0);
-    addmess((method)nbody_dsp, "dsp", A_CANT, 0);
-    addmess((method)nbody_assist,"assist",A_CANT,0);
-    addmess((method)nbody_guitar1, "guitar1", A_GIMME, 0);
-    addmess((method)nbody_guitar2, "guitar2", A_GIMME, 0);
-    addmess((method)nbody_mandolin, "mandolin", A_GIMME, 0);
-    addmess((method)nbody_violin, "violin", A_GIMME, 0);
-    addmess((method)nbody_hardanger, "hardanger", A_GIMME, 0);
-    addmess((method)nbody_archtop, "archtop", A_GIMME, 0);
-    addfloat((method)nbody_float);
-    addint((method)nbody_int);
-    addbang((method)nbody_bang);
-    dsp_initclass();
-    rescopy('STR#',9341);
+    t_class *c = class_new("nbody~", (method)nbody_new, (method)dsp_free, (long)sizeof(t_nbody), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)nbody_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)nbody_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)nbody_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)nbody_int, "int", A_LONG, 0);
+    class_addmethod(c, (method)nbody_bang, "bang", A_CANT, 0);
+
+    class_addmethod(c, (method)nbody_guitar1, "guitar1", A_GIMME, 0);
+    class_addmethod(c, (method)nbody_guitar2, "guitar2", A_GIMME, 0);
+    class_addmethod(c, (method)nbody_mandolin, "mandolin", A_GIMME, 0);
+    class_addmethod(c, (method)nbody_violin, "violin", A_GIMME, 0);
+    class_addmethod(c, (method)nbody_hardanger, "hardanger", A_GIMME, 0);
+    class_addmethod(c, (method)nbody_archtop, "archtop", A_GIMME, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    nbody_class = c;
 }
 
 void nbody_assist(t_nbody *x, void *b, long m, long a, char *s)
 {
-	assist_string(9341,m,a,1,3,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) number of items");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) frequency");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) damping");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void nbody_guitar1(t_nbody *x, double f)
@@ -217,7 +242,7 @@ void nbody_archtop(t_nbody *x, double f)
 
 void nbody_float(t_nbody *x, double f)
 {
-
+    nbody_int(x, (int)f);
 }
 
 void nbody_int(t_nbody *x, int f)
@@ -230,25 +255,23 @@ void nbody_int(t_nbody *x, int f)
 	f--;
 	x->direction = f;
 	
-	if (x->instrument = GUITAR1) nbody_guitar1(x, 0.);
-	if (x->instrument = GUITAR2) nbody_guitar2(x, 0.);
-	if (x->instrument = VIOLIN) nbody_violin(x, 0.);
-	if (x->instrument = HARDANGER) nbody_hardanger(x, 0.);
-	if (x->instrument = MANDOLIN) nbody_mandolin(x, 0.);
-	if (x->instrument = ARCHTOP) nbody_archtop(x, 0.);
-	
+	if (x->instrument == GUITAR1) nbody_guitar1(x, 0.);
+	if (x->instrument == GUITAR2) nbody_guitar2(x, 0.);
+	if (x->instrument == VIOLIN) nbody_violin(x, 0.);
+	if (x->instrument == HARDANGER) nbody_hardanger(x, 0.);
+	if (x->instrument == MANDOLIN) nbody_mandolin(x, 0.);
+	if (x->instrument == ARCHTOP) nbody_archtop(x, 0.);
 }
 
 void nbody_bang(t_nbody *x)
 {
-	
 }
 
 void *nbody_new(double initial_coeff)
 {
 	int i;
 
-    t_nbody *x = (t_nbody *)newobject(nbody_class);
+    t_nbody *x = (t_nbody *)object_alloc(nbody_class);
     dsp_setup((t_pxobject *)x,1);
     inlet_new((t_pxobject *)x, "int");
     outlet_new((t_object *)x, "signal");
@@ -273,29 +296,23 @@ void *nbody_new(double initial_coeff)
     return (x);
 }
 
-
-void nbody_dsp(t_nbody *x, t_signal **sp, short *count)
+void nbody_dsp64(t_nbody *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-
-	dsp_add(nbody_perform, 4, x, sp[0]->s_vec, sp[1]->s_vec,  sp[0]->s_n);	
-	
+    object_method(dsp64, gensym("dsp_add64"), x, nbody_perform64, 0, NULL);
 }
 
-t_int *nbody_perform(t_int *w)
+void nbody_perform64(t_nbody *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_nbody *x = (t_nbody *)(w[1]);
+	t_double *in = (t_double *)(ins[0]);
+	t_double *out = (t_double *)(outs[0]);
+	long n = sampleframes;
 	
-	float *in = (float *)(w[2]);	
-	float *out = (float *)(w[3]);
-	long n = w[4];
-	
-	float temp;
+	t_double temp;
 	
 	while(n--) {
 		temp = oz_tick(x, *in++);
 		temp = ap_tick(x, temp);
 		*out++ = temp;
 	}
-	return w + 5;
 }	
 

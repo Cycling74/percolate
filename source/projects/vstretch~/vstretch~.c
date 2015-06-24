@@ -1,5 +1,8 @@
 //expands or contracts a signal vector. good for transposing fft bins
 //another PeRColate hack: dan trueman, 2002
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 #include "stk_c.h"
 //#define TWOPI 6.283185307
@@ -22,13 +25,15 @@ typedef struct _vectorstretch
 
 //setup funcs
 void *vectorstretch_new(double val);
-void vectorstretch_dsp(t_vectorstretch *x, t_signal **sp, short *count); 
-t_int *vectorstretch_perform(t_int *w);
 void vectorstretch_assist(t_vectorstretch *x, void *b, long m, long a, char *s);
-void vectorstretch_setstretch(t_vectorstretch *x, Symbol *s, short argc, Atom *argv);
-void vectorstretch_setlinear(t_vectorstretch *x, Symbol *s, short argc, Atom *argv);
-void vectorstretch_setpoly(t_vectorstretch *x, Symbol *s, short argc, Atom *argv);
-void vectorstretch_setpoly2(t_vectorstretch *x, Symbol *s, short argc, Atom *argv);
+
+void vectorstretch_dsp64(t_vectorstretch *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void vectorstretch_perform64(t_vectorstretch *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
+void vectorstretch_setstretch(t_vectorstretch *x, t_symbol *s, long argc, t_atom *argv);
+void vectorstretch_setlinear(t_vectorstretch *x, t_symbol *s, long argc, t_atom *argv);
+void vectorstretch_setpoly(t_vectorstretch *x, t_symbol *s, long argc, t_atom *argv);
+void vectorstretch_setpoly2(t_vectorstretch *x, t_symbol *s, long argc, t_atom *argv);
 
 
 //t_symbol *ps_spvector;
@@ -38,28 +43,36 @@ void *vectorstretch_class;
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&vectorstretch_class, (method)vectorstretch_new, (method)dsp_free, (short)sizeof(t_vectorstretch), 0L, A_GIMME, 0);
-    addmess((method)vectorstretch_dsp, "dsp", A_CANT, 0);
-    addmess((method)vectorstretch_assist,"assist",A_CANT,0);
-    addmess((method)vectorstretch_setstretch, "stretch", A_GIMME, 0);
-    addmess((method)vectorstretch_setlinear, "linear", A_GIMME, 0);
-    addmess((method)vectorstretch_setpoly, "poly", A_GIMME, 0);
-    addmess((method)vectorstretch_setpoly, "poly2", A_GIMME, 0);
-    dsp_initclass();
- 
-    rescopy('STR#',RSRC_ID);
+    t_class *c = class_new("vectorstretch~", (method)vectorstretch_new, (method)dsp_free, (long)sizeof(t_vectorstretch), 0L, A_GIMME, 0);
+    
+    class_addmethod(c, (method)vectorstretch_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)vectorstretch_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)vectorstretch_setstretch, "stretch", A_GIMME, 0);
+    class_addmethod(c, (method)vectorstretch_setlinear, "linear", A_GIMME, 0);
+    class_addmethod(c, (method)vectorstretch_setpoly, "poly", A_GIMME, 0);
+    class_addmethod(c, (method)vectorstretch_setpoly, "poly2", A_GIMME, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    vectorstretch_class = c;
+
 }
 
 void vectorstretch_assist(t_vectorstretch *x, void *b, long m, long a, char *s)
 {
-	assist_string(RSRC_ID,m,a,1,2,s);
+    if (m == ASSIST_INLET) {
+        sprintf(s,"(signal) inputput");
+    } else {
+        sprintf(s,"(signal) output");
+    }
 }
 
 void *vectorstretch_new(double initial_coeff)
 {
 	int i;
 
-    t_vectorstretch *x = (t_vectorstretch *)newobject(vectorstretch_class);
+    t_vectorstretch *x = (t_vectorstretch *)object_alloc(vectorstretch_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_vectorstretch);i++)  
@@ -79,93 +92,90 @@ void *vectorstretch_new(double initial_coeff)
 }
 
 
-void vectorstretch_dsp(t_vectorstretch *x, t_signal **sp, short *count)
+void vectorstretch_setstretch(t_vectorstretch *x, t_symbol *s, long argc, t_atom *argv)
 {
-		dsp_add(vectorstretch_perform, 4, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n);	
+    short i;
+    float temp;
+    for (i=0; i < argc; i++) {
+        switch (argv[i].a_type) {
+            case A_LONG:
+                temp = (float)argv[i].a_w.w_long;
+                if (temp < 0.) temp = 0.;
+                //post("vectorstretch: setting stretch to: %f ", temp);
+                x->stretch = temp;
+                break;
+            case A_FLOAT:
+                temp = argv[i].a_w.w_float;
+                if (temp < 0.) temp = 0.;
+                //post("vectorstretch: setting stretch to: %f ", temp);
+                x->stretch = temp;
+                break;
+        }
+    }
 }
 
-t_int *vectorstretch_perform(t_int *w)
+void vectorstretch_setlinear(t_vectorstretch *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_vectorstretch *x = (t_vectorstretch *)(w[1]);
-
-	long i;
-
-	float *in = (float *)(w[2]);
-	float *out = (float *)(w[3]);
-	long n = w[4];
-	
-	double temp, temp2;
-	long stretchStart, stretchEnd;
-	double stretchOffset;
-	
-	if (x->x_obj.z_disabled)
-		goto out;
-	
-	if (x->interp_method == INT_LINEAR) {	
-		for(i=0;i<n;i++) {
-			temp = (double)i*(double)x->stretch; 			//float index for startpoint
-			stretchStart = (long)temp;						//integer value of index
-			stretchOffset = temp - (double)stretchStart;	//interpolation factor 
-			stretchEnd = stretchStart + 1;					//interpolation endpoint index
-			
-			//could add an if(stretchOffset == 0.) *out++ = in[stretchStart];
-			//              else.... interpolation stuff.
-			if (stretchStart >= n) temp = 0.;				//requests for frames above max are set to 0.
-				else temp = in[stretchStart];
-			
-			if (stretchEnd >= n) temp2 = 0.;
-				else temp2 = in[stretchEnd];
-
-			*out++ = temp + stretchOffset * (temp2 - temp);
-		}
-	}
-	
-	else if(x->interp_method == INT_POLY) {
-		for(i=0;i<n;i++) {
-			temp = (double)i*(double)x->stretch; 					//what's the index we want
-			*out++ = polyinterpolate(in, x->polylen, n, temp);		//2nd order poly interpolate
-		}	
-	}
-
-out:
-	return w + 5;
-}	
-
-void vectorstretch_setstretch(t_vectorstretch *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	float temp;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp = (float)argv[i].a_w.w_long;
-				if (temp < 0.) temp = 0.;
-    			//post("vectorstretch: setting stretch to: %f ", temp);
-    			x->stretch = temp;
-				break;
-			case A_FLOAT:
-				temp = argv[i].a_w.w_float;
-				if (temp < 0.) temp = 0.;
-				//post("vectorstretch: setting stretch to: %f ", temp);
-				x->stretch = temp;
-				break;
-		}
-	}
+    x->interp_method = INT_LINEAR;
 }
 
-void vectorstretch_setlinear(t_vectorstretch *x, Symbol *s, short argc, Atom *argv)
+void vectorstretch_setpoly(t_vectorstretch *x, t_symbol *s, long argc, t_atom *argv)
 {
-	x->interp_method = INT_LINEAR;
+    x->interp_method = INT_POLY;
+    x->polylen = 3;
 }
 
-void vectorstretch_setpoly(t_vectorstretch *x, Symbol *s, short argc, Atom *argv)
+void vectorstretch_setpoly2(t_vectorstretch *x, t_symbol *s, long argc, t_atom *argv)
 {
-	x->interp_method = INT_POLY;
-	x->polylen = 3;
+    x->interp_method = INT_POLY;
+    x->polylen = 4;
 }
 
-void vectorstretch_setpoly2(t_vectorstretch *x, Symbol *s, short argc, Atom *argv)
+void vectorstretch_dsp64(t_vectorstretch *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	x->interp_method = INT_POLY;
-	x->polylen = 4;
+    object_method(dsp64, gensym("dsp_add64"), x, vectorstretch_perform64, 0, NULL);
+}
+
+void vectorstretch_perform64(t_vectorstretch *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+    
+    long i;
+    
+    t_double *in = (t_double *)(ins[2]);
+    t_double *out = (t_double *)(outs[3]);
+    long n = sampleframes;
+    
+    double temp, temp2;
+    long stretchStart, stretchEnd;
+    double stretchOffset;
+    
+    if (x->x_obj.z_disabled)
+        return;
+    
+    if (x->interp_method == INT_LINEAR) {
+        for(i=0;i<n;i++) {
+            temp = (double)i*(double)x->stretch; 			//float index for startpoint
+            stretchStart = (long)temp;						//integer value of index
+            stretchOffset = temp - (double)stretchStart;	//interpolation factor
+            stretchEnd = stretchStart + 1;					//interpolation endpoint index
+            
+            //could add an if(stretchOffset == 0.) *out++ = in[stretchStart];
+            //              else.... interpolation stuff.
+            if (stretchStart >= n) temp = 0.;				//requests for frames above max are set to 0.
+            else temp = in[stretchStart];
+            
+            if (stretchEnd >= n) temp2 = 0.;
+            else temp2 = in[stretchEnd];
+            
+            *out++ = temp + stretchOffset * (temp2 - temp);
+        }
+    }
+    
+    else if(x->interp_method == INT_POLY) {
+        for(i=0;i<n;i++) {
+            temp = (double)i*(double)x->stretch; 					//what's the index we want
+            *out++ = polyinterpolate(in, x->polylen, n, temp);		//2nd order poly interpolate
+        }	
+    }
+
 }

@@ -15,14 +15,18 @@
 /*                CONTROL3 = vibFreq      */
 /*                MOD_WHEEL= vibAmt       */
 /******************************************/
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
+#include <math.h>
 #include "stk_c.h"
-#include <math.h> 
+
 #define LENGTH 882 	//44100/LOWFREQ + 1 --flute length
 #define JETLENGTH (LENGTH >> 1)
 #define VIBLENGTH 1024
 
-void *flute_class;
+t_class *flute_class;
 
 typedef struct _flute
 {
@@ -76,10 +80,11 @@ typedef struct _flute
 //setup funcs
 void *flute_new(double val);
 void flute_free(t_flute *x);
-void flute_dsp(t_flute *x, t_signal **sp, short *count);
-void flute_float(t_flute *x, double f);
-t_int *flute_perform(t_int *w);
 void flute_assist(t_flute *x, void *b, long m, long a, char *s);
+
+void flute_float(t_flute *x, double f);
+void flute_dsp64(t_flute *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void flute_perform64(t_flute *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 //vib funcs
 void setVibFreq(t_flute *x, float freq);
@@ -138,17 +143,44 @@ float vib_tick(t_flute *x)
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&flute_class, (method)flute_new, (method)flute_free, (short)sizeof(t_flute), 0L, A_DEFFLOAT, 0);
-    addmess((method)flute_dsp, "dsp", A_CANT, 0);
-    addmess((method)flute_assist,"assist",A_CANT,0);
-    addfloat((method)flute_float);
-    dsp_initclass();
-    rescopy('STR#',9802);
+    t_class *c = class_new("flute~", (method)flute_new, (method)flute_free, (long)sizeof(t_flute), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)flute_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)flute_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)flute_float, "float", A_FLOAT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    flute_class = c;
+
 }
 
 void flute_assist(t_flute *x, void *b, long m, long a, char *s)
 {
-	assist_string(9802,m,a,1,7,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) breath pressure");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) jet delay");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) noise gain");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) vibrato frequency");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) vibrato amount");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) frequency");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void flute_float(t_flute *x, double f)
@@ -172,7 +204,7 @@ void *flute_new(double initial_coeff)
 {
 	int i;
 
-    t_flute *x = (t_flute *)newobject(flute_class);
+    t_flute *x = (t_flute *)object_alloc(flute_class);
      //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject)-1;i<sizeof(t_flute);i++)  
@@ -231,7 +263,7 @@ void flute_free(t_flute *x)
 	DLineL_free(&x->jetDelay);
 }
 
-void flute_dsp(t_flute *x, t_signal **sp, short *count)
+void flute_dsp64(t_flute *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->x_bpconnected = count[0];
 	x->x_jdconnected = count[1];
@@ -239,56 +271,53 @@ void flute_dsp(t_flute *x, t_signal **sp, short *count)
 	x->x_vfconnected = count[3];
 	x->x_vaconnected = count[4];
 	x->x_frconnected = count[5];
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
     x->one_over_srate = 1./x->srate;
     OnePole_setPole(&x->filter, 0.7 - (0.1 * 22050. / x->srate));
-	dsp_add(flute_perform, 9, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[0]->s_n);	
-	
+
+    object_method(dsp64, gensym("dsp_add64"), x, flute_perform64, 0, NULL);
 }
 
-t_int *flute_perform(t_int *w)
+void flute_perform64(t_flute *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_flute *x = (t_flute *)(w[1]);
+	double bp = x->x_bpconnected? *(double *)(ins[0]) : x->x_bp;
+	double jd = x->x_jdconnected? *(double *)(ins[1]) : x->x_jd;
+	double ng = x->x_ngconnected? *(double *)(ins[2]) : x->x_ng;
+	double vf = x->x_vfconnected? *(double *)(ins[3]) : x->x_vf;
+	double va = x->x_vaconnected? *(double *)(ins[4]) : x->x_va;
+	double fr = x->x_frconnected? *(double *)(ins[5]) : x->x_fr;
 	
-	float bp = x->x_bpconnected? *(float *)(w[2]) : x->x_bp;
-	float jd = x->x_jdconnected? *(float *)(w[3]) : x->x_jd;
-	float ng = x->x_ngconnected? *(float *)(w[4]) : x->x_ng;
-	float vf = x->x_vfconnected? *(float *)(w[5]) : x->x_vf;
-	float va = x->x_vaconnected? *(float *)(w[6]) : x->x_va;
-	float fr = x->x_frconnected? *(float *)(w[7]) : x->x_fr;
+	double *out = (double *)(outs[0]);
+	long n = sampleframes;
 	
-	float *out = (float *)(w[8]);
-	long n = w[9];
-	
-	float jr = x->jetRefl;
-	float er = x->endRefl;
-	float temp, pressureDiff, randPressure;	
-
+	double jr = x->jetRefl;
+	double er = x->endRefl;
+	double temp, pressureDiff, randPressure;
+    
 	if(fr != x->fr_save) {
 		setFreq(x, fr);
 		x->fr_save = fr;
 	}
-
-	x->vibRate = VIBLENGTH * x->one_over_srate * vf; 
+    
+	x->vibRate = VIBLENGTH * x->one_over_srate * vf;
 	
 	if(jd != x->jd_save) {
 		setJetDelay(x, jd);
 		x->jd_save = jd;
 	}
-
+    
 	while(n--) {
 		
 		randPressure  = ng * Noise_tick();
 		randPressure += va * vib_tick(x);
-		randPressure *= bp;		
+		randPressure *= bp;
 		
 		temp = OnePole_tick(&x->filter, x->boreDelay.lastOutput);
 		temp = DCBlock_tick(&x->killdc, temp);
-		pressureDiff = bp + randPressure - (jr * temp);	
-		pressureDiff = DLineL_tick(&x->jetDelay, pressureDiff);								
+		pressureDiff = bp + randPressure - (jr * temp);
+		pressureDiff = DLineL_tick(&x->jetDelay, pressureDiff);
 		pressureDiff =  JetTabl_lookup(pressureDiff) + (er * temp);
 		
 		*out++ = DLineL_tick(&x->boreDelay, pressureDiff);
 	}
-	return w + 10;
-}	
+}

@@ -4,14 +4,17 @@
 //
 // objects and source are provided without warranty of any kind, express or implied.
 //
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 // include files...
 #include <stdlib.h>
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 
 // global for the class definition
-void *random_class;
+t_class *random_class;
 
 // my object structure
 typedef struct _random
@@ -24,22 +27,26 @@ typedef struct _random
 
 void *random_new(long flag); // creation function
 void *random_free(t_random *x); // free function (we use proxies, so can't just be dsp_free()
-t_int *random_perform(t_int *w); // dsp perform function
 void random_range(t_random *x, long n); // set random range
-void random_dsp(t_random *x, t_signal **sp, short *count); // dsp add function
 void random_assist(t_random *x, void *b, long m, long a, char *s); // assistance function
+
+// dsp stuff
+void random_dsp64(t_random *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void random_perform64(t_random *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 void ext_main(void* p)
 {
-    setup((t_messlist **)&random_class, (method)random_new, (method)random_free, (short)sizeof(t_random), 0L, A_DEFLONG, A_DEFLONG, 0);
-
-	// declare the methods
-    addmess((method)random_dsp, "dsp", A_CANT, 0);
-    addmess((method)random_assist,"assist",A_CANT,0);
-	addmess((method)random_range, "range", A_DEFLONG, 0);
-    dsp_initclass(); // required for msp
-
+    t_class *c = class_new("random~", (method)random_new, (method)random_free, (long)sizeof(t_random), 0L,A_DEFLONG, A_DEFLONG, 0);
+    
+    class_addmethod(c, (method)random_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)random_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)random_range, "range", A_DEFLONG, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    random_class = c;
 	post("random~: by r. luke dubois, cmc");
+    
 }
 
 // deal with the assistance strings...
@@ -66,7 +73,7 @@ void random_assist(t_random *x, void *b, long m, long a, char *s)
 // instantiate the object
 void *random_new(long flag)
 {	
-    t_random *x = (t_random *)newobject(random_class);
+    t_random *x = (t_random *)object_alloc(random_class);
     dsp_setup((t_pxobject *)x,0);
     outlet_new((t_pxobject *)x, "signal");
 	x->range = 1000; // initialize argument
@@ -83,6 +90,7 @@ void *random_new(long flag)
 void *random_free(t_random *x)
 {
 	dsp_free(&x->r_obj); // flush the dsp memory
+    return 0;
 }
 
 void random_range(t_random *x, long n)
@@ -92,33 +100,27 @@ void random_range(t_random *x, long n)
 	    if (x->range>65535) x->range = 65535;
 }
 
-// go go go...
-t_int *random_perform(t_int *w)
+void random_dsp64(t_random *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	t_random *x = (t_random *)w[1]; // get current state of my object class
-	t_float *out; // variables for input and output buffer
-	int n; // counter for vector size
+    object_method(dsp64, gensym("dsp_add64"), x, random_perform64, 0, NULL);
+}
 
+void random_perform64(t_random *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+	t_double *out; // variables for input and output buffer
+	int n; // counter for vector size
+    
 	// more efficient -- make local copies of class variables so i'm not constantly checking the globals...
 	int range = x->range;
-
-	int cval_new; // local variable to get polarity of current sample
-
-	out = (t_float *)(w[2]); // my output vector
-
-	n = (int)(w[3]); // my vector size
-
+    
+	out = (t_double *)(outs[0]); // my output vector
+    
+	n = sampleframes; // my vector size
+    
 	while (--n) { // loop executes a single vector
 		*++out = ((float)rand()/(float)RAND_MAX)*(float)range;
-
+        
 	}
+    
 
-	return (w+5); // return one greater than the arguments in the dsp_add call
 }
-
-void random_dsp(t_random *x, t_signal **sp, short *count)
-{
-	// add to the dsp chain -- i need my class, my input vector, my output vector, and my vector size...
-	dsp_add(random_perform, 4, x, sp[0]->s_vec-1, sp[0]->s_n+1);
-}
-

@@ -2,6 +2,8 @@
 //
 //dt 2005; yet another PeRColate hack
 //
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 //here are the notes from the original STK instrument
 /***************************************************/
@@ -17,12 +19,12 @@
 
 extern "C" {
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include "ext_strings.h"
 }
 
 #include <math.h>
-//#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -31,7 +33,7 @@ extern "C" {
 #define MAX_INPUTS 10 	//arbitrary
 #define MAX_OUTPUTS 10	//also arbitrary
 
-void *pit_shift_class;
+t_class *pit_shift_class;
 
 typedef struct _pit_shift
 {
@@ -41,7 +43,7 @@ typedef struct _pit_shift
     //variables specific to this object
     float srate, one_over_srate;  	//sample rate vars
     long num_inputs, num_outputs; 	//number of inputs and outputs
-    float in[MAX_INPUTS];			//values of input variables
+    double in[MAX_INPUTS];			//values of input variables
     float in_connected[MAX_INPUTS]; //booleans: true if signals connected to the input in question
     //we use this "connected" boolean so that users can connect *either* signals or floats
     //to the various inputs; sometimes it's easier just to have floats, but other times
@@ -62,19 +64,21 @@ typedef struct _pit_shift
 //args that the user can input, in which case pit_shift_new will have to change
 void *pit_shift_new(long num_inputs, long num_outputs);
 void pit_shift_free(t_pit_shift *x);
-void pit_shift_dsp(t_pit_shift *x, t_signal **sp, short *count); 
-t_int *pit_shift_perform(t_int *w);
 void pit_shift_assist(t_pit_shift *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void pit_shift_dsp64(t_pit_shift *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void pit_shift_perform64(t_pit_shift *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 //for getting floats at inputs
 void pit_shift_float(t_pit_shift *x, double f);
 
 //for custom messages
-void pit_shift_setShift(t_pit_shift *x, Symbol *s, short argc, Atom *argv);
-void pit_shift_clear(t_pit_shift *x, Symbol *s, short argc, Atom *argv);
+void pit_shift_setShift(t_pit_shift *x, t_symbol *s, long argc, t_atom *argv);
+void pit_shift_clear(t_pit_shift *x, t_symbol *s, long argc, t_atom *argv);
 
 
-void pit_shift_setpower(t_pit_shift *x, Symbol *s, short argc, Atom *argv);
+void pit_shift_setpower(t_pit_shift *x, t_symbol *s, long argc, t_atom *argv);
 
 
 /****FUNCTIONS****/
@@ -82,24 +86,18 @@ void pit_shift_setpower(t_pit_shift *x, Symbol *s, short argc, Atom *argv);
 //primary MSP funcs
 void ext_main(void* p)
 {
-	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
-	//change these if you want different user args
-    setup((struct messlist **)&pit_shift_class, (method)pit_shift_new, (method)pit_shift_free, (short)sizeof(t_pit_shift), 0L, A_DEFLONG, A_DEFLONG, 0);
-   
-	//standard messages; don't change these  
-    addmess((method)pit_shift_dsp, "dsp", A_CANT, 0);
-    addmess((method)pit_shift_assist,"assist", A_CANT,0);
+    t_class *c = class_new("pit_shift~", (method)pit_shift_new, (method)pit_shift_free, (long)sizeof(t_pit_shift), 0L, A_DEFLONG, A_DEFLONG, 0);
     
-    //our own messages
-    addmess((method)pit_shift_setpower, "power", A_GIMME, 0);
-    addmess((method)pit_shift_setShift, "shift", A_GIMME, 0);
-    addmess((method)pit_shift_clear, "clear", A_GIMME, 0);
-
-    //so we know what to do with floats that we receive at the inputs
-    addfloat((method)pit_shift_float);
+    class_addmethod(c, (method)pit_shift_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)pit_shift_dsp64, "dsp64", A_CANT, 0);
     
-    //gotta have this one....
-    dsp_initclass();
+    class_addmethod(c, (method)pit_shift_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)pit_shift_setpower, "power", A_GIMME, 0);
+    class_addmethod(c, (method)pit_shift_setShift, "shift", A_GIMME, 0);
+    class_addmethod(c, (method)pit_shift_clear, "clear", A_GIMME, 0);    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    pit_shift_class = c;
 }
 
 //this gets called when the object is created; everytime the user types in new args, this will get called
@@ -108,7 +106,7 @@ void *pit_shift_new(long baseDelay, long yD)
 	int i;
 	
 	//leave this; creates our object
-    t_pit_shift *x = (t_pit_shift *)newobject(pit_shift_class);
+    t_pit_shift *x = (t_pit_shift *)object_alloc(pit_shift_class);
     
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
@@ -167,89 +165,13 @@ void pit_shift_free(t_pit_shift *x)
 	delete x->myshift;
 }
 
-
-//this gets called everytime audio is started; even when audio is running, if the user
-//changes anything (like deletes a patch cord), audio will be turned off and
-//then on again, calling this func.
-//this adds the "perform" method to the DSP chain, and also tells us
-//where the audio vectors are and how big they are
-void pit_shift_dsp(t_pit_shift *x, t_signal **sp, short *count)
-{
-	void *dsp_add_args[MAX_INPUTS + MAX_OUTPUTS + 2];
-	int i;
-
-	//set sample rate vars
-	x->srate = sp[0]->s_sr;
-	x->one_over_srate = 1./x->srate;
-	
-	//check to see if there are signals connected to the various inputs
-	for(i=0;i<x->num_inputs;i++) x->in_connected[i]	= count[i];
-	
-	Stk::setSampleRate(x->srate);
-	
-	//construct the array of vectors and stuff
-	dsp_add_args[0] = x; //the object itself
-    for(i=0;i< (x->num_inputs + x->num_outputs); i++) { //pointers to the input and output vectors
-    	dsp_add_args[i+1] = sp[i]->s_vec;
-    }
-    dsp_add_args[x->num_inputs + x->num_outputs + 1] = (void *)sp[0]->s_n; //pointer to the vector size
-	dsp_addv(pit_shift_perform, (x->num_inputs + x->num_outputs + 2), dsp_add_args); //add them to the signal chain
-	
-}
-
-//this is where the action is
-//we get vectors of samples (n samples per vector), process them and send them out
-t_int *pit_shift_perform(t_int *w)
-{
-	t_pit_shift *x = (t_pit_shift *)(w[1]);
-
-	float *in[MAX_INPUTS]; 		//pointers to the input vectors
-	float *out[MAX_OUTPUTS];	//pointers to the output vectors
-
-	long n = w[x->num_inputs + x->num_outputs + 2];	//number of samples per vector
-	
-	//random local vars
-	int i;
-	float temp;
-	
-	//check to see if we should skip this routine if the patcher is "muted"
-	//i also setup of "power" messages for expensive objects, so that the
-	//object itself can be turned off directly. this can be convenient sometimes.
-	//in any case, all audio objects should have this
-	if (x->x_obj.z_disabled || (x->power == 0)) goto out;
-	
-	//check to see if we have a signal or float message connected to input
-	//then assign the pointer accordingly
-	for (i=0;i<x->num_inputs;i++) {
-		in[i] = x->in_connected[i] ? (float *)(w[i+2]) : &x->in[i];
-	}
-	
-	//assign the output vectors
-	for (i=0;i<x->num_outputs;i++) {
-		out[i] = (float *)(w[x->num_inputs+i+2]);
-	}
-	
-	while(n--) {	//this is where the action happens..... let's make something up
-	
-		if(x->in_connected[0]) temp = *in[0]++; //use the signal vector if there is one
-		else temp = *in[0];					 	//otherwise use the global variable
-		*out[0]++ = x->myshift->tick(temp);
-
-	}
-	
-	//return a pointer to the next object in the signal chain.
-out:
-	return w + x->num_inputs + x->num_outputs + 3;
-}	
-
-
 //tells the user about the inputs/outputs when mousing over them
 void pit_shift_assist(t_pit_shift *x, void *b, long m, long a, char *s)
 {
-	int i, j;
+	int i;
 	//could use switch/case inside for loops, to give more informative assist info....
 	if (m==1) {
-		for(i=0;i<x->num_inputs;i++) 
+		for(i=0;i<x->num_inputs;i++)
 			if (a==i) std::sprintf(s, "input (signal)");
 	}
 	if (m==2) {
@@ -269,13 +191,11 @@ void pit_shift_float(t_pit_shift *x, double f)
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
 			post("pit_shift~: setting in[%d] =  %f", i, f);
-		} 
+		}
 	}
 }
 
-
-
-void pit_shift_setShift(t_pit_shift *x, Symbol *s, short argc, Atom *argv)
+void pit_shift_setShift(t_pit_shift *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -296,19 +216,18 @@ void pit_shift_setShift(t_pit_shift *x, Symbol *s, short argc, Atom *argv)
 	x->myshift->setShift(temp);
 }
 
-void pit_shift_clear(t_pit_shift *x, Symbol *s, short argc, Atom *argv)
+void pit_shift_clear(t_pit_shift *x, t_symbol *s, long argc, t_atom *argv)
 {
-
+    
 	x->myshift->clear();
 }
 
-
 //what to do when we get the message "mymessage" and a value (or list of values)
-void pit_shift_setpower(t_pit_shift *x, Symbol *s, short argc, Atom *argv)
+void pit_shift_setpower(t_pit_shift *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
-	long temp2; 
+	long temp2;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
@@ -322,5 +241,57 @@ void pit_shift_setpower(t_pit_shift *x, Symbol *s, short argc, Atom *argv)
     			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
+	}
+}
+
+void pit_shift_dsp64(t_pit_shift *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
+{
+	int i;
+    
+	//set sample rate vars
+	x->srate = samplerate;
+	x->one_over_srate = 1./x->srate;
+	
+	//check to see if there are signals connected to the various inputs
+	for(i=0;i<x->num_inputs;i++) x->in_connected[i]	= count[i];
+	
+	Stk::setSampleRate(x->srate);
+    object_method(dsp64, gensym("dsp_add64"), x, pit_shift_perform64, 0, NULL);
+}
+
+void pit_shift_perform64(t_pit_shift *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+	t_double *in[MAX_INPUTS]; 		//pointers to the input vectors
+	t_double *out[MAX_OUTPUTS];	//pointers to the output vectors
+    
+	long n = sampleframes;	//number of samples per vector
+	
+	//random local vars
+	int i;
+	t_double temp;
+	
+	//check to see if we should skip this routine if the patcher is "muted"
+	//i also setup of "power" messages for expensive objects, so that the
+	//object itself can be turned off directly. this can be convenient sometimes.
+	//in any case, all audio objects should have this
+	if (x->x_obj.z_disabled || (x->power == 0)) return;
+	
+	//check to see if we have a signal or float message connected to input
+	//then assign the pointer accordingly
+	for (i=0;i<x->num_inputs;i++) {
+		in[i] = x->in_connected[i] ? (t_double *)(ins[i]) : &x->in[i];
+	}
+	
+	//assign the output vectors
+	for (i=0;i<x->num_outputs;i++) {
+		out[i] = (t_double *)(outs[i]);
+	}
+	
+	while(n--) {	//this is where the action happens..... let's make something up
+        
+		if(x->in_connected[0]) temp = *in[0]++; //use the signal vector if there is one
+		else temp = *in[0];					 	//otherwise use the global variable
+		*out[0]++ = x->myshift->tick(temp);
+        
 	}
 }

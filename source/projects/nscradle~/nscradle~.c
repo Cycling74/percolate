@@ -1,8 +1,12 @@
 //Newton's Cradle; a model of newton's cradle. choose number of balls, their sizes, masses
 //strings lengths, etc...., set them colliding. sends out impulses for each collision out
-//individual outputs for each pair of balls. 
+//individual outputs for each pair of balls.
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include <math.h>
 #include <stdio.h>
@@ -34,20 +38,46 @@ typedef struct _nscradle
 
 //setup funcs
 void *nscradle_new(long num_inputs, long num_outputs);
-void nscradle_dsp(t_nscradle *x, t_signal **sp, short *count); 
-t_int *nscradle_perform(t_int *w);
 void nscradle_assist(t_nscradle *x, void *b, long m, long a, char *s);
-void nscradle_which(t_nscradle *x, Symbol *s, short argc, Atom *argv);
-void nscradle_put(t_nscradle *x, Symbol *s, short argc, Atom *argv);
-void nscradle_push(t_nscradle *x, Symbol *s, short argc, Atom *argv);
-void nscradle_L(t_nscradle *x, Symbol *s, short argc, Atom *argv);
-void nscradle_mass(t_nscradle *x, Symbol *s, short argc, Atom *argv);
-void nscradle_radius(t_nscradle *x, Symbol *s, short argc, Atom *argv);
-void nscradle_damping(t_nscradle *x, Symbol *s, short argc, Atom *argv);
-void nscradle_zero(t_nscradle *x, Symbol *s, short argc, Atom *argv);
+
+// dsp stuff
+void nscradle_dsp64(t_nscradle *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void nscradle_perform64(t_nscradle *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
+void nscradle_which(t_nscradle *x, t_symbol *s, long argc, t_atom *argv);
+void nscradle_put(t_nscradle *x, t_symbol *s, long argc, t_atom *argv);
+void nscradle_push(t_nscradle *x, t_symbol *s, long argc, t_atom *argv);
+void nscradle_L(t_nscradle *x, t_symbol *s, long argc, t_atom *argv);
+void nscradle_mass(t_nscradle *x, t_symbol *s, long argc, t_atom *argv);
+void nscradle_radius(t_nscradle *x, t_symbol *s, long argc, t_atom *argv);
+void nscradle_damping(t_nscradle *x, t_symbol *s, long argc, t_atom *argv);
+void nscradle_zero(t_nscradle *x, t_symbol *s, long argc, t_atom *argv);
 
 
 /****FUNCTIONS****/
+
+//primary MSP funcs
+void ext_main(void* p)
+{
+    t_class *c = class_new("nscradle~", (method)nscradle_new, (method)dsp_free, (long)sizeof(t_nscradle), 0L, A_DEFLONG, A_DEFLONG, 0);
+    
+    class_addmethod(c, (method)nscradle_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)nscradle_dsp64, "dsp64", A_CANT, 0);
+
+    class_addmethod(c, (method)nscradle_which, "which", A_GIMME, 0);
+    class_addmethod(c, (method)nscradle_put, "put", A_GIMME, 0);  //put a ball to a certain angle
+    class_addmethod(c, (method)nscradle_push, "push", A_GIMME, 0); //push a ball
+    class_addmethod(c, (method)nscradle_L, "length", A_GIMME, 0); //set the length
+    class_addmethod(c, (method)nscradle_mass, "mass", A_GIMME, 0); //set the mass
+    class_addmethod(c, (method)nscradle_radius, "radius", A_GIMME, 0); //set the radius
+    class_addmethod(c, (method)nscradle_damping, "damping", A_GIMME, 0); //set the damping
+    class_addmethod(c, (method)nscradle_zero, "zero", A_GIMME, 0); //set the damping
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    nscradle_class = c;
+}
+
 
 void nscradle_assist(t_nscradle *x, void *b, long m, long a, char *s)
 {
@@ -64,31 +94,11 @@ void nscradle_assist(t_nscradle *x, void *b, long m, long a, char *s)
 }
 
 
-//primary MSP funcs
-void ext_main(void* p)
-{
-	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
-	//change these if you want differen user args
-    setup((struct messlist **)&nscradle_class, (method)nscradle_new, (method)dsp_free, (short)sizeof(t_nscradle), 0L, A_DEFLONG, A_DEFLONG, 0);
-    addmess((method)nscradle_dsp, "dsp", A_CANT, 0);
-    addmess((method)nscradle_assist,"assist",A_CANT,0);
-    addmess((method)nscradle_which, "which", A_GIMME, 0);
-    addmess((method)nscradle_put, "put", A_GIMME, 0);  //put a ball to a certain angle
-    addmess((method)nscradle_push, "push", A_GIMME, 0); //push a ball
-    addmess((method)nscradle_L, "length", A_GIMME, 0); //set the length
-    addmess((method)nscradle_mass, "mass", A_GIMME, 0); //set the mass
-    addmess((method)nscradle_radius, "radius", A_GIMME, 0); //set the radius
-    addmess((method)nscradle_damping, "damping", A_GIMME, 0); //set the damping
-    addmess((method)nscradle_zero, "zero", A_GIMME, 0); //set the damping
-    dsp_initclass();
-}
-
-
 void *nscradle_new(long num_balls, long nothing)
 {
 	int i;
 
-    t_nscradle *x = (t_nscradle *)newobject(nscradle_class);
+    t_nscradle *x = (t_nscradle *)object_alloc(nscradle_class);
     
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
@@ -130,56 +140,391 @@ void *nscradle_new(long num_balls, long nothing)
     return (x);
 }
 
-
-void nscradle_dsp(t_nscradle *x, t_signal **sp, short *count)
+void nscradle_which(t_nscradle *x, t_symbol *s, long argc, t_atom *argv)
 {
-	void *dsp_add_args[MAX_INPUTS + MAX_BALLS + 2];
-	int i;
-
-	x->srate = sp[0]->s_sr;
-	x->one_over_srate = 1./x->srate;
-	x->delta_t = 1./x->srate;
-	
-	dsp_add_args[0] = x;
-    for(i=0;i< (x->num_inputs + x->num_outputs); i++) {
-    	dsp_add_args[i+1] = sp[i]->s_vec;
-    }
-    dsp_add_args[x->num_inputs + x->num_outputs + 1] = (void *)sp[0]->s_n;
-	dsp_addv(nscradle_perform, (x->num_inputs + x->num_outputs + 2), dsp_add_args);	
+	short i;
+	int temp;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp = argv[i].a_w.w_long;
+				if(temp < 0) temp = 0;
+				if(temp > x->num_balls) temp = 0;
+				x->current_ball = temp - 1;
+    			post("nscradle: setting current ball to: %d ", x->current_ball + 1);
+				break;
+			case A_FLOAT:
+				temp = (int)argv[i].a_w.w_float;
+				if(temp < 0) temp = 0;
+				if(temp > x->num_balls) temp = 0;
+				x->current_ball = temp - 1;
+    			post("nscradle: setting current ball to: %d ", x->current_ball + 1);
+				break;
+		}
+	}
 }
 
-t_int *nscradle_perform(t_int *w)
+/*
+ void nscradle_put(t_nscradle *x, t_symbol *s, long argc, t_atom *argv)
+ {
+ short i;
+ double temp;
+ for (i=0; i < argc; i++) {
+ switch (argv[i].a_type) {
+ case A_LONG:
+ temp = (double)argv[i].a_w.w_long;
+ x->put = temp;
+ post("nscradle: putting current ball to: %f ", x->put);
+ break;
+ case A_FLOAT:
+ temp = (double)argv[i].a_w.w_float;
+ x->put = temp;
+ post("nscradle: putting current ball to: %f ", x->put);
+ break;
+ }
+ }
+ }
+ 
+ void nscradle_push(t_nscradle *x, t_symbol *s, long argc, t_atom *argv)
+ {
+ short i;
+ double temp;
+ for (i=0; i < argc; i++) {
+ switch (argv[i].a_type) {
+ case A_LONG:
+ temp = (double)argv[i].a_w.w_long;
+ x->push = temp;
+ post("nscradle: pushing current ball with: %f", x->push);
+ break;
+ case A_FLOAT:
+ temp = (double)argv[i].a_w.w_float;
+ x->push = temp;
+ post("nscradle: pushing current ball with: %f ", x->push);
+ break;
+ }
+ }
+ }
+ */
+
+void nscradle_put(t_nscradle *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_nscradle *x = (t_nscradle *)(w[1]);
-
-	float *in[MAX_INPUTS];
-	#define NC_LENGTH 0 //so in[NC_LENGTH] --> length input
-	#define NC_MASS 1
-	#define NC_RADIUS 2
-	#define NC_DAMPING 3
+	int i;
 	
-	float *out[MAX_BALLS];
+	if(argc < 2) {
+		post("nscradle: need 2 args -- ballNum Length");
+		return;
+	}
+	
+	switch (argv[0].a_type) {
+		case A_LONG:
+			i = (int)argv[0].a_w.w_long - 1;
+			break;
+		case A_FLOAT:
+			i = (int)argv[0].a_w.w_float - 1;
+			break;
+	}
+	
+	if(i >= x->num_balls) {
+		post("nscradle: too many balls, isaac");
+	} else if(i==-1) { //set them all
+		switch (argv[1].a_type) {
+			case A_LONG:
+				for (i=0;i<x->num_balls;i++) {
+					x->theta[i] = (double)argv[1].a_w.w_long;
+					//post("setting length %d to %f", i, (float)x->L[i]);
+				}
+				break;
+			case A_FLOAT:
+				for (i=0;i<x->num_balls;i++) {
+					x->theta[i] = (double)argv[1].a_w.w_float;
+					//post("setting length %d to %f", i, (float)x->L[i]);
+				}
+				break;
+		}
+	} else { //set individual ones
+		switch (argv[1].a_type) {
+			case A_LONG:
+				x->theta[i] = (double)argv[1].a_w.w_long;
+				break;
+			case A_FLOAT:
+				x->theta[i] = (double)argv[1].a_w.w_float;
+				break;
+		}
+	}
+}
 
-	long n = w[x->num_inputs + x->num_outputs + 2];
+void nscradle_push(t_nscradle *x, t_symbol *s, long argc, t_atom *argv)
+{
+	int i;
+	
+	if(argc < 2) {
+		post("nscradle: need 2 args -- ballNum Length");
+		return;
+	}
+	
+	switch (argv[0].a_type) {
+		case A_LONG:
+			i = (int)argv[0].a_w.w_long - 1;
+			break;
+		case A_FLOAT:
+			i = (int)argv[0].a_w.w_float - 1;
+			break;
+	}
+	
+	if(i >= x->num_balls) {
+		post("nscradle: too many balls, isaac");
+	} else if(i==-1) { //set them all
+		switch (argv[1].a_type) {
+			case A_LONG:
+				for (i=0;i<x->num_balls;i++) {
+					x->omega[i] = (double)argv[1].a_w.w_long;
+					//post("setting length %d to %f", i, (float)x->L[i]);
+				}
+				break;
+			case A_FLOAT:
+				for (i=0;i<x->num_balls;i++) {
+					x->omega[i] = (double)argv[1].a_w.w_float;
+					//post("setting length %d to %f", i, (float)x->L[i]);
+				}
+				break;
+		}
+	} else { //set individual ones
+		switch (argv[1].a_type) {
+			case A_LONG:
+				x->omega[i] = (double)argv[1].a_w.w_long;
+				break;
+			case A_FLOAT:
+				x->omega[i] = (double)argv[1].a_w.w_float;
+				break;
+		}
+	}
+}
+
+void nscradle_L(t_nscradle *x, t_symbol *s, long argc, t_atom *argv)
+{
+	int i;
+	
+	if(argc < 2) {
+		post("nscradle: need 2 args -- ballNum Length");
+		return;
+	}
+	
+	switch (argv[0].a_type) {
+		case A_LONG:
+			i = (int)argv[0].a_w.w_long - 1;
+			break;
+		case A_FLOAT:
+			i = (int)argv[0].a_w.w_float - 1;
+			break;
+	}
+	
+	if(i >= x->num_balls) {
+		post("nscradle: too many balls, isaac");
+	} else if(i==-1) { //set them all
+		switch (argv[1].a_type) {
+			case A_LONG:
+				for (i=0;i<x->num_balls;i++) {
+					x->L[i] = (double)argv[1].a_w.w_long;
+					//post("setting length %d to %f", i, (float)x->L[i]);
+				}
+				break;
+			case A_FLOAT:
+				for (i=0;i<x->num_balls;i++) {
+					x->L[i] = (double)argv[1].a_w.w_float;
+					//post("setting length %d to %f", i, (float)x->L[i]);
+				}
+				break;
+		}
+	} else { //set individual ones
+		switch (argv[1].a_type) {
+			case A_LONG:
+				x->L[i] = (double)argv[1].a_w.w_long;
+				break;
+			case A_FLOAT:
+				x->L[i] = (double)argv[1].a_w.w_float;
+				break;
+		}
+	}
+}
+
+void nscradle_mass(t_nscradle *x, t_symbol *s, long argc, t_atom *argv)
+{
+	int i;
+	
+	if(argc < 2) {
+		post("nscradle: need 2 args -- ballNum mass");
+		return;
+	}
+	
+	switch (argv[0].a_type) {
+		case A_LONG:
+			i = (int)argv[0].a_w.w_long - 1;
+			break;
+		case A_FLOAT:
+			i = (int)argv[0].a_w.w_float - 1;
+			break;
+	}
+	
+	if(i>x->num_balls) {
+		post("nscradle: too many balls, isaac");
+	} else if(i==-1) { //set them all
+		switch (argv[1].a_type) {
+			case A_LONG:
+				for (i=0;i<x->num_balls;i++)
+					x->mass[i] = (double)argv[1].a_w.w_long;
+				break;
+			case A_FLOAT:
+				for (i=0;i<x->num_balls;i++)
+					x->mass[i] = (double)argv[1].a_w.w_float;
+				break;
+		}
+	} else { //set individual ones
+		switch (argv[1].a_type) {
+			case A_LONG:
+				x->mass[i] = (double)argv[1].a_w.w_long;
+				break;
+			case A_FLOAT:
+				x->mass[i] = (double)argv[1].a_w.w_float;
+				break;
+		}
+	}
+}
+
+void nscradle_radius(t_nscradle *x, t_symbol *s, long argc, t_atom *argv)
+{
+	int i;
+	
+	if(argc < 2) {
+		post("nscradle: need 2 args -- ballNum radius");
+		return;
+	}
+	
+	switch (argv[0].a_type) {
+		case A_LONG:
+			i = (int)argv[0].a_w.w_long - 1;
+			break;
+		case A_FLOAT:
+			i = (int)argv[0].a_w.w_float - 1;
+			break;
+	}
+	
+	if(i>x->num_balls) {
+		post("nscradle: too many balls, isaac");
+	} else if(i==-1) { //set them all
+		switch (argv[1].a_type) {
+			case A_LONG:
+				for (i=0;i<x->num_balls;i++)
+					x->radius[i] = (double)argv[1].a_w.w_long;
+				break;
+			case A_FLOAT:
+				for (i=0;i<x->num_balls;i++)
+					x->radius[i] = (double)argv[1].a_w.w_float;
+				break;
+		}
+	} else { //set individual ones
+		switch (argv[1].a_type) {
+			case A_LONG:
+				x->radius[i] = (double)argv[1].a_w.w_long;
+				break;
+			case A_FLOAT:
+				x->radius[i] = (double)argv[1].a_w.w_float;
+				break;
+		}
+	}
+}
+
+void nscradle_damping(t_nscradle *x, t_symbol *s, long argc, t_atom *argv)
+{
+	int i;
+	
+	if(argc < 2) {
+		post("nscradle: need 2 args -- ballNum damping");
+		return;
+	}
+	
+	switch (argv[0].a_type) {
+		case A_LONG:
+			i = (int)argv[0].a_w.w_long - 1;
+			break;
+		case A_FLOAT:
+			i = (int)argv[0].a_w.w_float - 1;
+			break;
+	}
+	
+	if(i>x->num_balls) {
+		post("nscradle: too many balls, isaac");
+	} else if(i==-1) { //set them all
+		switch (argv[1].a_type) {
+			case A_LONG:
+				for (i=0;i<x->num_balls;i++)
+					x->damping[i] = (double)argv[1].a_w.w_long;
+				break;
+			case A_FLOAT:
+				for (i=0;i<x->num_balls;i++)
+					x->damping[i] = (double)argv[1].a_w.w_float;
+				break;
+		}
+	} else { //set individual ones
+		switch (argv[1].a_type) {
+			case A_LONG:
+				x->damping[i] = (double)argv[1].a_w.w_long;
+				break;
+			case A_FLOAT:
+				x->damping[i] = (double)argv[1].a_w.w_float;
+				break;
+		}
+	}
+}
+
+void nscradle_zero(t_nscradle *x, t_symbol *s, long argc, t_atom *argv)
+{
+	int i;
+	
+	for (i=0;i<x->num_balls;i++) {
+		x->theta[i] = 0.;
+		x->omega[i] = 0.;
+	}
+    
+}
+
+void nscradle_dsp64(t_nscradle *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
+{
+	x->srate = samplerate;
+	x->one_over_srate = 1./x->srate;
+	x->delta_t = 1./x->srate;
+    
+    object_method(dsp64, gensym("dsp_add64"), x, nscradle_perform64, 0, NULL);
+}
+
+void nscradle_perform64(t_nscradle *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+	t_double *in[MAX_INPUTS];
+    #define NC_LENGTH 0 //so in[NC_LENGTH] --> length input
+    #define NC_MASS 1
+    #define NC_RADIUS 2
+    #define NC_DAMPING 3
+	
+	t_double *out[MAX_BALLS];
+    
+	long n = sampleframes;
 	int i, j;
 	
-	double half_theta, sin_halftheta, xdiff, ydiff; 
+	double half_theta, sin_halftheta, xdiff, ydiff;
 	double delta_t, x_pos[MAX_BALLS], y_pos[MAX_BALLS];
 	double offset[MAX_BALLS], L[MAX_BALLS], mass[MAX_BALLS], radius[MAX_BALLS+1], damping[MAX_BALLS];
 	double g, D[MAX_BALLS], T, M, omega_save;
 	
-	if (x->x_obj.z_disabled) goto out;
-	
+	if (x->x_obj.z_disabled) return;
 	
 	g = -9.8; 				//acceleration of gravity, meters/sec^2
 	delta_t = x->delta_t; 	//seconds per sample
 	
 	for (i=0;i<x->num_inputs;i++) {
-		in[i] = (float *)(w[i+2]);
+		in[i] = (t_double *)(ins[i]);
 	}
 	
 	for (i=0;i<x->num_outputs;i++) {
-		out[i] = (float *)(w[x->num_inputs+i+2]);
+		out[i] = (t_double *)(outs[i]);
 	}
 	
 	if(x->put != 0.) {
@@ -213,7 +558,7 @@ t_int *nscradle_perform(t_int *w)
 	while(n--) {
 		
 		for(i=0;i<x->num_balls;i++) {
-		
+            
 			//calculate angular position and velocity
 			x->theta[i] = delta_t * x->omega[i] + x->theta[i];
 			x->omega[i] = delta_t * (g/L[i]) * (double)sin(x->theta[i]*TWOPI) + x->omega[i]*(1. - damping[i]);
@@ -224,11 +569,11 @@ t_int *nscradle_perform(t_int *w)
 			x_pos[i] = 2.*L[i] * sin_halftheta*cos(half_theta*TWOPI);
 			y_pos[i] = 2.*L[i] * sin_halftheta*sin_halftheta;
 			
-			//offset so balls are just touching at rest 			
+			//offset so balls are just touching at rest
 			if(i>0) {
 				offset[i] = offset[i-1] + radius[i] + radius[i-1];
 				x_pos[i] += offset[i];
-			} 
+			}
 		}
 		
 		//calculate distance between balls, exchange momenta if they collide and send out an impulse
@@ -255,11 +600,11 @@ t_int *nscradle_perform(t_int *w)
 				omega_save = x->omega[i];
 				x->omega[i] = x->omega[j] * T;
 				x->omega[j] = omega_save / T;
-				*out[i] = M; 
+				*out[i] = M;
 				if(j > i+1) { //have both click if they are not adjacent
-					M = x->omega[j]*cos(x->theta[j]*TWOPI) - x->omega[j-1]*cos(x->theta[j-1]*TWOPI);	
+					M = x->omega[j]*cos(x->theta[j]*TWOPI) - x->omega[j-1]*cos(x->theta[j-1]*TWOPI);
 					*out[j-1] = M;
-				}				
+				}
 				i=j; //skip to the next ball
 			} else {
 				*out[i++] = 0.;
@@ -268,355 +613,7 @@ t_int *nscradle_perform(t_int *w)
 		
 		for(i=0;i<x->num_outputs;i++) *out[i]++;
 	}
-	
-out:
-	return w + x->num_inputs + x->num_outputs + 3;
-}	
-
-
-void nscradle_which(t_nscradle *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	int temp;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp = argv[i].a_w.w_long;
-				if(temp < 0) temp = 0;
-				if(temp > x->num_balls) temp = 0;
-				x->current_ball = temp - 1;
-    			post("nscradle: setting current ball to: %d ", x->current_ball + 1);
-				break;
-			case A_FLOAT:
-				temp = (int)argv[i].a_w.w_float;
-				if(temp < 0) temp = 0;
-				if(temp > x->num_balls) temp = 0;
-				x->current_ball = temp - 1;
-    			post("nscradle: setting current ball to: %d ", x->current_ball + 1);
-				break;
-		}
-	}
 }
 
-/*
-void nscradle_put(t_nscradle *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	double temp;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp = (double)argv[i].a_w.w_long;
-				x->put = temp;
-    			post("nscradle: putting current ball to: %f ", x->put);
-				break;
-			case A_FLOAT:
-				temp = (double)argv[i].a_w.w_float;
-				x->put = temp;
-    			post("nscradle: putting current ball to: %f ", x->put);
-				break;
-		}
-	}
-}
 
-void nscradle_push(t_nscradle *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	double temp;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp = (double)argv[i].a_w.w_long;
-				x->push = temp;
-    			post("nscradle: pushing current ball with: %f", x->push);
-				break;
-			case A_FLOAT:
-				temp = (double)argv[i].a_w.w_float;
-				x->push = temp;
-    			post("nscradle: pushing current ball with: %f ", x->push);
-				break;
-		}
-	}
-}
-*/
 
-void nscradle_put(t_nscradle *x, Symbol *s, short argc, Atom *argv)
-{
-	int i;
-	
-	if(argc < 2) {
-		post("nscradle: need 2 args -- ballNum Length");
-		return;
-	}
-	
-	switch (argv[0].a_type) {
-		case A_LONG:
-			i = (int)argv[0].a_w.w_long - 1; 
-			break;
-		case A_FLOAT:
-			i = (int)argv[0].a_w.w_float - 1;
-			break;
-	}
-	
-	if(i >= x->num_balls) {
-		post("nscradle: too many balls, isaac");
-	} else if(i==-1) { //set them all
-		switch (argv[1].a_type) {
-			case A_LONG:
-				for (i=0;i<x->num_balls;i++) {
-					x->theta[i] = (double)argv[1].a_w.w_long; 
-					//post("setting length %d to %f", i, (float)x->L[i]);
-				}
-				break;
-			case A_FLOAT:
-				for (i=0;i<x->num_balls;i++) {
-					x->theta[i] = (double)argv[1].a_w.w_float;
-					//post("setting length %d to %f", i, (float)x->L[i]);
-				}
-				break;
-		}
-	} else { //set individual ones	
-		switch (argv[1].a_type) {
-			case A_LONG:
-				x->theta[i] = (double)argv[1].a_w.w_long; 
-				break;
-			case A_FLOAT:
-				x->theta[i] = (double)argv[1].a_w.w_float;
-				break;
-		}
-	}
-}
-
-void nscradle_push(t_nscradle *x, Symbol *s, short argc, Atom *argv)
-{
-	int i;
-	
-	if(argc < 2) {
-		post("nscradle: need 2 args -- ballNum Length");
-		return;
-	}
-	
-	switch (argv[0].a_type) {
-		case A_LONG:
-			i = (int)argv[0].a_w.w_long - 1; 
-			break;
-		case A_FLOAT:
-			i = (int)argv[0].a_w.w_float - 1;
-			break;
-	}
-	
-	if(i >= x->num_balls) {
-		post("nscradle: too many balls, isaac");
-	} else if(i==-1) { //set them all
-		switch (argv[1].a_type) {
-			case A_LONG:
-				for (i=0;i<x->num_balls;i++) {
-					x->omega[i] = (double)argv[1].a_w.w_long; 
-					//post("setting length %d to %f", i, (float)x->L[i]);
-				}
-				break;
-			case A_FLOAT:
-				for (i=0;i<x->num_balls;i++) {
-					x->omega[i] = (double)argv[1].a_w.w_float;
-					//post("setting length %d to %f", i, (float)x->L[i]);
-				}
-				break;
-		}
-	} else { //set individual ones	
-		switch (argv[1].a_type) {
-			case A_LONG:
-				x->omega[i] = (double)argv[1].a_w.w_long; 
-				break;
-			case A_FLOAT:
-				x->omega[i] = (double)argv[1].a_w.w_float;
-				break;
-		}
-	}
-}
-
-void nscradle_L(t_nscradle *x, Symbol *s, short argc, Atom *argv)
-{
-	int i;
-	
-	if(argc < 2) {
-		post("nscradle: need 2 args -- ballNum Length");
-		return;
-	}
-	
-	switch (argv[0].a_type) {
-		case A_LONG:
-			i = (int)argv[0].a_w.w_long - 1; 
-			break;
-		case A_FLOAT:
-			i = (int)argv[0].a_w.w_float - 1;
-			break;
-	}
-	
-	if(i >= x->num_balls) {
-		post("nscradle: too many balls, isaac");
-	} else if(i==-1) { //set them all
-		switch (argv[1].a_type) {
-			case A_LONG:
-				for (i=0;i<x->num_balls;i++) {
-					x->L[i] = (double)argv[1].a_w.w_long; 
-					//post("setting length %d to %f", i, (float)x->L[i]);
-				}
-				break;
-			case A_FLOAT:
-				for (i=0;i<x->num_balls;i++) {
-					x->L[i] = (double)argv[1].a_w.w_float;
-					//post("setting length %d to %f", i, (float)x->L[i]);
-				}
-				break;
-		}
-	} else { //set individual ones	
-		switch (argv[1].a_type) {
-			case A_LONG:
-				x->L[i] = (double)argv[1].a_w.w_long; 
-				break;
-			case A_FLOAT:
-				x->L[i] = (double)argv[1].a_w.w_float;
-				break;
-		}
-	}
-}
-
-void nscradle_mass(t_nscradle *x, Symbol *s, short argc, Atom *argv)
-{
-	int i;
-	
-	if(argc < 2) {
-		post("nscradle: need 2 args -- ballNum mass");
-		return;
-	}
-	
-	switch (argv[0].a_type) {
-		case A_LONG:
-			i = (int)argv[0].a_w.w_long - 1; 
-			break;
-		case A_FLOAT:
-			i = (int)argv[0].a_w.w_float - 1;
-			break;
-	}
-	
-	if(i>x->num_balls) {
-		post("nscradle: too many balls, isaac");
-	} else if(i==-1) { //set them all
-		switch (argv[1].a_type) {
-			case A_LONG:
-				for (i=0;i<x->num_balls;i++) 
-					x->mass[i] = (double)argv[1].a_w.w_long; 
-				break;
-			case A_FLOAT:
-				for (i=0;i<x->num_balls;i++) 
-					x->mass[i] = (double)argv[1].a_w.w_float;
-				break;
-		}
-	} else { //set individual ones	
-		switch (argv[1].a_type) {
-			case A_LONG:
-				x->mass[i] = (double)argv[1].a_w.w_long; 
-				break;
-			case A_FLOAT:
-				x->mass[i] = (double)argv[1].a_w.w_float;
-				break;
-		}
-	}
-}
-
-void nscradle_radius(t_nscradle *x, Symbol *s, short argc, Atom *argv)
-{
-	int i;
-	
-	if(argc < 2) {
-		post("nscradle: need 2 args -- ballNum radius");
-		return;
-	}
-	
-	switch (argv[0].a_type) {
-		case A_LONG:
-			i = (int)argv[0].a_w.w_long - 1; 
-			break;
-		case A_FLOAT:
-			i = (int)argv[0].a_w.w_float - 1;
-			break;
-	}
-	
-	if(i>x->num_balls) {
-		post("nscradle: too many balls, isaac");
-	} else if(i==-1) { //set them all
-		switch (argv[1].a_type) {
-			case A_LONG:
-				for (i=0;i<x->num_balls;i++) 
-					x->radius[i] = (double)argv[1].a_w.w_long; 
-				break;
-			case A_FLOAT:
-				for (i=0;i<x->num_balls;i++) 
-					x->radius[i] = (double)argv[1].a_w.w_float;
-				break;
-		}
-	} else { //set individual ones	
-		switch (argv[1].a_type) {
-			case A_LONG:
-				x->radius[i] = (double)argv[1].a_w.w_long; 
-				break;
-			case A_FLOAT:
-				x->radius[i] = (double)argv[1].a_w.w_float;
-				break;
-		}
-	}
-}
-
-void nscradle_damping(t_nscradle *x, Symbol *s, short argc, Atom *argv)
-{
-	int i;
-	
-	if(argc < 2) {
-		post("nscradle: need 2 args -- ballNum damping");
-		return;
-	}
-	
-	switch (argv[0].a_type) {
-		case A_LONG:
-			i = (int)argv[0].a_w.w_long - 1; 
-			break;
-		case A_FLOAT:
-			i = (int)argv[0].a_w.w_float - 1;
-			break;
-	}
-	
-	if(i>x->num_balls) {
-		post("nscradle: too many balls, isaac");
-	} else if(i==-1) { //set them all
-		switch (argv[1].a_type) {
-			case A_LONG:
-				for (i=0;i<x->num_balls;i++) 
-					x->damping[i] = (double)argv[1].a_w.w_long; 
-				break;
-			case A_FLOAT:
-				for (i=0;i<x->num_balls;i++) 
-					x->damping[i] = (double)argv[1].a_w.w_float;
-				break;
-		}
-	} else { //set individual ones	
-		switch (argv[1].a_type) {
-			case A_LONG:
-				x->damping[i] = (double)argv[1].a_w.w_long; 
-				break;
-			case A_FLOAT:
-				x->damping[i] = (double)argv[1].a_w.w_float;
-				break;
-		}
-	}
-}
-
-void nscradle_zero(t_nscradle *x, Symbol *s, short argc, Atom *argv)
-{
-	int i;
-	
-	for (i=0;i<x->num_balls;i++) {
-		x->theta[i] = 0.;
-		x->omega[i] = 0.;
-	}
-
-}

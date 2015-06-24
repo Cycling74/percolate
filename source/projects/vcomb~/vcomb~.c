@@ -4,22 +4,25 @@
 //non-interpolating, to keep it relatively CPU efficient
 //
 //dt 2004; yet another PeRColate hack
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include "ext_strings.h"
 #include "stk_c.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 #define MAX_INPUTS 10 	//arbitrary
 #define MAX_OUTPUTS 10	//also arbitrary
 #define MAX_BINS 4096	//assume a max window size of 8192
 #define MAX_DELAY 1000
 
-void *vcomb_class;
+t_class *vcomb_class;
 
 typedef struct _vcomb
 {
@@ -29,7 +32,7 @@ typedef struct _vcomb
     //variables specific to this object
     float srate, one_over_srate;  	//sample rate vars
     long num_inputs, num_outputs; 	//number of inputs and outputs
-    float in[MAX_INPUTS];			//values of input variables
+    t_double in[MAX_INPUTS];			//values of input variables
     float in_connected[MAX_INPUTS]; //booleans: true if signals connected to the input in question
     //we use this "connected" boolean so that users can connect *either* signals or floats
     //to the various inputs; sometimes it's easier just to have floats, but other times
@@ -55,18 +58,20 @@ typedef struct _vcomb
 //args that the user can input, in which case vcomb_new will have to change
 void *vcomb_new(long num_inputs, long num_outputs);
 void vcomb_free(t_vcomb *x);
-void vcomb_dsp(t_vcomb *x, t_signal **sp, short *count); 
-t_int *vcomb_perform(t_int *w);
 void vcomb_assist(t_vcomb *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void vcomb_dsp64(t_vcomb *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void vcomb_perform64(t_vcomb *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 //for getting floats at inputs
 void vcomb_float(t_vcomb *x, double f);
 void dline_setDelay(t_vcomb *x, long whichLine, long lag);
-void dline_tick(t_vcomb *x, long whichLine, float *samples);
+void dline_tick(t_vcomb *x, long whichLine, t_double *samples);
 
 //for custom messages
-void vcomb_mymessage(t_vcomb *x, Symbol *s, short argc, Atom *argv);
-void vcomb_setpower(t_vcomb *x, Symbol *s, short argc, Atom *argv);
+void vcomb_mymessage(t_vcomb *x, t_symbol *s, long argc, t_atom *argv);
+void vcomb_setpower(t_vcomb *x, t_symbol *s, long argc, t_atom *argv);
 
 
 /****FUNCTIONS****/
@@ -81,7 +86,7 @@ void dline_setDelay(t_vcomb *x, long whichLine, long lag)
   while (x->outPoint[whichLine]<0) x->outPoint[whichLine] += x->delaytime[whichLine];  	// modulo maximum length
 }
 
-void dline_tick(t_vcomb *x, long whichLine, float *samples)        			// Take two, yield two
+void dline_tick(t_vcomb *x, long whichLine, t_double *samples)        			// Take two, yield two
 {
   x->bin1delays[x->inPoint[whichLine]   ][whichLine] = samples[0];
   x->bin2delays[x->inPoint[whichLine]++ ][whichLine] = samples[1];
@@ -99,32 +104,27 @@ void dline_tick(t_vcomb *x, long whichLine, float *samples)        			// Take tw
 //primary MSP funcs
 void ext_main(void* p)
 {
-	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
-	//change these if you want different user args
-    setup((struct messlist **)&vcomb_class, (method)vcomb_new, (method)vcomb_free, (short)sizeof(t_vcomb), 0L, A_DEFLONG, A_DEFLONG, 0);
-   
-	//standard messages; don't change these  
-    addmess((method)vcomb_dsp, "dsp", A_CANT, 0);
-    addmess((method)vcomb_assist,"assist", A_CANT,0);
+    t_class *c = class_new("vcomb~", (method)vcomb_new, (method)vcomb_free, (long)sizeof(t_vcomb), 0L, A_DEFLONG, A_DEFLONG, 0);
     
-    //our own messages
-    addmess((method)vcomb_mymessage, "mymessage", A_GIMME, 0);
-    addmess((method)vcomb_setpower, "power", A_GIMME, 0);
+    class_addmethod(c, (method)vcomb_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)vcomb_dsp64, "dsp64", A_CANT, 0);
     
-    //so we know what to do with floats that we receive at the inputs
-    addfloat((method)vcomb_float);
+    class_addmethod(c, (method)vcomb_mymessage, "mymessage", A_GIMME, 0);
+    class_addmethod(c, (method)vcomb_setpower, "power", A_GIMME, 0);
+    class_addmethod(c, (method)vcomb_float, "float", A_FLOAT, 0);
+    class_dspinit(c);
     
-    //gotta have this one....
-    dsp_initclass();
+    class_register(CLASS_BOX, c);
+    vcomb_class = c;
 }
 
 //this gets called when the object is created; everytime the user types in new args, this will get called
 void *vcomb_new(long num_inputs, long num_outputs)
 {
-	int i, j;
+	int i;
 	
 	//leave this; creates our object
-    t_vcomb *x = (t_vcomb *)newobject(vcomb_class);
+    t_vcomb *x = (t_vcomb *)object_alloc(vcomb_class);
     
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
@@ -168,42 +168,42 @@ void *vcomb_new(long num_inputs, long num_outputs)
 	    x->bin1delays[i] = t_getbytes(MAX_BINS*sizeof(float));
 		if (!x->bin1delays[i]) {
 			error("vcomb~: out of memory");
-			return;
+			return x;
 		}
 		
 		x->bin2delays[i] = t_getbytes(MAX_BINS*sizeof(float));
 		if (!x->bin2delays[i]) {
 			error("vcomb~: out of memory");
-			return;
+			return x;
 		}
 	}
 	
 	x->delaytime = t_getbytes(MAX_BINS*sizeof(long));
 	if (!x->delaytime) {
 		error("vcomb~: out of memory");
-		return;
+		return x;
 	}
 	x->inPoint = t_getbytes(MAX_BINS*sizeof(long));
 	if (!x->inPoint) {
 		error("vcomb~: out of memory");
-		return;
+		return x;
 	}
 	x->outPoint = t_getbytes(MAX_BINS*sizeof(long));
 	if (!x->outPoint) {
 		error("vcomb~: out of memory");
-		return;
+		return x;
 	}
 	
 	x->last_output1 = t_getbytes(MAX_BINS*sizeof(float));
 	if (!x->last_output1) {
 		error("vcomb~: out of memory");
-		return;
+		return x;
 	}
 	
 	x->last_output2 = t_getbytes(MAX_BINS*sizeof(float));
 	if (!x->last_output2) {
 		error("vcomb~: out of memory");
-		return;
+		return x;
 	}
 	
 	for(i=0;i<MAX_BINS;i++) {
@@ -252,67 +252,124 @@ void vcomb_free(t_vcomb *x)
 }
 
 
-//this gets called everytime audio is started; even when audio is running, if the user
-//changes anything (like deletes a patch cord), audio will be turned off and
-//then on again, calling this func.
-//this adds the "perform" method to the DSP chain, and also tells us
-//where the audio vectors are and how big they are
-void vcomb_dsp(t_vcomb *x, t_signal **sp, short *count)
+//tells the user about the inputs/outputs when mousing over them
+void vcomb_assist(t_vcomb *x, void *b, long m, long a, char *s)
 {
-	void *dsp_add_args[MAX_INPUTS + MAX_OUTPUTS + 2];
 	int i;
+	if (m==1) {
+		for(i=0;i<x->num_inputs;i++)
+			if (a==0)  sprintf(s, "fft in 1");
+        if (a==1)  sprintf(s, "fft in 2");
+        if (a==2)  sprintf(s, "delay time (int: in unit samples)");
+        if (a==3)  sprintf(s, "feedback coefficient (float)");
+	}
+	if (m==2) {
+		for(i=0;i<x->num_outputs;i++)
+			if (a==0)  sprintf(s, "fft out 1");
+        if (a==1)  sprintf(s, "fft out 2");
+	}
+}
 
+
+//this gets called when ever a float is received at *any* input
+void vcomb_float(t_vcomb *x, double f)
+{
+	int i;
+	
+	//check to see which input the float came in, then set the appropriate variable value
+	for(i=0;i<x->num_inputs;i++) {
+		if (x->x_obj.z_in == i) {
+			x->in[i] = f;
+			post("vcomb~: setting in[%d] =  %f", i, f);
+		}
+	}
+}
+
+
+//what to do when we get the message "mymessage" and a value (or list of values)
+void vcomb_mymessage(t_vcomb *x, t_symbol *s, long argc, t_atom *argv)
+{
+	short i;
+	float temp;
+	long temp2;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp2 = argv[i].a_w.w_long;
+				//probably should comment these out when the object is debugged.
+    			post("vcomb~: received argument %d of mymessage with value %d", i+1, temp2);
+				break;
+			case A_FLOAT:
+				temp = argv[i].a_w.w_float;
+    			post("vcomb~: received argument %d of mymessage with value %f", i+1, temp);
+				break;
+		}
+	}
+}
+
+//what to do when we get the message "mymessage" and a value (or list of values)
+void vcomb_setpower(t_vcomb *x, t_symbol *s, long argc, t_atom *argv)
+{
+	short i;
+	float temp;
+	long temp2;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp2 = argv[i].a_w.w_long;
+				//probably should comment these out when the object is debugged.
+				x->power = temp2;
+    			post("vcomb~: power = %d", x->power);
+				break;
+			case A_FLOAT:
+				temp = argv[i].a_w.w_float;
+    			//post("vcomb~: received argument %d of mymessage with value %f", i+1, temp);
+				break;
+		}
+	}
+}
+
+
+void vcomb_dsp64(t_vcomb *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
+{
+	int i;
+    
 	//set sample rate vars
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
 	x->one_over_srate = 1./x->srate;
 	
 	//check to see if there are signals connected to the various inputs
 	for(i=0;i<x->num_inputs;i++) x->in_connected[i]	= count[i];
 	
-	//construct the array of vectors and stuff
-	dsp_add_args[0] = x; //the object itself
-    for(i=0;i< (x->num_inputs + x->num_outputs); i++) { //pointers to the input and output vectors
-    	dsp_add_args[i+1] = sp[i]->s_vec;
-    }
-    dsp_add_args[x->num_inputs + x->num_outputs + 1] = (void *)sp[0]->s_n; //pointer to the vector size
-	dsp_addv(vcomb_perform, (x->num_inputs + x->num_outputs + 2), dsp_add_args); //add them to the signal chain
-	
-	if (sp[0]->s_n > MAX_BINS) {
-		post("vcomb~: max window size = %d; bypassing", 2*MAX_BINS);
-		x->power = 0;
-	}
+    object_method(dsp64, gensym("dsp_add64"), x, vcomb_perform64, 0, NULL);
 }
 
-//this is where the action is
-//we get vectors of samples (n samples per vector), process them and send them out
-t_int *vcomb_perform(t_int *w)
+void vcomb_perform64(t_vcomb *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_vcomb *x = (t_vcomb *)(w[1]);
-
-	float *in[MAX_INPUTS]; 		//pointers to the input vectors
-	float *out[MAX_OUTPUTS];	//pointers to the output vectors
-	float temp[MAX_INPUTS];
-	float samples[2];
-
-	long n = w[x->num_inputs + x->num_outputs + 2];	//number of samples per vector
+	t_double *in[MAX_INPUTS]; 		//pointers to the input vectors
+	t_double *out[MAX_OUTPUTS];	//pointers to the output vectors
+	t_double temp[MAX_INPUTS];
+	t_double samples[2];
+    
+	long n = sampleframes;	//number of samples per vector
 	
 	//random local vars
 	int i, j;
-	float fft1, fft2, feedback_coeff;
+	t_double fft1, fft2, feedback_coeff;
 	long delaytime;
 	
 	//bypass if necessary
-	if (x->x_obj.z_disabled || (x->power == 0)) goto out;
+	if (x->x_obj.z_disabled || (x->power == 0)) return;
 	
 	//check to see if we have a signal or float message connected to input
 	//then assign the pointer accordingly
 	for (i=0;i<x->num_inputs;i++) {
-		in[i] = x->in_connected[i] ? (float *)(w[i+2]) : &x->in[i];
+		in[i] = x->in_connected[i] ? (t_double *)(ins[i]) : &x->in[i];
 	}
 	
 	//assign the output vectors
 	for (i=0;i<x->num_outputs;i++) {
-		out[i] = (float *)(w[x->num_inputs+i+2]);
+		out[i] = (t_double *)(outs[i]);
 	}
 	
 	for(j=0;j<n;j++) {
@@ -340,87 +397,5 @@ t_int *vcomb_perform(t_int *w)
 		*out[0]++ = x->last_output1[j] = feedback_coeff*samples[0] + fft1;
 		*out[1]++ = x->last_output2[j] = feedback_coeff*samples[1] + fft2;
 		
-	}
-	
-	//return a pointer to the next object in the signal chain.
-out:
-	return w + x->num_inputs + x->num_outputs + 3;
-}	
-
-
-//tells the user about the inputs/outputs when mousing over them
-void vcomb_assist(t_vcomb *x, void *b, long m, long a, char *s)
-{
-	int i;
-	if (m==1) {
-		for(i=0;i<x->num_inputs;i++)
-			if (a==0)  sprintf(s, "fft in 1");
-			if (a==1)  sprintf(s, "fft in 2");
-			if (a==2)  sprintf(s, "delay time (int: in unit samples)");
-			if (a==3)  sprintf(s, "feedback coefficient (float)");
-	}
-	if (m==2) {
-		for(i=0;i<x->num_outputs;i++)
-			if (a==0)  sprintf(s, "fft out 1");
-			if (a==1)  sprintf(s, "fft out 2");
-	}
-}
-
-
-//this gets called when ever a float is received at *any* input
-void vcomb_float(t_vcomb *x, double f)
-{
-	int i;
-	
-	//check to see which input the float came in, then set the appropriate variable value
-	for(i=0;i<x->num_inputs;i++) {
-		if (x->x_obj.z_in == i) {
-			x->in[i] = f;
-			post("vcomb~: setting in[%d] =  %f", i, f);
-		} 
-	}
-}
-
-
-//what to do when we get the message "mymessage" and a value (or list of values)
-void vcomb_mymessage(t_vcomb *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	float temp;
-	long temp2; 
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-    			post("vcomb~: received argument %d of mymessage with value %d", i+1, temp2);
-				break;
-			case A_FLOAT:
-				temp = argv[i].a_w.w_float;
-    			post("vcomb~: received argument %d of mymessage with value %f", i+1, temp);
-				break;
-		}
-	}
-}
-
-//what to do when we get the message "mymessage" and a value (or list of values)
-void vcomb_setpower(t_vcomb *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	float temp;
-	long temp2; 
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-				x->power = temp2;
-    			post("vcomb~: power = %d", x->power);
-				break;
-			case A_FLOAT:
-				temp = argv[i].a_w.w_float;
-    			//post("vcomb~: received argument %d of mymessage with value %f", i+1, temp);
-				break;
-		}
 	}
 }

@@ -9,8 +9,11 @@
 /*  by dan trueman ('98 and on....	)		*/
 /*											*/
 /********************************************/
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include <math.h>
 #include <stdio.h>
@@ -20,7 +23,7 @@
 #define MAXBUFLENGTH 3.*132300. 
 #define BUFSIZE BUFLENGTH
 
-void *scrub_class;
+t_class *scrub_class;
 
 typedef struct _scrub
 {
@@ -68,31 +71,34 @@ typedef struct _scrub
 
 //setup funcs
 void *scrub_new(double val);
-void scrub_dsp(t_scrub *x, t_signal **sp, short *count); 
-t_int *scrub_perform(t_int *w);
 void scrub_assist(t_scrub *x, void *b, long m, long a, char *s);
+
+void scrub_float(t_scrub *x, double f);
+void scrub_alloc(t_scrub *x);
+void scrub_free(t_scrub *x);
+
 float getSamp0(t_scrub *x);
 float getSamp1(t_scrub *x);
 float getSamp2(t_scrub *x);
-void scrub_float(t_scrub *x, double f);
-
-void scrub_alloc(t_scrub *x);
-void scrub_free(t_scrub *x);
 float recordEnvelope(t_scrub *x, float sample);
 float attackEnvelope(t_scrub *x, float sample);
 float decayEnvelope(t_scrub *x, float sample);
-void setoverlap(t_scrub *x, Symbol *s, short argc, Atom *argv);
-void setramp(t_scrub *x, Symbol *s, short argc, Atom *argv);
-void setdelay(t_scrub *x, Symbol *s, short argc, Atom *argv);
-void setpower(t_scrub *x, Symbol *s, short argc, Atom *argv);
-void setsync(t_scrub *x, Symbol *s, short argc, Atom *argv);
-void setrecord(t_scrub *x, Symbol *s, short argc, Atom *argv);
-void zero(t_scrub *x, Symbol *s, short argc, Atom *argv);
-void trigger(t_scrub *x, Symbol *s, short argc, Atom *argv);
+void setoverlap(t_scrub *x, t_symbol *s, long argc, t_atom *argv);
+void setramp(t_scrub *x, t_symbol *s, long argc, t_atom *argv);
+void setdelay(t_scrub *x, t_symbol *s, long argc, t_atom *argv);
+void setpower(t_scrub *x, t_symbol *s, long argc, t_atom *argv);
+void setsync(t_scrub *x, t_symbol *s, long argc, t_atom *argv);
+void setrecord(t_scrub *x, t_symbol *s, long argc, t_atom *argv);
+void zero(t_scrub *x, t_symbol *s, long argc, t_atom *argv);
+void trigger(t_scrub *x, t_symbol *s, long argc, t_atom *argv);
+
+// dsp stuff
+void scrub_dsp64(t_scrub *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void scrub_perform64(t_scrub *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 /****FUNCTIONS****/
 
-void setoverlap(t_scrub *x, Symbol *s, short argc, Atom *argv)
+void setoverlap(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -113,7 +119,7 @@ void setoverlap(t_scrub *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void setpower(t_scrub *x, Symbol *s, short argc, Atom *argv)
+void setpower(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -133,7 +139,7 @@ void setpower(t_scrub *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void setsync(t_scrub *x, Symbol *s, short argc, Atom *argv)
+void setsync(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -153,7 +159,7 @@ void setsync(t_scrub *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void setrecord(t_scrub *x, Symbol *s, short argc, Atom *argv)
+void setrecord(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -173,7 +179,7 @@ void setrecord(t_scrub *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void zero(t_scrub *x, Symbol *s, short argc, Atom *argv)
+void zero(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 {
 	long i;
 	
@@ -187,10 +193,8 @@ void zero(t_scrub *x, Symbol *s, short argc, Atom *argv)
 
 }
 
-void trigger(t_scrub *x, Symbol *s, short argc, Atom *argv)
+void trigger(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 {
-	long i;
-	
 	post ("scrub: triggering");
 	x->recordPoint = 0;
 	x->where0 = 0.;
@@ -200,7 +204,7 @@ void trigger(t_scrub *x, Symbol *s, short argc, Atom *argv)
 
 }
 
-void setramp(t_scrub *x, Symbol *s, short argc, Atom *argv)
+void setramp(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -225,7 +229,7 @@ void setramp(t_scrub *x, Symbol *s, short argc, Atom *argv)
 }
 
 //delay length in ms (sorta)
-void setdelay(t_scrub *x, Symbol *s, short argc, Atom *argv)
+void setdelay(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -351,27 +355,43 @@ float getSamp1(t_scrub *x)
 
 void scrub_assist(t_scrub *x, void *b, long m, long a, char *s)
 {
-	assist_string(13215,m,a,1,4,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"signal input");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) rate");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&scrub_class, (method)scrub_new, (method)scrub_free, (short)sizeof(t_scrub), 0L, A_DEFFLOAT, 0);
-    addmess((method)scrub_dsp, "dsp", A_CANT, 0);
-    addmess((method)scrub_assist,"assist",A_CANT,0);
-    addmess((method)setoverlap, "overlap", A_GIMME, 0);
-    addmess((method)setramp, "ramp", A_GIMME, 0);
-    addmess((method)setdelay, "delay", A_GIMME, 0);
-    addmess((method)setpower, "power", A_GIMME, 0);
-    addmess((method)setsync, "sync", A_GIMME, 0);
-    addmess((method)setrecord, "record", A_GIMME, 0);
-    addmess((method)zero, "zero", A_GIMME, 0);
-    addmess((method)trigger, "trigger", A_GIMME, 0);
-    addfloat((method)scrub_float);
-    dsp_initclass();
-    rescopy('STR#',13215);
+    t_class *c = class_new("scrub~", (method)scrub_new, (method)scrub_free, (long)sizeof(t_scrub), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)scrub_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)scrub_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)scrub_float, "float", A_FLOAT, 0);
+    
+    class_addmethod(c, (method)setoverlap, "overlap", A_GIMME, 0);
+    class_addmethod(c, (method)setramp, "ramp", A_GIMME, 0);
+    class_addmethod(c, (method)setdelay, "delay", A_GIMME, 0);
+    class_addmethod(c, (method)setpower, "power", A_GIMME, 0);
+    class_addmethod(c, (method)setsync, "sync", A_GIMME, 0);
+    class_addmethod(c, (method)setrecord, "record", A_GIMME, 0);
+    class_addmethod(c, (method)zero, "zero", A_GIMME, 0);
+    class_addmethod(c, (method)trigger, "trigger", A_GIMME, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    scrub_class = c;
+
 }
 
 void scrub_alloc(t_scrub *x){
@@ -419,10 +439,8 @@ void scrub_free(t_scrub *x)
 void *scrub_new(double scrubsize)
 {
 	int i;
-	
-	float rate;
 
-    t_scrub *x = (t_scrub *)newobject(scrub_class);
+    t_scrub *x = (t_scrub *)object_alloc(scrub_class);
        //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_scrub);i++)  
@@ -479,7 +497,7 @@ void *scrub_new(double scrubsize)
     x->delaylen1 = x->buflen;
     x->delaylen2 = x->buflen;
     x->delaylenUpdate = x->buflen;
-    x->recordPoint == 0;
+    x->recordPoint = 0;
 
     x->attkTail = x->delaylen - x->overlap;    
     x->overlapInv = 1./x->overlap; 
@@ -504,25 +522,12 @@ void *scrub_new(double scrubsize)
     return (x);
 }
 
-
-void scrub_dsp(t_scrub *x, t_signal **sp, short *count)
-{
-
-	x->rate_connected 	= count[1];
-	x->srate = sp[0]->s_sr;
-    x->one_over_srate = 1./x->srate;
-    x->srate_ms = .001 * x->srate;
-    x->one_over_srate_ms = 1. / x->srate_ms;
-	dsp_add(scrub_perform, 6, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[0]->s_n);	
-	
-}
-
 void scrub_float(t_scrub *x, double f)
 {
 	if (x->x_obj.z_in == 1) {
 		x->rate = f;
 		//post("scrub: setting rate =  %f", f);
-	} 
+	}
 }
 
 float recordEnvelope(t_scrub *x, float sample)
@@ -538,19 +543,19 @@ float recordEnvelope(t_scrub *x, float sample)
 }
 
 /*
-float attackEnvelope(t_scrub *x, float sample)
-//float decayEnvelope(t_scrub *x, float sample)
-{
-	//long tail = x->attkTail; 
-	long tail = x->recordlen - x->overlap; 
-	float coeff = (x->recordPoint - (float)tail)*x->overlapInv;
-
-	if(x->recordPoint > tail) sample *= coeff;
-	else sample = 0.;
-	
-	return sample;
-}
-*/
+ float attackEnvelope(t_scrub *x, float sample)
+ //float decayEnvelope(t_scrub *x, float sample)
+ {
+ //long tail = x->attkTail;
+ long tail = x->recordlen - x->overlap;
+ float coeff = (x->recordPoint - (float)tail)*x->overlapInv;
+ 
+ if(x->recordPoint > tail) sample *= coeff;
+ else sample = 0.;
+ 
+ return sample;
+ }
+ */
 float attackEnvelope(t_scrub *x, float sample)
 {
 	if(x->recordPoint < x->overlap) sample *= x->recordPoint*x->overlapInv;
@@ -569,31 +574,38 @@ float decayEnvelope(t_scrub *x, float sample)
 	return sample;
 }
 
-
-t_int *scrub_perform(t_int *w)
+void scrub_dsp64(t_scrub *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	t_scrub *x = (t_scrub *)(w[1]);
-        
-	float *in = (float *)(w[2]); 
-	float rate = x->rate_connected? *(float *)(w[3]) : x->rate;
-	float *fcoeff = (float *)(w[4]);
-	float output, input, insave, outsave;
-	float *out = (float *)(w[5]);
-	long n = w[6];
-	int moveon;
+	x->rate_connected 	= count[1];
+	x->srate = samplerate;
+    x->one_over_srate = 1./x->srate;
+    x->srate_ms = .001 * x->srate;
+    x->one_over_srate_ms = 1. / x->srate_ms;
+
+    object_method(dsp64, gensym("dsp_add64"), x, scrub_perform64, 0, NULL);
+}
+
+void scrub_perform64(t_scrub *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+	t_double *in = (t_double *)(ins[0]);
+	t_double rate = x->rate_connected? *(t_double *)(ins[1]) : x->rate;
+	t_double *fcoeff = (t_double *)(ins[2]);
+	t_double output, input, insave, outsave;
+	t_double *out = (t_double *)(outs[0]);
+	long n = sampleframes;
 	
-	if (x->x_obj.z_disabled) goto out;
+	if (x->x_obj.z_disabled) return;
 	
 	if(x->power) {
 		while(n--) {
-		
+            
 			input = *in++;
 			
 			//x->where += rate;
 			x->where0 += rate;
 			x->where1 += rate;
 			x->where2 += rate;
-
+            
 			if(x->recordPoint == 0 && x->record) {
 				x->whichBuf += 1;
 				if(x->whichBuf >= 3) x->whichBuf = 0;
@@ -603,23 +615,23 @@ t_int *scrub_perform(t_int *w)
 				x->recordenvInv = 1./x->recordenv;
 				
 				x->overlap = x->overlapUpdate;
-				if(x->overlap > 0.5*x->recordlen) x->overlap = 0.5*x->recordlen;    
-	    		x->overlapInv = 1./x->overlap; 
+				if(x->overlap > 0.5*x->recordlen) x->overlap = 0.5*x->recordlen;
+	    		x->overlapInv = 1./x->overlap;
 				
-				//if(x->updatevals-- == 0) {	
-					x->delaylen = x->delaylenUpdate;
-					/*
-					x->overlap = x->overlapUpdate;
-					if(x->overlap > 0.5*x->delaylen) x->overlap = 0.5*x->delaylen;
-	    			x->overlapInv = 1./x->overlap; 
-	    			*/
-				//}		
+				//if(x->updatevals-- == 0) {
+                x->delaylen = x->delaylenUpdate;
+                /*
+                 x->overlap = x->overlapUpdate;
+                 if(x->overlap > 0.5*x->delaylen) x->overlap = 0.5*x->delaylen;
+                 x->overlapInv = 1./x->overlap;
+                 */
+				//}
 			}
 			
-			//calcCoeffs(x), put sample;		
+			//calcCoeffs(x), put sample;
 			if(x->whichBuf == 0) {
 				x->coeff[0] = 0.;
-				x->coeff[1] = decayEnvelope(x, 1.); 
+				x->coeff[1] = decayEnvelope(x, 1.);
 				x->coeff[2] = attackEnvelope(x, 1.);
 				
 				x->buf0[x->recordPoint] = recordEnvelope(x, input + *fcoeff++ * x->feedback);
@@ -637,7 +649,7 @@ t_int *scrub_perform(t_int *w)
 				if (++x->recordPoint >= x->recordlen) x->recordPoint = 0;
 			}
 			else if(x->whichBuf == 1) {
-				x->coeff[2] = decayEnvelope(x, 1.); 
+				x->coeff[2] = decayEnvelope(x, 1.);
 				x->coeff[1] = 0.;
 				x->coeff[0] = attackEnvelope(x, 1.);
 				
@@ -650,16 +662,16 @@ t_int *scrub_perform(t_int *w)
 					output = x->coeff[0]*getSamp0(x) + x->coeff[2]*getSamp2(x);
 				else
 					output = getSamp2(x);
-					
+                
 				insave = x->buf2[x->recordPoint];
 				outsave = getSamp2(x);
 				if (++x->recordPoint >= x->recordlen) x->recordPoint = 0;
 			}
 			else if(x->whichBuf == 2) {
-				x->coeff[0] = decayEnvelope(x, 1.); 
+				x->coeff[0] = decayEnvelope(x, 1.);
 				x->coeff[2] = 0.;
 				x->coeff[1] = attackEnvelope(x, 1.);
-
+                
 				x->buf2[x->recordPoint] = recordEnvelope(x, input + *fcoeff++ * x->feedback);
 				
 				x->delaylen2 = x->delaylen;
@@ -668,12 +680,12 @@ t_int *scrub_perform(t_int *w)
 				if(x->record)
 					output = x->coeff[0]*getSamp0(x) + x->coeff[1]*getSamp1(x);
 				else
-					output = getSamp0(x); 
-					
+					output = getSamp0(x);
+                
 				insave = x->buf0[x->recordPoint];
 				outsave = getSamp0(x);
 				if (++x->recordPoint >= x->recordlen) x->recordPoint = 0;
-					
+                
 			}
 			else output = 0.;
 		    
@@ -684,7 +696,6 @@ t_int *scrub_perform(t_int *w)
 		}
 	}
 	else while(n--) *out++ = 0.;
-	out:
-	return w + 7;
-}	
+}
+
 

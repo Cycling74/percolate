@@ -3,6 +3,9 @@
 //retaining some of the flute potentials of the blotar~
 //
 //dt 2004; yet another PeRColate hack
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// -------------------------------------------------
 
 //messages: 	  pluck string amp position;
 //		    	  vibfreq string frequency; vibamp string value;
@@ -17,12 +20,12 @@
 //				  post-distortion output gain;
 
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include "ext_strings.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 #include "stk_c.h" 
 
@@ -51,7 +54,7 @@
 #define MAX_INPUTS 10 	//arbitrary
 #define MAX_OUTPUTS 10	//also arbitrary
 
-void *nublotar_class;
+t_class *nublotar_class;
 
 typedef struct _blostring
 {
@@ -94,7 +97,7 @@ typedef struct _nublotar
     //variables specific to this object
     float srate, one_over_srate;  	//sample rate vars
     long num_inputs, num_outputs; 	//number of inputs and outputs
-    float in[MAX_INPUTS];			//values of input variables
+    double in[MAX_INPUTS];			//values of input variables
     float in_connected[MAX_INPUTS]; //booleans: true if signals connected to the input in question
     //we use this "connected" boolean so that users can connect *either* signals or floats
     //to the various inputs; sometimes it's easier just to have floats, but other times
@@ -144,26 +147,27 @@ typedef struct _nublotar
 //args that the user can input, in which case nublotar_new will have to change
 void *nublotar_new(long num_inputs, long num_outputs);
 void nublotar_free(t_nublotar *x);
-void nublotar_dsp(t_nublotar *x, t_signal **sp, short *count); 
-t_int *nublotar_perform(t_int *w);
 void nublotar_assist(t_nublotar *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void nublotar_dsp64(t_nublotar *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void nublotar_perform64(t_nublotar *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 //for getting floats at inputs
 void nublotar_float(t_nublotar *x, double f);
-
-void nublotar_setpower(t_nublotar *x, Symbol *s, short argc, Atom *argv);
+void nublotar_setpower(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
 
 //message prototypes
-void nublotar_pluck(t_nublotar *x, Symbol *s, short argc, Atom *argv);
-void nublotar_vib(t_nublotar *x, Symbol *s, short argc, Atom *argv);
-void nublotar_breathpressure(t_nublotar *x, Symbol *s, short argc, Atom *argv);
-void nublotar_noisegain(t_nublotar *x, Symbol *s, short argc, Atom *argv);
-void nublotar_setlimit(t_nublotar *x, Symbol *s, short argc, Atom *argv);
-void nublotar_setsustain(t_nublotar *x, Symbol *s, short argc, Atom *argv);
-void nublotar_lowpasscross(t_nublotar *x, Symbol *s, short argc, Atom *argv);
-void nublotar_feedfreq(t_nublotar *x, Symbol *s, short argc, Atom *argv);
-void nublotar_feedgain(t_nublotar *x, Symbol *s, short argc, Atom *argv);
-void nublotar_distortgain(t_nublotar *x, Symbol *s, short argc, Atom *argv);
+void nublotar_pluck(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
+void nublotar_vib(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
+void nublotar_breathpressure(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
+void nublotar_noisegain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
+void nublotar_setlimit(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
+void nublotar_setsustain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
+void nublotar_lowpasscross(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
+void nublotar_feedfreq(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
+void nublotar_feedgain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
+void nublotar_distortgain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv);
 
 //string-bore functions
 float blostring_tick(t_nublotar *x, BloString *blostring, float sample);
@@ -202,7 +206,7 @@ float oz_tick(t_nublotar *x, float sample);
 float blostring_tick(t_nublotar *x, BloString *blostring, float sample)  
 {
 
-	float temp, tempsave, randPressure;
+	float temp, tempsave;
 	
 	temp = DLineL_tick(&blostring->boreDelay, sample + blostring->er * blostring->last_output);
 	/*
@@ -350,7 +354,7 @@ void setPoleCoeffs(t_nublotar *x, float *coeffs)
 
 float ap_tick(t_nublotar *x, float sample)
 {
-	int i, tempcount;			      		
+	int i;
     float temp;                          
 
     temp = sample * x->ap_gain;             
@@ -370,21 +374,21 @@ void nbody_setup(t_nublotar *x) {
 }
 
 float nbody_tick(t_nublotar *x) {
-  
+    return 0.0;
 }
 
 
 //primary MSP funcs
 void ext_main(void* p)
 {
-	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
-	//change these if you want different user args
-    setup((struct messlist **)&nublotar_class, (method)nublotar_new, (method)nublotar_free, (short)sizeof(t_nublotar), 0L, A_DEFLONG, A_DEFLONG, 0);
-   
-	//standard messages; don't change these  
-    addmess((method)nublotar_dsp, "dsp", A_CANT, 0);
-    addmess((method)nublotar_assist,"assist", A_CANT,0);
+    t_class *c = class_new("nublotar~", (method)nublotar_new, (method)nublotar_free, (long)sizeof(t_nublotar), 0L, A_DEFLONG, A_DEFLONG, 0);
     
+    class_addmethod(c, (method)nublotar_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)nublotar_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)nublotar_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)nbody_int, "int", A_LONG, 0);
+
     //messages: 	  pluck string amp position;
 	//		    	  vibfreq string frequency; vibamp string value;
 	//				  breathpressure string value;
@@ -394,32 +398,30 @@ void ext_main(void* p)
 	//				  feedfreq frequency;
 	//				  feedgain value;
 	//				  distortgain value;
-    addmess((method)nublotar_pluck, 			"pluck", A_GIMME, 0);
-    addmess((method)nublotar_vib, 			"vibrato", A_GIMME, 0);
-    //addmess((method)nublotar_breathpressure, "breathpressure", A_GIMME, 0);
-    addmess((method)nublotar_noisegain, 		"noise", A_GIMME, 0);
-    addmess((method)nublotar_setlimit, 		"limit", A_GIMME, 0);
-    addmess((method)nublotar_setsustain, 	"setsustain", A_GIMME, 0);
-    addmess((method)nublotar_lowpasscross, 	"lowpasscross", A_GIMME, 0);
-    //addmess((method)nublotar_feedfreq, 		"feedfreq", A_GIMME, 0);
-    addmess((method)nublotar_feedgain, 		"feedgain", A_GIMME, 0);
-    addmess((method)nublotar_distortgain, 	"distortgain", A_GIMME, 0);
-    addmess((method)nublotar_setpower, 		"power", A_GIMME, 0);
-    
-    //so we know what to do with floats that we receive at the inputs
-    addfloat((method)nublotar_float);
+    class_addmethod(c, (method)nublotar_pluck, 			"pluck", A_GIMME, 0);
+    class_addmethod(c, (method)nublotar_vib, 			"vibrato", A_GIMME, 0);
+    //class_addmethod(c, (method)nublotar_breathpressure, "breathpressure", A_GIMME, 0);
+    class_addmethod(c, (method)nublotar_noisegain, 		"noise", A_GIMME, 0);
+    class_addmethod(c, (method)nublotar_setlimit, 		"limit", A_GIMME, 0);
+    class_addmethod(c, (method)nublotar_setsustain, 	"setsustain", A_GIMME, 0);
+    class_addmethod(c, (method)nublotar_lowpasscross, 	"lowpasscross", A_GIMME, 0);
+    //class_addmethod(c, (method)nublotar_feedfreq, 		"feedfreq", A_GIMME, 0);
+    class_addmethod(c, (method)nublotar_feedgain, 		"feedgain", A_GIMME, 0);
+    class_addmethod(c, (method)nublotar_distortgain, 	"distortgain", A_GIMME, 0);
+    class_addmethod(c, (method)nublotar_setpower, 		"power", A_GIMME, 0);
     
     //nbody messeages
-    addmess((method)nbody_guitar1, "guitar1", A_GIMME, 0);
-    addmess((method)nbody_guitar2, "guitar2", A_GIMME, 0);
-    addmess((method)nbody_mandolin, "mandolin", A_GIMME, 0);
-    addmess((method)nbody_violin, "violin", A_GIMME, 0);
-    addmess((method)nbody_hardanger, "hardanger", A_GIMME, 0);
-    addmess((method)nbody_archtop, "archtop", A_GIMME, 0);
-    addint((method)nbody_int);
+    class_addmethod(c, (method)nbody_guitar1, "guitar1", A_GIMME, 0);
+    class_addmethod(c, (method)nbody_guitar2, "guitar2", A_GIMME, 0);
+    class_addmethod(c, (method)nbody_mandolin, "mandolin", A_GIMME, 0);
+    class_addmethod(c, (method)nbody_violin, "violin", A_GIMME, 0);
+    class_addmethod(c, (method)nbody_hardanger, "hardanger", A_GIMME, 0);
+    class_addmethod(c, (method)nbody_archtop, "archtop", A_GIMME, 0);
     
-    //gotta have this one....
-    dsp_initclass();
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    nublotar_class = c;
 }
 
 //this gets called when the object is created; everytime the user types in new args, this will get called
@@ -428,7 +430,7 @@ void *nublotar_new(long num_inputs, long num_outputs)
 	int i;
 	
 	//leave this; creates our object
-    t_nublotar *x = (t_nublotar *)newobject(nublotar_class);
+    t_nublotar *x = (t_nublotar *)object_alloc(nublotar_class);
     
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
@@ -543,172 +545,30 @@ void nublotar_free(t_nublotar *x)
 	dsp_free((t_pxobject *)x);
 }
 
-
-//this gets called everytime audio is started; even when audio is running, if the user
-//changes anything (like deletes a patch cord), audio will be turned off and
-//then on again, calling this func.
-//this adds the "perform" method to the DSP chain, and also tells us
-//where the audio vectors are and how big they are
-void nublotar_dsp(t_nublotar *x, t_signal **sp, short *count)
-{
-	void *dsp_add_args[MAX_INPUTS + MAX_OUTPUTS + 2];
-	int i;
-
-	//set sample rate vars
-	x->srate = sp[0]->s_sr;
-	x->one_over_srate = 1./x->srate;
-	
-	//check to see if there are signals connected to the various inputs
-	for(i=0;i<x->num_inputs;i++) x->in_connected[i]	= count[i];
-	
-	//construct the array of vectors and stuff
-	dsp_add_args[0] = x; //the object itself
-    for(i=0;i< (x->num_inputs + x->num_outputs); i++) { //pointers to the input and output vectors
-    	dsp_add_args[i+1] = sp[i]->s_vec;
-    }
-    dsp_add_args[x->num_inputs + x->num_outputs + 1] = (void *)sp[0]->s_n; //pointer to the vector size
-	dsp_addv(nublotar_perform, (x->num_inputs + x->num_outputs + 2), dsp_add_args); //add them to the signal chain
-	
-}
-
-
-t_int *nublotar_perform(t_int *w)
-{
-	t_nublotar *x = (t_nublotar *)(w[1]);
-
-	float *in[MAX_INPUTS]; 		//pointers to the input vectors
-	float *out[MAX_OUTPUTS];	//pointers to the output vectors
-
-	long n = w[x->num_inputs + x->num_outputs + 2];	//number of samples per vector
-	
-	//random local vars
-	long i, j, k;
-	float inputs[MAX_INPUTS];
-	float string_bore_output, distortion_output, outmix, temp, pressureDiff, randPressure, inPressure;
-	float fr[NUM_STRINGS], jd;
-	
-	if (x->x_obj.z_disabled || !x->power) goto out;
-	
-	//check to see if we have a signal or float message connected to input
-	//then assign the pointer accordingly
-	for (i=0;i<x->num_inputs;i++) {
-		in[i] = x->in_connected[i] ? (float *)(w[i+2]) : &x->in[i];
-	}
-	
-	//assign the output vectors
-	for (i=0;i<x->num_outputs;i++) {
-		out[i] = (float *)(w[x->num_inputs+i+2]);
-	}
-	
-	for(j=0;j<NUM_STRINGS;j++) {
-		if (x->blo_string[j].pluckAmp > 0.) {
-			if(x->blo_string[j].pluckPos < 0.) {
-				//load with noise
-				for (i=0;i<x->blo_string[j].boreDelay.length;i++) {
-					x->blo_string[j].boreDelay.inputs[i] = Noise_tick() * x->blo_string[j].pluckAmp;
-				}
-			} else {
-				//load with noise
-				for (i=0;i<x->blo_string[j].boreDelay.length;i++) {
-					x->blo_string[j].boreDelay.inputs[i] = DCBlock_tick(&x->pluckblock, Noise_tick() * x->blo_string[j].pluckAmp);
-				}
-				//lowpass a few times; isn't this just wildly brilliant?
-				pluck_squish(x, &x->blo_string[j]);
-			}
-			x->blo_string[j].pluckAmp = 0.;
-		}
-	}
-	
-	while(n--) {
-		
-		//grab the inputs; ok, this isn't the most efficient way to do this, but what the hell....
-		for(i=0;i<x->num_inputs;i++)
-			if(x->in_connected[i]) inputs[i] = *in[i]++; //use and increment the signal vector if there is one
-			else inputs[i] += *in[i];					 //otherwise use the global variable
-		
-		//set variables
-		jd						  = inputs[NUM_STRINGS];
-		x->predistortion_outgain  = inputs[NUM_STRINGS+1];
-		x->postdistortion_outgain = inputs[NUM_STRINGS+2];
-		x->blo_string[0].bp		  = inputs[NUM_STRINGS+3];
-		//inPressure				  = inputs[NUM_STRINGS+4];
-		
-		//blowing; this could probably be done on each string individually.... but maybe not.
-		randPressure  = x->blo_string[0].ng * Noise_tick();
-		randPressure += x->blo_string[0].va * vib_tick(x, &x->blo_string[0]);
-		randPressure *= x->blo_string[0].bp;
-		
-		//set string frequencies, if necessary, and then sum their outputs
-		string_bore_output = 0.;
-		for(i=0;i<NUM_STRINGS;i++) {
-			fr[i] = inputs[i];
-			if(fr[i] != x->blo_string[i].fr) {
-				setFreq(x, &x->blo_string[i], fr[i]);
-				x->blo_string[i].fr = fr[i];
-			}
-			string_bore_output += blostring_tick(x, &x->blo_string[i], x->x_jr * x->last_output);
-		}
-		
-		
-		//do nbody filter
-		if(x->direction > -1) {
-			string_bore_output = oz_tick(x, string_bore_output);
-			string_bore_output = ap_tick(x, string_bore_output);
-		}
-		
-		
-		//calculate pressure difference
-		//pressureDiff = x->blo_string[0].bp + randPressure + inPressure - string_bore_output*ONE_OVER_NUMSTRINGS;	
-		pressureDiff = x->blo_string[0].bp + randPressure - string_bore_output*ONE_OVER_NUMSTRINGS;
-
-		//reset the feedback delay time, if necessary
-		if(jd != x->x_jd) {
-			setJetDelay(x, jd);
-			x->x_jd = jd;
-		}
-		
-		//feedback delay line
-		temp = DLineL_tick(&x->jetDelay, pressureDiff);
-		
-		//distortion
-		distortion_output = x->last_output = JetTabl_lookup(x->predistortion_gain*temp);
-		
-		//send it all out
-		*out[0]++ =  x->predistortion_outgain*string_bore_output + x->postdistortion_outgain*distortion_output;
-		
-	}
-	
-//return a pointer to the next object in the signal chain.
-out:
-	return w + x->num_inputs + x->num_outputs + 3;
-}	
-
-
 //tells the user about the inputs/outputs when mousing over them
 void nublotar_assist(t_nublotar *x, void *b, long m, long a, char *s)
 {
 	int i;
 	//could use switch/case inside for loops, to give more informative assist info....
 	if (m==1) {
-		if (a==0)  sprintf(s, "input %d: string/bore 1 frequency", a);
-		if (a==1)  sprintf(s, "input %d: string/bore 2 frequency", a);
-		if (a==2)  sprintf(s, "input %d: string/bore 3 frequency", a);
-		if (a==3)  sprintf(s, "input %d: string/bore 4 frequency", a);
-		if (a==4)  sprintf(s, "input %d: string/bore 5 frequency", a);
-		if (a==5)  sprintf(s, "input %d: string/bore 6 frequency", a);
-		if (a==6)  sprintf(s, "input %d: feedback/jet frequency", a);
-		if (a==7)  sprintf(s, "input %d: predistortion output level", a);
-		if (a==8)  sprintf(s, "input %d: postdistortion output level", a);
-		if (a==9)  sprintf(s, "input %d: breath pressure", a);
-		if (a==10)  sprintf(s, "input %d: input signal", a);
-
+		if (a==0)  sprintf(s, "input %ld: string/bore 1 frequency", a);
+		if (a==1)  sprintf(s, "input %ld: string/bore 2 frequency", a);
+		if (a==2)  sprintf(s, "input %ld: string/bore 3 frequency", a);
+		if (a==3)  sprintf(s, "input %ld: string/bore 4 frequency", a);
+		if (a==4)  sprintf(s, "input %ld: string/bore 5 frequency", a);
+		if (a==5)  sprintf(s, "input %ld: string/bore 6 frequency", a);
+		if (a==6)  sprintf(s, "input %ld: feedback/jet frequency", a);
+		if (a==7)  sprintf(s, "input %ld: predistortion output level", a);
+		if (a==8)  sprintf(s, "input %ld: postdistortion output level", a);
+		if (a==9)  sprintf(s, "input %ld: breath pressure", a);
+		if (a==10)  sprintf(s, "input %ld: input signal", a);
+        
 	}
 	if (m==2) {
 		for(i=0;i<x->num_outputs;i++)
 			if (a==i)  sprintf(s, "output mix");
 	}
 }
-
 
 //this gets called when ever a float is received at *any* input
 void nublotar_float(t_nublotar *x, double f)
@@ -720,13 +580,13 @@ void nublotar_float(t_nublotar *x, double f)
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
 			//post("nublotar~: setting in[%d] =  %f", i, f);
-		} 
+		}
 	}
 }
 
 //messages
 //				  pluck string amp position;
-void nublotar_pluck(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_pluck(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp[10], amp, position, width;
@@ -752,16 +612,15 @@ void nublotar_pluck(t_nublotar *x, Symbol *s, short argc, Atom *argv)
 	position = temp[2];
 	width = temp[3];
 	dopluck(x, &x->blo_string[stringtopluck], amp, position, width);
-
+    
 }
 
 //		    	  vib string frequency amp;
-void nublotar_vib(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_vib(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
-
+    
 	short i;
-	float temp[10], freq, amp;
-	short string;
+	float temp[10], freq;
 	if (argc>10) argc = 10;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
@@ -778,18 +637,17 @@ void nublotar_vib(t_nublotar *x, Symbol *s, short argc, Atom *argv)
 	
 	//string = (short)temp[0];
 	freq = temp[0];
-	x->blo_string[0].va = temp[1]; 
+	x->blo_string[0].va = temp[1];
 	setVibFreq(x, &x->blo_string[0], freq);
-
+    
 }
 
 //				  breathpressure string value;
-void nublotar_breathpressure(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_breathpressure(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
-
+    
 	short i;
-	float temp[10], amp;
-	short string;
+	float temp[10];
 	if (argc>10) argc = 10;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
@@ -806,17 +664,16 @@ void nublotar_breathpressure(t_nublotar *x, Symbol *s, short argc, Atom *argv)
 	
 	//need to set this up so that string = -1 will set *all* string vals
 	//string = (short)temp[0];
-	x->blo_string[0].bp = temp[0]; 
+	x->blo_string[0].bp = temp[0];
 	//post("bp = %f", x->blo_string[0].bp);
 	
 }
 
-void nublotar_noisegain(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_noisegain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
-
+    
 	short i;
-	float temp[10], amp;
-	short string;
+	float temp[10];
 	if (argc>10) argc = 10;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
@@ -833,18 +690,17 @@ void nublotar_noisegain(t_nublotar *x, Symbol *s, short argc, Atom *argv)
 	
 	//need to set this up so that string = -1 will set *all* string vals
 	//string = (short)temp[0];
-	x->blo_string[0].ng = temp[0]; 
+	x->blo_string[0].ng = temp[0];
 	//post("ng = %f",  x->blo_string[0].ng);
 	
 }
 
 //			      setfreq string frequency;
-void nublotar_setlimit(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_setlimit(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
-
+    
 	short i;
-	float temp[10], freq;
-	short string;
+	float temp[10];
 	if (argc>10) argc = 10;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
@@ -860,15 +716,15 @@ void nublotar_setlimit(t_nublotar *x, Symbol *s, short argc, Atom *argv)
 	}
 	
 	x->limit = temp[0];
-
+    
 }
 
 //				  setsustain string value;
-void nublotar_setsustain(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_setsustain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
-
+    
 	short i;
-	float temp[10], amp;
+	float temp[10];
 	short string;
 	if (argc>10) argc = 10;
 	for (i=0; i < argc; i++) {
@@ -885,19 +741,19 @@ void nublotar_setsustain(t_nublotar *x, Symbol *s, short argc, Atom *argv)
 	}
 	
 	string = (short)temp[0];
-	if(string >=0) x->blo_string[string].er = temp[1]; 
+	if(string >=0) x->blo_string[string].er = temp[1];
 	else for(i=0;i<NUM_STRINGS;i++) {
 		x->blo_string[i].er = temp[1];
 	}
-
+    
 }
 
 //				  lowpasscross string;
-void nublotar_lowpasscross(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_lowpasscross(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
-
+    
 	short i;
-	float temp[10], amp;
+	float temp[10];
 	short string;
 	if (argc>10) argc = 10;
 	for (i=0; i < argc; i++) {
@@ -915,22 +771,21 @@ void nublotar_lowpasscross(t_nublotar *x, Symbol *s, short argc, Atom *argv)
 	
 	string = (short)temp[0];
 	if(string >=0) {
-		x->blo_string[string].filterRatio = temp[1]; 
-		x->blo_string[string].filterRatioInv = 1. - temp[1]; 
+		x->blo_string[string].filterRatio = temp[1];
+		x->blo_string[string].filterRatioInv = 1. - temp[1];
 	} else for(i=0;i<NUM_STRINGS;i++) {
-		x->blo_string[i].filterRatio = temp[1]; 
-		x->blo_string[i].filterRatioInv = 1. - temp[1]; 
+		x->blo_string[i].filterRatio = temp[1];
+		x->blo_string[i].filterRatioInv = 1. - temp[1];
 	}
-
+    
 }
 
 //				  feedfreq frequency
-void nublotar_feedfreq(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_feedfreq(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
-
+    
 	short i;
-	float temp[10], amp;
-	short string;
+	float temp[10];
 	if (argc>10) argc = 10;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
@@ -951,12 +806,11 @@ void nublotar_feedfreq(t_nublotar *x, Symbol *s, short argc, Atom *argv)
 }
 
 //				  feedgain value;
-void nublotar_feedgain(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_feedgain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
-
+    
 	short i;
-	float temp[10], amp;
-	short string;
+	float temp[10];
 	if (argc>10) argc = 10;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
@@ -970,18 +824,17 @@ void nublotar_feedgain(t_nublotar *x, Symbol *s, short argc, Atom *argv)
 				break;
 		}
 	}
-
-	x->x_jr = temp[0]; 
+    
+	x->x_jr = temp[0];
 	//post ("x_jr = %f", x->x_jr);
-
+    
 }
 
 //				  distortgain value;
-void nublotar_distortgain(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_distortgain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
-	float temp[10], amp;
-	short string;
+	float temp[10];
 	if (argc>10) argc = 10;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
@@ -997,16 +850,15 @@ void nublotar_distortgain(t_nublotar *x, Symbol *s, short argc, Atom *argv)
 	}
 	
 	x->predistortion_gain = temp[0];
-	//post("predistortion_gain set to %f", x->predistortion_gain); 
-
-
+	//post("predistortion_gain set to %f", x->predistortion_gain);
+    
+    
 }
 
-void nublotar_setpower(t_nublotar *x, Symbol *s, short argc, Atom *argv)
+void nublotar_setpower(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
-	float temp[10], amp;
-	short string;
+	float temp[10];
 	if (argc>10) argc = 10;
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
@@ -1085,15 +937,137 @@ void nbody_int(t_nublotar *x, int f)
 		post("nublotar: nbody filter bypassed");
 	} else {
 		post("nublotar: changing filter to %d", f);
-				
+        
 		f--;
 		x->direction = f;
 		
-		if (x->instrument = GUITAR1) nbody_guitar1(x, 0.);
-		if (x->instrument = GUITAR2) nbody_guitar2(x, 0.);
-		if (x->instrument = VIOLIN) nbody_violin(x, 0.);
-		if (x->instrument = HARDANGER) nbody_hardanger(x, 0.);
-		if (x->instrument = MANDOLIN) nbody_mandolin(x, 0.);
-		if (x->instrument = ARCHTOP) nbody_archtop(x, 0.);
+		if (x->instrument == GUITAR1) nbody_guitar1(x, 0.);
+		if (x->instrument == GUITAR2) nbody_guitar2(x, 0.);
+		if (x->instrument == VIOLIN) nbody_violin(x, 0.);
+		if (x->instrument == HARDANGER) nbody_hardanger(x, 0.);
+		if (x->instrument == MANDOLIN) nbody_mandolin(x, 0.);
+		if (x->instrument == ARCHTOP) nbody_archtop(x, 0.);
 	}
 }
+
+
+void nublotar_dsp64(t_nublotar *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
+{
+	int i;
+    
+	//set sample rate vars
+	x->srate = samplerate;
+	x->one_over_srate = 1./x->srate;
+	
+	//check to see if there are signals connected to the various inputs
+	for(i=0;i<x->num_inputs;i++) x->in_connected[i]	= count[i];
+    object_method(dsp64, gensym("dsp_add64"), x, nublotar_perform64, 0, NULL);
+}
+
+
+
+void nublotar_perform64(t_nublotar *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+	t_double *in[MAX_INPUTS]; 		//pointers to the input vectors
+	t_double *out[MAX_OUTPUTS];	//pointers to the output vectors
+
+	long n = sampleframes;	//number of samples per vector
+	
+	//random local vars
+	long i, j;
+	t_double inputs[MAX_INPUTS];
+	t_double string_bore_output, distortion_output, temp, pressureDiff, randPressure;
+	t_double fr[NUM_STRINGS], jd;
+	
+	if (x->x_obj.z_disabled || !x->power) return;
+	
+	//check to see if we have a signal or float message connected to input
+	//then assign the pointer accordingly
+	for (i=0;i<x->num_inputs;i++) {
+		in[i] = x->in_connected[i] ? (t_double *)(ins[i]) : &x->in[i];
+	}
+	
+	//assign the output vectors
+	for (i=0;i<x->num_outputs;i++) {
+		out[i] = (t_double *)(outs[i]);
+	}
+	
+	for(j=0;j<NUM_STRINGS;j++) {
+		if (x->blo_string[j].pluckAmp > 0.) {
+			if(x->blo_string[j].pluckPos < 0.) {
+				//load with noise
+				for (i=0;i<x->blo_string[j].boreDelay.length;i++) {
+					x->blo_string[j].boreDelay.inputs[i] = Noise_tick() * x->blo_string[j].pluckAmp;
+				}
+			} else {
+				//load with noise
+				for (i=0;i<x->blo_string[j].boreDelay.length;i++) {
+					x->blo_string[j].boreDelay.inputs[i] = DCBlock_tick(&x->pluckblock, Noise_tick() * x->blo_string[j].pluckAmp);
+				}
+				//lowpass a few times; isn't this just wildly brilliant?
+				pluck_squish(x, &x->blo_string[j]);
+			}
+			x->blo_string[j].pluckAmp = 0.;
+		}
+	}
+	
+	while(n--) {
+		
+		//grab the inputs; ok, this isn't the most efficient way to do this, but what the hell....
+		for(i=0;i<x->num_inputs;i++)
+			if(x->in_connected[i]) inputs[i] = *in[i]++; //use and increment the signal vector if there is one
+			else inputs[i] += *in[i];					 //otherwise use the global variable
+		
+		//set variables
+		jd						  = inputs[NUM_STRINGS];
+		x->predistortion_outgain  = inputs[NUM_STRINGS+1];
+		x->postdistortion_outgain = inputs[NUM_STRINGS+2];
+		x->blo_string[0].bp		  = inputs[NUM_STRINGS+3];
+		//inPressure				  = inputs[NUM_STRINGS+4];
+		
+		//blowing; this could probably be done on each string individually.... but maybe not.
+		randPressure  = x->blo_string[0].ng * Noise_tick();
+		randPressure += x->blo_string[0].va * vib_tick(x, &x->blo_string[0]);
+		randPressure *= x->blo_string[0].bp;
+		
+		//set string frequencies, if necessary, and then sum their outputs
+		string_bore_output = 0.;
+		for(i=0;i<NUM_STRINGS;i++) {
+			fr[i] = inputs[i];
+			if(fr[i] != x->blo_string[i].fr) {
+				setFreq(x, &x->blo_string[i], fr[i]);
+				x->blo_string[i].fr = fr[i];
+			}
+			string_bore_output += blostring_tick(x, &x->blo_string[i], x->x_jr * x->last_output);
+		}
+		
+		
+		//do nbody filter
+		if(x->direction > -1) {
+			string_bore_output = oz_tick(x, string_bore_output);
+			string_bore_output = ap_tick(x, string_bore_output);
+		}
+		
+		
+		//calculate pressure difference
+		//pressureDiff = x->blo_string[0].bp + randPressure + inPressure - string_bore_output*ONE_OVER_NUMSTRINGS;	
+		pressureDiff = x->blo_string[0].bp + randPressure - string_bore_output*ONE_OVER_NUMSTRINGS;
+
+		//reset the feedback delay time, if necessary
+		if(jd != x->x_jd) {
+			setJetDelay(x, jd);
+			x->x_jd = jd;
+		}
+		
+		//feedback delay line
+		temp = DLineL_tick(&x->jetDelay, pressureDiff);
+		
+		//distortion
+		distortion_output = x->last_output = JetTabl_lookup(x->predistortion_gain*temp);
+		
+		//send it all out
+		*out[0]++ =  x->predistortion_outgain*string_bore_output + x->postdistortion_outgain*distortion_output;
+	}
+}	
+
+

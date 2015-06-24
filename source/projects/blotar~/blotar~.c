@@ -1,3 +1,7 @@
+//
+// Updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
+
 /******************************************/
 /*  WaveGuide Flute ala Karjalainen,      */
 /*  Smith, Waryznyk, etc.                 */
@@ -17,13 +21,14 @@
 /*                CONTROL3 = vibFreq      */
 /*                MOD_WHEEL= vibAmt       */
 /******************************************/
-#include "stk_c.h" 
+
+#include "stk_c.h"
 #include "mandimpulses.h"
 #define LENGTH 2048 	//44100/LOWFREQ + 1 --blotar length
 #define JETLENGTH LENGTH * 2 //larger, for big rooms
 #define VIBLENGTH 1024
 
-void *blotar_class;
+t_class *blotar_class;
 
 typedef struct _blotar
 {
@@ -31,37 +36,37 @@ typedef struct _blotar
     t_pxobject x_obj;
     
     //user controlled vars
-    float pluckAmp;		//pluck amplitude
-    float pluckPos;		//that's right
-    float bodySize;		//big blotarlin
-    float x_fr;			//frequency	    
-    float x_bp;			//breath pressure	
-    float x_jd;			//jet frequency
-    float x_ng; 		//noise gain
-    float x_vf; 		//vib freq
-    float x_va; 		//vib amount
-    float x_jr;			//pre-feedback gain (jet reflection coeff)
-    float x_er;			//pre-distortion gain (end reflection coeff)
-    float filterRatio;	//OneZero vs. OnePole filter ratio
+    double pluckAmp;		//pluck amplitude
+    double pluckPos;		//that's right
+    double bodySize;		//big blotarlin
+    double x_fr;			//frequency	    
+    double x_bp;			//breath pressure	
+    double x_jd;			//jet frequency
+    double x_ng; 		//noise gain
+    double x_vf; 		//vib freq
+    double x_va; 		//vib amount
+    double x_jr;			//pre-feedback gain (jet reflection coeff)
+    double x_er;			//pre-distortion gain (end reflection coeff)
+    double filterRatio;	//OneZero vs. OnePole filter ratio
     
     int mic;			//directional position (NBody)
 
-    float fr_save;
-    float jd_save;
+    double fr_save;
+    double jd_save;
     
     //signals connected? or controls...
-    short pluckAmpconnected;
-    short pluckPosconnected;
-    short bodySizeconnected;
-    short x_frconnected;
-    short x_bpconnected;
-    short x_jdconnected;
-    short x_ngconnected;
-    short x_vfconnected;
-    short x_vaconnected;
-    short x_jrconnected;
-    short x_erconnected;
-    short filterRatioconnected;
+    long pluckAmpconnected;
+    long pluckPosconnected;
+    long bodySizeconnected;
+    long x_frconnected;
+    long x_bpconnected;
+    long x_jdconnected;
+    long x_ngconnected;
+    long x_vfconnected;
+    long x_vaconnected;
+    long x_jrconnected;
+    long x_erconnected;
+    long filterRatioconnected;
     
     //delay lines, flute
     DLineL boreDelay;
@@ -79,27 +84,27 @@ typedef struct _blotar
     OneZero lowpass; //lowpass filter
     
      //vibrato table
-    float vibTable[VIBLENGTH];
-    float vibRate;
-    float vibTime;
+    double vibTable[VIBLENGTH];
+    double vibRate;
+    double vibTime;
     
     //stuff
-    float endRefl;
-    float jetRefl;
+    double endRefl;
+    double jetRefl;
     
     //stuff
     long length;
-    float lastFreq;
-    float lastLength;
-    short pluck;
+    double lastFreq;
+    double lastLength;
+    long pluck;
     long dampTime;
     int waveDone;
-    float directBody;
+    double directBody;
     
-    short mode; //whether to run the "classic" (incorrect) blotar or the new ("correct") blotar
+    long mode; //whether to run the "classic" (incorrect) blotar or the new ("correct") blotar
     			//"classic" by default
 
-    float srate, one_over_srate;
+    double srate, one_over_srate;
 } t_blotar;
 
 /****PROTOTYPES****/
@@ -107,24 +112,25 @@ typedef struct _blotar
 //setup funcs
 void *blotar_new(double val);
 void blotar_free(t_blotar *x);
-void blotar_dsp(t_blotar *x, t_signal **sp, short *count);
-void blotar_float(t_blotar *x, double f);
-void blotar_bang(t_blotar *x);
-void blotar_mode(t_blotar *x, Symbol *s, short argc, Atom *argv);
-void blotar_clear(t_blotar *x);
-t_int *blotar_perform(t_int *w);
 void blotar_assist(t_blotar *x, void *b, long m, long a, char *s);
 
-//blotar functions
-void setFreq(t_blotar *x, float frequency);
+void blotar_bang(t_blotar *x);
+void blotar_float(t_blotar *x, double f);
+void setmic(t_blotar *x, t_symbol *s, long argc, t_atom *argv);
+void blotar_mode(t_blotar *x, t_symbol *s, long argc, t_atom *argv);
+void blotar_clear(t_blotar *x);
+
+//helper funcs
 void pluck(t_blotar *x, float amplitude, float position);
 void setBodySize(t_blotar *x, float size);
-void setmic(t_blotar *x, Symbol *s, short argc, Atom *argv);
+void setFreq(t_blotar *x, float frequency);
 void setJetDelay(t_blotar *x, float ratio);
-
-//vib funcs
 void setVibFreq(t_blotar *x, float freq);
 float vib_tick(t_blotar *x);
+
+// dsp stuff
+void blotar_dsp64(t_blotar *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void blotar_perform64(t_blotar *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 
 /****FUNCTIONS****/
@@ -150,11 +156,6 @@ void setBodySize(t_blotar *x, float size)
   for (i=0;i<12;i++)	{
   	HeaderSnd_setRate(&x->soundfile[i], size);
   }
-}
-
-void blotar_bang(t_blotar *x)
-{
-	x->pluck = 1;
 }
 
 #define WATCHIT 0.00001
@@ -215,66 +216,152 @@ float vib_tick(t_blotar *x)
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&blotar_class, (method)blotar_new, (method)blotar_free, (short)sizeof(t_blotar), 0L, A_DEFFLOAT, 0);
-    addmess((method)blotar_dsp, "dsp", A_CANT, 0);
-    addmess((method)blotar_assist,"assist",A_CANT,0);
-    addmess((method)setmic, "mic", A_GIMME, 0);
-    addmess((method)blotar_clear, "clear", A_GIMME, 0);
-    addmess((method)blotar_mode, "mode", A_GIMME, 0);
-    addfloat((method)blotar_float);
-    addbang((method)blotar_bang);
-    dsp_initclass();
-    rescopy('STR#',9982);
+    t_class *c = class_new("blotar~", (method)blotar_new, (method)blotar_free, (long)sizeof(t_blotar), 0L, A_DEFFLOAT, 0);
+    class_addmethod(c, (method)blotar_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)blotar_assist,"assist",A_CANT,0);
+    class_addmethod(c, (method)blotar_bang, "bang", A_CANT, 0);
+    class_addmethod(c, (method)blotar_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)setmic, "mic", A_GIMME, 0);
+    class_addmethod(c, (method)blotar_clear, "clear", A_GIMME, 0);
+    class_addmethod(c, (method)blotar_mode, "mode", A_GIMME, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    blotar_class = c;
 }
 
-void setmic(t_blotar *x, Symbol *s, short argc, Atom *argv)
+void *blotar_new(double initial_coeff)
 {
-	short i;
-	int temp;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp = (int)argv[i].a_w.w_long;
-				x->mic = temp % 12;
-    			post("blotar: setting mic: %d", x->mic);
-				break;
-			case A_FLOAT:
-				temp = (int)argv[i].a_w.w_long;
-				x->mic = temp % 12;
-    			post("blotar: setting mic: %d", x->mic);
-				break;
-		}
-	}
+	int i;
+	
+    t_blotar *x = (t_blotar *)object_alloc(blotar_class);
+    if (x) {
+        for(i=sizeof(t_pxobject);i<sizeof(t_blotar);i++) {
+            ((char *)x)[i]=0;
+        }
+
+        dsp_setup((t_pxobject *)x, 12);
+        outlet_new((t_object *)x, "signal");
+        
+        x->length = LENGTH;
+        /*
+         x->baseLoopGain = 0.995;
+         x->loopGain = 0.999;
+         */
+        x->directBody = 1.0;
+        x->mic = 0;
+        x->dampTime = 0;
+        x->waveDone = 1;
+        x->pluckAmp = 0.3;
+        x->pluckPos = 0.4;
+        x->lastFreq = 80.;
+        x->lastLength = x->length * 0.5;
+        x->x_fr = 440.;
+        x->pluck = 0;
+        x->filterRatio = 1.;
+        x->mode = 0;
+        
+        x->srate = sys_getsr();
+        x->one_over_srate = 1./x->srate;
+        
+        DLineL_alloc(&x->boreDelay, LENGTH);
+        DLineL_alloc(&x->jetDelay, JETLENGTH); //longer here, for long feedback loops, big rooms
+        DLineL_alloc(&x->combDelay, LENGTH);
+        
+        for(i=0; i<VIBLENGTH; i++) x->vibTable[i] = sin(i*TWO_PI/VIBLENGTH);
+        x->vibRate = 1.;
+        x->vibTime = 0.;
+        
+        //clear stuff flute
+        DLineL_clear(&x->boreDelay);
+        DLineL_clear(&x->jetDelay);
+        OnePole_init(&x->flute_filter);
+        OneZero_init(&x->lowpass);
+        DLineL_clear(&x->combDelay);
+        
+        //impulse responses
+        for (i=0;i<12;i++) {
+            HeaderSnd_alloc(&x->soundfile[i], &mand[i][0], 721, "oneshot");
+        }
+        
+        setFreq(x, x->x_fr);
+        DLineL_setDelay(&x->jetDelay, 49.);
+        
+        OnePole_setPole(&x->flute_filter, 0.7 - (0.1 * 22050. / x->srate));
+        OnePole_setGain(&x->flute_filter, -1.);
+        
+        x->fr_save = x->x_fr;
+        x->jd_save = 49.;
+        
+        post("dooooooooooode, air guitar!");
+    }
+    return (x);
 }
 
-void blotar_mode(t_blotar *x, Symbol *s, short argc, Atom *argv)
+void blotar_free(t_blotar *x)
 {
-	short i;
-	int temp;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp = (int)argv[i].a_w.w_long;
-				x->mode = temp % 2;
-    			post("blotar: setting mode: %d", x->mode);
-				break;
-			case A_FLOAT:
-				temp = (int)argv[i].a_w.w_long;
-				x->mode = temp % 2;
-    			post("blotar: setting mode: %d", x->mode);
-				break;
-		}
-	}
+	int i;
+	dsp_free((t_pxobject *)x);
+	DLineL_free(&x->combDelay);
+	DLineL_free(&x->boreDelay);
+	DLineL_free(&x->jetDelay);
+	for (i=0;i<12;i++) {
+		HeaderSnd_free(&x->soundfile[i]);
+    }
 }
-
 
 void blotar_assist(t_blotar *x, void *b, long m, long a, char *s)
 {
-	assist_string(9982,m,a,1,13,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) pluck amplitude");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) pluck position");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) body size");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) breath pressure");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) jet frequency");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) noise gain");
+                break;
+            case 6:
+                sprintf(s,"(signal/float) vib frequency");
+                break;
+            case 7:
+                sprintf(s,"(signal/float) vib amount");
+                break;
+            case 8:
+                sprintf(s,"(signal/float) frequency");
+                break;
+            case 9:
+                sprintf(s,"(signal/float) pre-feedback gain");
+                break;
+            case 10:
+                sprintf(s,"(signal/float) pre-distortion gain");
+                break;
+            case 11:
+                sprintf(s,"(signal/float) filter ratio (one-zero vs. one-pole)");
+            break;		}
+	} else {
+		sprintf(s,"(signal) output");
+    }
+}
+
+void blotar_bang(t_blotar *x)
+{
+	x->pluck = 1;
 }
 
 void blotar_float(t_blotar *x, double f)
-{	
+{
 	if (x->x_obj.z_in == 0) {
 		x->pluckAmp = f;
 	} else if (x->x_obj.z_in == 1) {
@@ -299,7 +386,47 @@ void blotar_float(t_blotar *x, double f)
 		x->x_er = f;
 	} else if (x->x_obj.z_in == 11) {
 		x->filterRatio = f;
-	} 
+	}
+}
+
+void setmic(t_blotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+	long i;
+	int temp;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp = (int)argv[i].a_w.w_long;
+				x->mic = temp % 12;
+    			post("blotar: setting mic: %d", x->mic);
+				break;
+			case A_FLOAT:
+				temp = (int)argv[i].a_w.w_long;
+				x->mic = temp % 12;
+    			post("blotar: setting mic: %d", x->mic);
+				break;
+		}
+	}
+}
+
+void blotar_mode(t_blotar *x, t_symbol *s, long argc, t_atom *argv)
+{
+	long i;
+	int temp;
+	for (i=0; i < argc; i++) {
+		switch (argv[i].a_type) {
+			case A_LONG:
+				temp = (int)argv[i].a_w.w_long;
+				x->mode = temp % 2;
+    			post("blotar: setting mode: %d", x->mode);
+				break;
+			case A_FLOAT:
+				temp = (int)argv[i].a_w.w_long;
+				x->mode = temp % 2;
+    			post("blotar: setting mode: %d", x->mode);
+				break;
+		}
+	}
 }
 
 void blotar_clear(t_blotar *x)
@@ -314,90 +441,9 @@ void blotar_clear(t_blotar *x)
     OnePole_setGain(&x->flute_filter, -1.);
 }
 
-void *blotar_new(double initial_coeff)
+void blotar_dsp64(t_blotar *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	int i;
-	char temp[128];
-	
-    t_blotar *x = (t_blotar *)newobject(blotar_class);
-    //zero out the struct, to be careful (takk to jkclayton)
-    if (x) { 
-        for(i=sizeof(t_pxobject);i<sizeof(t_blotar);i++)  
-                ((char *)x)[i]=0; 
-	} 
-	
-    dsp_setup((t_pxobject *)x,12);
-    outlet_new((t_object *)x, "signal");
-    
-    x->length = LENGTH;
-    /*
-    x->baseLoopGain = 0.995;
-    x->loopGain = 0.999;
-    */
-    x->directBody = 1.0;
-  	x->mic = 0;
-  	x->dampTime = 0;
-  	x->waveDone = 1;
-  	x->pluckAmp = 0.3;
-  	x->pluckPos = 0.4;
-  	x->lastFreq = 80.;
-  	x->lastLength = x->length * 0.5;
-  	x->x_fr = 440.;
-  	x->pluck = 0;
-  	x->filterRatio = 1.;
-  	x->mode = 0;
-    
-    x->srate = sys_getsr();
-    x->one_over_srate = 1./x->srate;
-    
-    DLineL_alloc(&x->boreDelay, LENGTH);
-    DLineL_alloc(&x->jetDelay, JETLENGTH); //longer here, for long feedback loops, big rooms
-    DLineL_alloc(&x->combDelay, LENGTH);
-    
-    for(i=0; i<VIBLENGTH; i++) x->vibTable[i] = sin(i*TWO_PI/VIBLENGTH);
-    x->vibRate = 1.;
-    x->vibTime = 0.;
-    
-    //clear stuff flute
-    DLineL_clear(&x->boreDelay);
-    DLineL_clear(&x->jetDelay);
-    OnePole_init(&x->flute_filter);
-    OneZero_init(&x->lowpass);
-    DLineL_clear(&x->combDelay);
-    
-    //impulse responses   
-    for (i=0;i<12;i++) {
-    	HeaderSnd_alloc(&x->soundfile[i], &mand[i][0], 721, "oneshot");
-    }
-    
-    setFreq(x, x->x_fr);
-    DLineL_setDelay(&x->jetDelay, 49.);
-    
-    OnePole_setPole(&x->flute_filter, 0.7 - (0.1 * 22050. / x->srate));
-    OnePole_setGain(&x->flute_filter, -1.);
-   
-    x->fr_save = x->x_fr;
-    x->jd_save = 49.;
-    
-    post("dooooooooooode, air guitar!");
-    
-    return (x);
-}
-
-void blotar_free(t_blotar *x)
-{
-	int i;
-	dsp_free((t_pxobject *)x);
-	DLineL_free(&x->combDelay);
-	DLineL_free(&x->boreDelay);
-	DLineL_free(&x->jetDelay);
-	for (i=0;i<12;i++) 
-		HeaderSnd_free(&x->soundfile[i]);
-}
-
-void blotar_dsp(t_blotar *x, t_signal **sp, short *count)
-{	
-	x->pluckAmpconnected = count[0];
+    x->pluckAmpconnected = count[0];
 	x->pluckPosconnected = count[1];
 	x->bodySizeconnected = count[2];
 	x->x_bpconnected = count[3];
@@ -410,42 +456,37 @@ void blotar_dsp(t_blotar *x, t_signal **sp, short *count)
 	x->x_erconnected = count[10];
 	x->filterRatioconnected = count[11];
 	
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
     x->one_over_srate = 1./x->srate;
-    
     OnePole_setPole(&x->flute_filter, 0.7 - (0.1 * 22050. / x->srate));
     
-	dsp_add(blotar_perform, 15, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, 
-		sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[7]->s_vec, 
-		sp[8]->s_vec, sp[9]->s_vec, sp[10]->s_vec, sp[11]->s_vec, sp[12]->s_vec, sp[0]->s_n);	
+    object_method(dsp64, gensym("dsp_add64"), x, blotar_perform64, 0, NULL);
 }
 
-t_int *blotar_perform(t_int *w)
+void blotar_perform64(t_blotar *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_blotar *x = (t_blotar *)(w[1]);
-	
-	float pluckAmp = x->pluckAmpconnected? *(float *)(w[2]) : x->pluckAmp;
-	float pluckPos = x->pluckPosconnected? *(float *)(w[3]) : x->pluckPos;
-	float bodySize = x->bodySizeconnected? *(float *)(w[4]) : x->bodySize;
-	float bp = x->x_bpconnected? *(float *)(w[5]) : x->x_bp;
-	float jd = x->x_jdconnected? *(float *)(w[6]) : x->x_jd;
-	float ng = x->x_ngconnected? *(float *)(w[7]) : x->x_ng;
-	float vf = x->x_vfconnected? *(float *)(w[8]) : x->x_vf;
-	float va = x->x_vaconnected? *(float *)(w[9]) : x->x_va;
-	float fr = x->x_frconnected? *(float *)(w[10]) : x->x_fr;
-	float jr = x->x_jrconnected? *(float *)(w[11]) : x->x_jr;
-	float er = x->x_erconnected? *(float *)(w[12]) : x->x_er;
-	float filterRatio = x->filterRatioconnected? *(float *)(w[13]) : x->filterRatio;
-	
-	float *out = (float *)(w[14]);
-	long n = w[15];
-
-	float temp, tempsave, lastOutput, pressureDiff, randPressure, filterRatioInv;	
-     
+	double pluckAmp = x->pluckAmpconnected          ?   *(double *)(ins[0]) : x->pluckAmp;
+	double pluckPos = x->pluckPosconnected          ?   *(double *)(ins[1]) : x->pluckPos;
+	double bodySize = x->bodySizeconnected          ?   *(double *)(ins[2]) : x->bodySize;
+	double bp = x->x_bpconnected                    ?   *(double *)(ins[3]) : x->x_bp;
+	double jd = x->x_jdconnected                    ?   *(double *)(ins[4]) : x->x_jd;
+	double ng = x->x_ngconnected                    ?   *(double *)(ins[5]) : x->x_ng;
+	double vf = x->x_vfconnected                    ?   *(double *)(ins[6]) : x->x_vf;
+	double va = x->x_vaconnected                    ?   *(double *)(ins[7]) : x->x_va;
+	double fr = x->x_frconnected                    ?   *(double *)(ins[8]) : x->x_fr;
+	double jr = x->x_jrconnected                    ?   *(double *)(ins[9]) : x->x_jr;
+	double er = x->x_erconnected                    ?   *(double *)(ins[10]) : x->x_er;
+	double filterRatio = x->filterRatioconnected    ?   *(double *)(ins[11]) : x->filterRatio;
+    
+    double *out = (double *)outs[0];
+    long n = sampleframes;
+    
+	double temp, tempsave, pressureDiff, randPressure, filterRatioInv;
+    
 	if(fr != x->fr_save) {
 		setFreq(x, fr);
 		x->fr_save = fr;
-	} 
+	}
 	
  	//room feedback length, or jet delay length
 	if(jd != x->jd_save) {
@@ -461,35 +502,34 @@ t_int *blotar_perform(t_int *w)
 		pluck(x, pluckAmp, pluckPos);
 		x->pluck = 0;
 	}
-
+    
 	while(n--) {
-
 		randPressure  = ng * Noise_tick();
 		randPressure += va * vib_tick(x);
-		randPressure *= bp;		
-
+		randPressure *= bp;
+        
 		temp = 0.;
   		//if (!x->waveDone)      {
-  			x->waveDone = HeaderSnd_informTick(&x->soundfile[x->mic]);/* as long as it goes . . .   */     	
-    		temp = x->soundfile[x->mic].lastOutput * pluckAmp; 		  /* scaled pluck excitation    */
-    		temp = temp - DLineL_tick(&x->combDelay, temp);			  /* with comb filtering        */         		
-  		//}  
+        x->waveDone = HeaderSnd_informTick(&x->soundfile[x->mic]);/* as long as it goes . . .   */
+        temp = x->soundfile[x->mic].lastOutput * pluckAmp; 		  /* scaled pluck excitation    */
+        temp = temp - DLineL_tick(&x->combDelay, temp);			  /* with comb filtering        */
+  		//}
   		
   		//balance OnePole (flute) with LowPass (Karplus Strong); total wacko hack, but sounds cool
   		tempsave = temp;
   		temp = OnePole_tick(&x->flute_filter, (x->boreDelay.lastOutput + temp));
   		temp = filterRatio * temp +
-  			   filterRatioInv * 
-  			   OneZero_tick(&x->lowpass, (x->boreDelay.lastOutput + tempsave));
-
+        filterRatioInv *
+        OneZero_tick(&x->lowpass, (x->boreDelay.lastOutput + tempsave));
+        
     	temp = DCBlock_tick(&x->killdc, temp);
-		pressureDiff = bp + randPressure - (jr * temp);	
-		pressureDiff = DLineL_tick(&x->jetDelay, pressureDiff);		
+		pressureDiff = bp + randPressure - (jr * temp);
+		pressureDiff = DLineL_tick(&x->jetDelay, pressureDiff);
 		
 		//the original blotar fed the output of both delay lines into the non-linearity (somehow a parenthesis got moved)
 		//which makes it different than the flute, but also more stable (constraining the range of values)
 		//the "mode" message lets the user choose "classic" (incorrect)	mode or the more "correct" (but less stable mode)
-		//"classic" by default, of course.....				
+		//"classic" by default, of course.....
 		if(!x->mode) pressureDiff = JetTabl_lookup(pressureDiff + (er * temp)); //from the original, "incorrect" blotar
 		else {
 		 	pressureDiff =  JetTabl_lookup(pressureDiff) + (er * temp); 		//this is "correct"
@@ -497,9 +537,8 @@ t_int *blotar_perform(t_int *w)
 	    	if (pressureDiff > 10.) pressureDiff = 0.; //make this threshold user-controllable
 	    	else if (pressureDiff < -10.) pressureDiff = 0.;
 	    }
-	    	
+        
     	*out++ = DLineL_tick(&x->boreDelay, pressureDiff);
-		
 	}
-	return w + 16;
-}	
+}
+

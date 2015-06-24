@@ -20,7 +20,7 @@
 /* heritage (!) of the code. Some functions		*/
 /* that are not relevant for MSP may be			*/
 /* mentioned, which should be ignored			*/
-/*
+/*                                              */
 /* Also, I prefer having all the functions 		*/
 /* in a single file--call me an idiot if		*/
 /* you like--but, in a future version, we may	*/
@@ -264,7 +264,8 @@ void BowTabl_init(BowTabl *bowtable)
 }
 
 float BowTabl_lookup(BowTabl *bowtable, float sample) 	/*  Perform Table Lookup    */
-{                                           			/*  sample is differential  */				    								/*  string vs. bow velocity */
+{                                           			/*  sample is differential  */
+                                                        /*  string vs. bow velocity */
     float input;
     input = sample + bowtable->offSet;                				/*  add bias to sample      */
     input *= bowtable->slope;                         				/*  scale it                */
@@ -596,7 +597,7 @@ float BiQuad_tick(BiQuad *biquad, float sample) /*  Perform Filter Operation    
 /*******************************************/
 void DLineA_alloc(DLineA *delayLine, long max_length)
 {
-  	long i;
+  	// long i;
   	delayLine->length = max_length;
   	//delayLine->inputs = t_getbytes(delayLine->length * sizeof(double));
   	delayLine->inputs = (double *)sysmem_newptr(delayLine->length * sizeof(double));
@@ -690,7 +691,7 @@ float DLineA_tick(DLineA *delayLine, double sample) // Take sample, yield sample
 /*******************************************/
 void DLineL_alloc(DLineL *delayLine, long max_length)
 {
-	long i;
+	// long i;
   	delayLine->length = max_length;
   	//delayLine->inputs = t_getbytes(delayLine->length * sizeof(float));
   	delayLine->inputs = (float *)sysmem_newptr(delayLine->length * sizeof(float));
@@ -841,7 +842,7 @@ void RawWvIn_alloc(RawWvIn *inwave, char *fileName, char *mode)
 	short temp;
 	long fdlength;	
 	struct stat bufinfo;
-	long stattest;	
+	// long stattest;
 	FILE *fd;
 
 	fd = fopen(fileName,"rb"); //need full pathname
@@ -852,7 +853,7 @@ void RawWvIn_alloc(RawWvIn *inwave, char *fileName, char *mode)
     fdlength = bufinfo.st_size/sizeof(short);
     inwave->length = fdlength;    
     //inwave->data = t_getbytes((fdlength+1) * sizeof(float));
-    inwave->data - (float *)sysmem_newptr((fdlength+1) * sizeof(float));
+    inwave->data = (float *)sysmem_newptr((fdlength+1) * sizeof(float));
 	if (!inwave->data) {
 		post("RawWvIn: out of memory!");
 		return;
@@ -1455,7 +1456,8 @@ float polyinterpolate(float yinput[], int n, long vsize, float x)
 {
 	int i, m, ns=2;
 	long closest;
-	float den, dif, dift, ho, hp, w, output;
+    // float dif, dift;
+	float den, ho, hp, w, output;
 	float c[MAXORDER], d[MAXORDER], ya[MAXORDER]; //arbitrary max to order of polynomial
 	long xa[MAXORDER];
 	if (n>MAXORDER-1) n = MAXORDER-1;

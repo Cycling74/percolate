@@ -1,12 +1,16 @@
 // chase~ -- uses a sync signal to determine who gets out which outlet.
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// -------------------------------------------------
 
-#include "ext.h"
-#include "z_dsp.h"
 #include <math.h>
+#include "ext.h"
+#include "ext_obex.h"
+#include "z_dsp.h"
 
 #define MAXFRAMES 32
 
-void *chase_class;
+t_class *chase_class;
 
 typedef struct _chase
 {
@@ -15,21 +19,14 @@ typedef struct _chase
 
 float FConstrain(float v, float lo, float hi);
 long IConstrain(long v, long lo, long hi);
-t_int *chase_perform(t_int *w);
-void chase_dsp(t_chase *x, t_signal **sp);
+
 void *chase_new(void);
 void chase_assist(t_chase *x, void *b, long m, long a, char *s);
 
-t_symbol *ps_buffer;
+void chase_dsp64(t_chase *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void chase_perform64(t_chase *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
-void ext_main(void* p)
-{
-	setup((t_messlist **)&chase_class, (method)chase_new, (method)dsp_free, (short)sizeof(t_chase), 0L, 0);
-	addmess((method)chase_dsp, "dsp", A_CANT, 0);
-	addmess((method)chase_assist, "assist", A_CANT, 0);
-	dsp_initclass();
-	post("chase chase chase...");
-}
+t_symbol *ps_buffer;
 
 long IConstrain(long v, long lo, long hi)
 {
@@ -51,53 +48,28 @@ float FConstrain(float v, float lo, float hi)
 		return v;
 }
 
-t_int *chase_perform(t_int *w)
+void ext_main(void* p)
 {
-    t_chase *x = (t_chase *)(w[1]);
-    t_float *in1 = (t_float *)(w[2]);
-    t_float *in2 = (t_float *)(w[3]);
-    t_float *sync = (t_float *)(w[4]);
-    t_float *out1 = (t_float *)(w[5]);
-    t_float *out2 = (t_float *)(w[6]);
-    int n = (int)(w[7]);
-    float dist1, dist2;
-	if (x->l_obj.z_disabled)
-	goto out;
-
-	while (--n) {
-		if(*++sync>*++in1) {
-		dist1 = fabs(*sync-*in1);
-		}
-		else {
-		dist1 = fabs(*in1-*sync);
-		}
-		if(*sync>*++in2) {
-		dist2 = fabs(*sync-*in1);
-		}
-		else {
-		dist2 = fabs(*in2 - *sync);
-		}
-		if(dist1>dist2) {
-		*++out1 = dist1;
-		*++out2 = dist2;
-		}
-		else {
-		*++out1 = dist2;
-		*++out2 = dist1;
-		}
-	}
-	return (w+8);
-
-out:
-	return (w+8);
+    t_class *c = class_new("chase~", (method)chase_new, (method)dsp_free, (long)sizeof(t_chase), 0L, 0);
+    class_addmethod(c, (method)chase_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)chase_dsp64, "dsp64", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    chase_class = c;
+	post("chase chase chase...");
 }
 
-
-void chase_dsp(t_chase *x, t_signal **sp)
+void *chase_new(void)
 {
-    dsp_add(chase_perform, 7, x, sp[0]->s_vec-1, sp[1]->s_vec-1, sp[2]->s_vec-1, sp[3]->s_vec-1, sp[4]->s_vec-1, sp[0]->s_n+1);
+	t_chase *x = (t_chase *)object_alloc(chase_class);
+    if (x) {
+        dsp_setup((t_pxobject *)x, 3);
+        outlet_new((t_object *)x, "signal");
+        outlet_new((t_object *)x, "signal");
+    }
+	return (x);
 }
-
 
 void chase_assist(t_chase *x, void *b, long m, long a, char *s)
 {
@@ -105,36 +77,68 @@ void chase_assist(t_chase *x, void *b, long m, long a, char *s)
 		case 1: // inlet
 			switch(a) {
 				case 0:
-				sprintf(s, "(signal) Input 1");
-				break;
+                    sprintf(s, "(signal) Input 1");
+                    break;
 				case 1:
-				sprintf(s, "(signal) Input 2");
-				break;
+                    sprintf(s, "(signal) Input 2");
+                    break;
 				case 2:
-				sprintf(s, "(signal) Sync");
-				break;
+                    sprintf(s, "(signal) Sync");
+                    break;
 			}
-		break;
+            break;
 		case 2: // outlet
 			switch(a) {
 				case 0:
-				sprintf(s, "(signal) Near Output");
-				break;
+                    sprintf(s, "(signal) Near Output");
+                    break;
 				case 1:
-				sprintf(s, "(signal) Far Output");
-				break;
+                    sprintf(s, "(signal) Far Output");
+                    break;
 			}
-		break;
+            break;
 	}
-
+    
 }
 
-void *chase_new(void)
+void chase_dsp64(t_chase *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	t_chase *x = (t_chase *)newobject(chase_class);
-	dsp_setup((t_pxobject *)x, 3);
-	outlet_new((t_object *)x, "signal");
-	outlet_new((t_object *)x, "signal");
-	return (x);
+    object_method(dsp64, gensym("dsp_add64"), x, chase_perform64, 0, NULL);
 }
+
+void chase_perform64(t_chase *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+    t_double *in1 = (t_double *)(ins[0]);
+    t_double *in2 = (t_double *)(ins[1]);
+    t_double *sync = (t_double *)(ins[2]);
+    t_double *out1 = (t_double *)(outs[0]);
+    t_double *out2 = (t_double *)(outs[2]);
+    int n = sampleframes;
+    
+    double dist1, dist2;
+	
+	while (--n) {
+		if(*++sync>*++in1) {
+            dist1 = fabs(*sync-*in1);
+		}
+		else {
+            dist1 = fabs(*in1-*sync);
+		}
+		if(*sync>*++in2) {
+            dist2 = fabs(*sync-*in1);
+		}
+		else {
+            dist2 = fabs(*in2 - *sync);
+		}
+		if(dist1>dist2) {
+            *++out1 = dist1;
+            *++out2 = dist2;
+		}
+		else {
+            *++out1 = dist2;
+            *++out2 = dist1;
+		}
+	}
+}
+
 

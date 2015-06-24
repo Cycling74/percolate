@@ -1,9 +1,13 @@
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
+
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+
 #define TWO_PI 6.283185307
 //#define ONE_OVER_RANDLIMIT 0.00006103516 // constant = 1. / 16384.0
 #define ONE_OVER_RANDLIMIT 1./RAND_MAX
@@ -23,7 +27,7 @@
 #define SEKE_SYSTEM_DECAY 0.999
 #define SEKE_NUM_BEANS 64
 
-void *sekere_class;
+t_class *sekere_class;
 
 typedef struct _sekere
 {
@@ -64,12 +68,15 @@ typedef struct _sekere
 
 //setup funcs
 void *sekere_new(double val);
-void sekere_dsp(t_sekere *x, t_signal **sp, short *count);
+void sekere_assist(t_sekere *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void sekere_dsp64(t_sekere *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void sekere_perform64(t_sekere *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
 void sekere_float(t_sekere *x, double f);
 void sekere_int(t_sekere *x, int f);
 void sekere_bang(t_sekere *x);
-t_int *sekere_perform(t_int *w);
-void sekere_assist(t_sekere *x, void *b, long m, long a, char *s);
 
 void sekere_setup(t_sekere *x);
 float sekere_tick(t_sekere *x);
@@ -128,19 +135,40 @@ float noise_tick()
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&sekere_class, (method)sekere_new, (method)dsp_free, (short)sizeof(t_sekere), 0L, A_DEFFLOAT, 0);
-    addmess((method)sekere_dsp, "dsp", A_CANT, 0);
-    addmess((method)sekere_assist,"assist",A_CANT,0);
-    addfloat((method)sekere_float);
-    addint((method)sekere_int);
-    addbang((method)sekere_bang);
-    dsp_initclass();
-    rescopy('STR#',9334);
+    t_class *c = class_new("sekere~", (method)sekere_new, (method)dsp_free, (long)sizeof(t_sekere), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)sekere_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)sekere_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)sekere_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)sekere_int, "int", A_LONG, 0);
+    class_addmethod(c, (method)sekere_bang, "bang", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    sekere_class = c;
 }
 
 void sekere_assist(t_sekere *x, void *b, long m, long a, char *s)
 {
-	assist_string(9334,m,a,1,5,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) number of items");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) damping");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) maximum shake");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) resonant frequency");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void sekere_float(t_sekere *x, double f)
@@ -187,7 +215,7 @@ void *sekere_new(double initial_coeff)
 {
 	int i;
 
-    t_sekere *x = (t_sekere *)newobject(sekere_class);
+    t_sekere *x = (t_sekere *)object_alloc(sekere_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_sekere);i++)  
@@ -223,65 +251,59 @@ void *sekere_new(double initial_coeff)
     return (x);
 }
 
-
-void sekere_dsp(t_sekere *x, t_signal **sp, short *count)
+// dsp stuff
+void sekere_dsp64(t_sekere *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->num_objectsConnected = count[0];
 	x->shake_dampConnected = count[1];
 	x->shake_maxConnected = count[2];
 	x->res_freqConnected = count[3];
 	
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
 	x->one_over_srate = 1./x->srate;
-	
-	dsp_add(sekere_perform, 7, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, \
-							sp[4]->s_vec, sp[0]->s_n);	
-	
+    
+    object_method(dsp64, gensym("dsp_add64"), x, sekere_perform64, 0, NULL);
 }
 
-t_int *sekere_perform(t_int *w)
+void sekere_perform64(t_sekere *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_sekere *x = (t_sekere *)(w[1]);
+	t_double num_objects	= x->num_objectsConnected	? 	*(t_double *)(ins[2]) : x->num_objects;
+	t_double shake_damp 	= x->shake_dampConnected	? 	*(t_double *)(ins[3]) : x->shake_damp;
+	t_double shake_max      = x->shake_maxConnected		? 	*(t_double *)(ins[4]) : x->shake_max;
+	t_double res_freq 		= x->res_freqConnected		? 	*(t_double *)(ins[5]) : x->res_freq;
 	
-	float num_objects	= x->num_objectsConnected	? 	*(float *)(w[2]) : x->num_objects;
-	float shake_damp 	= x->shake_dampConnected	? 	*(float *)(w[3]) : x->shake_damp;
-	float shake_max 	= x->shake_maxConnected		? 	*(float *)(w[4]) : x->shake_max;
-	float res_freq 		= x->res_freqConnected		? 	*(float *)(w[5]) : x->res_freq;
-	
-	float *out = (float *)(w[6]);
-	long n = w[7];
+	t_double *out = (t_double *)(outs[6]);
+	long n = sampleframes;
+    
+	t_double lastOutput;
+    
+    if(num_objects != x->num_objectsSave) {
+        if(num_objects < 1.) num_objects = 1.;
+        x->num_objects = (long)num_objects;
+        x->num_objectsSave = (long)num_objects;
+        //x->gain = log(num_objects) * 30. / (t_double)num_objects;
+        x->gain = log(num_objects) / log(4.0) * 40.0 / (t_double)num_objects;
+    }
+    
+    if(res_freq != x->res_freqSave) {
+        x->res_freqSave = x->res_freq = res_freq;
+        x->coeffs[0] = -0.6 * 2.0 * cos(res_freq * TWO_PI / x->srate);
+    }
+    
+    if(shake_damp != x->shake_dampSave) {
+        x->shake_dampSave = x->shake_damp = shake_damp;
+        x->systemDecay = .998 + (shake_damp * .002);
+    }
+    
+    if(shake_max != x->shake_maxSave) {
+        x->shake_maxSave = x->shake_max = shake_max;
+        x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
+        if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
+    }
+    
+    while(n--) {
+        lastOutput = sekere_tick(x);		
+        *out++ = lastOutput;
+    }
 
-	float lastOutput, temp;
-	long temp2;
-
-		if(num_objects != x->num_objectsSave) {
-			if(num_objects < 1.) num_objects = 1.;
-			x->num_objects = (long)num_objects;
-			x->num_objectsSave = (long)num_objects;
-			//x->gain = log(num_objects) * 30. / (float)num_objects;
-			x->gain = log(num_objects) / log(4.0) * 40.0 / (float)num_objects;
-		}
-		
-		if(res_freq != x->res_freqSave) {
-			x->res_freqSave = x->res_freq = res_freq;
-	  		x->coeffs[0] = -0.6 * 2.0 * cos(res_freq * TWO_PI / x->srate);
-		}
-		
-		if(shake_damp != x->shake_dampSave) {
-			x->shake_dampSave = x->shake_damp = shake_damp;
-			x->systemDecay = .998 + (shake_damp * .002);
-		}
-		
-		if(shake_max != x->shake_maxSave) {
-			x->shake_maxSave = x->shake_max = shake_max;
-		 	x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
-	    	if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-		}	
-
-		while(n--) {
-			lastOutput = sekere_tick(x);		
-			*out++ = lastOutput;
-		}
-		return w + 8;
-}	
-
+}

@@ -1,9 +1,13 @@
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
+
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+
 #define TWO_PI 6.283185307
 //#define ONE_OVER_RANDLIMIT 0.00006103516 // constant = 1. / 16384.0
 #define ONE_OVER_RANDLIMIT 1./RAND_MAX
@@ -19,7 +23,7 @@
 #define BAMB_NUM_TUBES 5
 #define BAMB_BASE_FREQ  2800
 
-void *sleigh_class;
+t_class *sleigh_class;
 
 typedef struct _sleigh
 {
@@ -75,12 +79,14 @@ typedef struct _sleigh
 
 //setup funcs
 void *sleigh_new(double val);
-void sleigh_dsp(t_sleigh *x, t_signal **sp, short *count);
+void sleigh_assist(t_sleigh *x, void *b, long m, long a, char *s);
+
 void sleigh_float(t_sleigh *x, double f);
 void sleigh_int(t_sleigh *x, int f);
 void sleigh_bang(t_sleigh *x);
-t_int *sleigh_perform(t_int *w);
-void sleigh_assist(t_sleigh *x, void *b, long m, long a, char *s);
+
+void sleigh_dsp64(t_sleigh *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void sleigh_perform64(t_sleigh *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 void sleigh_setup(t_sleigh *x);
 float sleigh_tick(t_sleigh *x);
@@ -212,19 +218,52 @@ float noise_tick()
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&sleigh_class, (method)sleigh_new, (method)dsp_free, (short)sizeof(t_sleigh), 0L, A_DEFFLOAT, 0);
-    addmess((method)sleigh_dsp, "dsp", A_CANT, 0);
-    addmess((method)sleigh_assist,"assist",A_CANT,0);
-    addfloat((method)sleigh_float);
-    addint((method)sleigh_int);
-    addbang((method)sleigh_bang);
-    dsp_initclass();
-    rescopy('STR#',9322);
+    t_class *c = class_new("sleigh~", (method)sleigh_new, (method)dsp_free, (long)sizeof(t_sleigh), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)sleigh_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)sleigh_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)sleigh_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)sleigh_int, "int", A_LONG, 0);
+    class_addmethod(c, (method)sleigh_bang, "bang", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    sleigh_class = c;
 }
 
 void sleigh_assist(t_sleigh *x, void *b, long m, long a, char *s)
 {
-	assist_string(9322,m,a,1,9,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) number of items");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) resonance");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) damping");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) maximum shake");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) frequency 1");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) frequency 2");
+                break;
+            case 6:
+                sprintf(s,"(signal/float) frequency 3");
+                break;
+            case 7:
+                sprintf(s,"(signal/float) frequency 4");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void sleigh_float(t_sleigh *x, double f)
@@ -278,7 +317,7 @@ void *sleigh_new(double initial_coeff)
 {
 	int i;
 
-    t_sleigh *x = (t_sleigh *)newobject(sleigh_class);
+    t_sleigh *x = (t_sleigh *)object_alloc(sleigh_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_sleigh);i++)  
@@ -329,7 +368,7 @@ void *sleigh_new(double initial_coeff)
 }
 
 
-void sleigh_dsp(t_sleigh *x, t_signal **sp, short *count)
+void sleigh_dsp64(t_sleigh *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->num_objectsConnected = count[0];
 	x->shake_dampConnected = count[1];
@@ -340,37 +379,33 @@ void sleigh_dsp(t_sleigh *x, t_signal **sp, short *count)
 	x->res_freq3Connected = count[6];
 	x->res_freq4Connected = count[7];
 	
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
 	x->one_over_srate = 1./x->srate;
-	
-	dsp_add(sleigh_perform, 11, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[7]->s_vec, sp[8]->s_vec, sp[0]->s_n);	
-	
+    
+    object_method(dsp64, gensym("dsp_add64"), x, sleigh_perform64, 0, NULL);
 }
 
-t_int *sleigh_perform(t_int *w)
+void sleigh_perform64(t_sleigh *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_sleigh *x = (t_sleigh *)(w[1]);
+	t_double num_objects	= x->num_objectsConnected	? 	*(t_double *)(ins[0]) : x->num_objects;
+	t_double shake_damp 	= x->shake_dampConnected	? 	*(t_double *)(ins[1]) : x->shake_damp;
+	t_double shake_max      = x->shake_maxConnected		? 	*(t_double *)(ins[2]) : x->shake_max;
+	t_double res_freq 		= x->res_freqConnected		? 	*(t_double *)(ins[3]) : x->res_freq;
+	t_double res_freq1      = x->res_freq1Connected		? 	*(t_double *)(ins[4]) : x->res_freq1;
+	t_double res_freq2      = x->res_freq2Connected		? 	*(t_double *)(ins[5]) : x->res_freq2;
+	t_double res_freq3      = x->res_freq3Connected		? 	*(t_double *)(ins[6]) : x->res_freq3;
+	t_double res_freq4      = x->res_freq4Connected		? 	*(t_double *)(ins[7]) : x->res_freq4;
 	
-	float num_objects	= x->num_objectsConnected	? 	*(float *)(w[2]) : x->num_objects;
-	float shake_damp 	= x->shake_dampConnected	? 	*(float *)(w[3]) : x->shake_damp;
-	float shake_max 	= x->shake_maxConnected		? 	*(float *)(w[4]) : x->shake_max;
-	float res_freq 		= x->res_freqConnected		? 	*(float *)(w[5]) : x->res_freq;
-	float res_freq1 	= x->res_freq1Connected		? 	*(float *)(w[6]) : x->res_freq1;
-	float res_freq2 	= x->res_freq2Connected		? 	*(float *)(w[7]) : x->res_freq2;
-	float res_freq3 	= x->res_freq3Connected		? 	*(float *)(w[8]) : x->res_freq3;
-	float res_freq4 	= x->res_freq4Connected		? 	*(float *)(w[9]) : x->res_freq4;
-	
-	float *out = (float *)(w[10]);
-	long n = w[11];
-
-	float lastOutput, temp;
-	long temp2;
-
+	t_double *out = (t_double *)(outs[0]);
+	long n = sampleframes;
+    
+	t_double lastOutput;
+    
 	if(num_objects != x->num_objectsSave) {
 		if(num_objects < 1.) num_objects = 1.;
 		x->num_objects = (long)num_objects;
 		x->num_objectsSave = (long)num_objects;
-		x->gain = log(num_objects) * 30. / (float)num_objects;
+		x->gain = log(num_objects) * 30. / (t_double)num_objects;
 	}
 	
 	if(res_freq != x->res_freqSave) {
@@ -386,15 +421,15 @@ t_int *sleigh_perform(t_int *w)
 		x->shake_maxSave = x->shake_max = shake_max;
 	 	x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
     	if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-	}	
-
+	}
+    
 	if(res_freq1 != x->res_freq1Save) {
 		x->res_freq1Save = x->res_freq1 = res_freq1;
 	}
 	
 	if(res_freq2 != x->res_freq2Save) {
 		x->res_freq2Save = x->res_freq2 = res_freq2;
-	}	
+	}
 	
 	if(res_freq3 != x->res_freq3Save) {
 		x->res_freq3Save = x->res_freq3 = res_freq3;
@@ -402,12 +437,13 @@ t_int *sleigh_perform(t_int *w)
 	
 	if(res_freq4 != x->res_freq4Save) {
 		x->res_freq4Save = x->res_freq4 = res_freq4;
-	}	
+	}
 	
 	while(n--) {
-		lastOutput = sleigh_tick(x);		
+		lastOutput = sleigh_tick(x);
 		*out++ = lastOutput;
 	}
-	return w + 12;
-}	
+
+}
+
 

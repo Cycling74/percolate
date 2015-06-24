@@ -1,11 +1,14 @@
+// ------------------------------------------------------------------
 // returns the minimum value of a signal based on absolute values.
 // by r. luke dubois, cmc/cu, 2001.
+//
+// updated 2015 for Max 7, by Darwin Grosse and Tim Place
+// ------------------------------------------------------------------
 
 #include <math.h>
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
-
-void *sigabsmin_class;
 
 typedef struct _sigabsmin
 {
@@ -14,23 +17,42 @@ typedef struct _sigabsmin
 } t_sigabsmin;
 
 void *sigabsmin_new(double val);
-t_int *offset_perform(t_int *w);
-t_int *sigabsmin2_perform(t_int *w);
 void sigabsmin_float(t_sigabsmin *x, double f);
-void sigabsmin_int(t_sigabsmin *x, long n);
-void sigabsmin_dsp(t_sigabsmin *x, t_signal **sp, short *count);
 void sigabsmin_assist(t_sigabsmin *x, void *b, long m, long a, char *s);
+
+void sigabsmin_dsp64(t_sigabsmin *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void sigabsmin1_perform64(t_sigabsmin *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+void sigabsmin2_perform64(t_sigabsmin *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
+static t_class *sigabsmin_class = NULL;
+
+//***********************************************************************************************
 
 void ext_main(void* p)
 {
-    setup((t_messlist **)&sigabsmin_class, (method)sigabsmin_new, (method)dsp_free, (short)sizeof(t_sigabsmin), 0L, A_DEFFLOAT, 0);
-    addmess((method)sigabsmin_dsp, "dsp", A_CANT, 0);
-    addfloat((method)sigabsmin_float);
-    addint((method)sigabsmin_int);
-    addmess((method)sigabsmin_assist,"assist",A_CANT,0);
-    dsp_initclass();
+    t_class *c = class_new("absmin~", (method)sigabsmin_new, (method)dsp_free, (long)sizeof(t_sigabsmin), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)sigabsmin_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)sigabsmin_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)sigabsmin_assist, "assist", A_CANT, 0);
+    
+    class_dspinit(c);
+    class_register(CLASS_BOX, c);
+    sigabsmin_class = c;
     
     post("absmin~: by r. luke dubois, cmc");
+}
+
+void *sigabsmin_new(double val)
+{
+    t_sigabsmin *x = (t_sigabsmin *)object_alloc(sigabsmin_class);
+    
+    if (x) {
+		dsp_setup((t_pxobject *)x, 2);
+		outlet_new(x, "signal");
+        x->x_val = val;
+    }
+    return (x);
 }
 
 void sigabsmin_assist(t_sigabsmin *x, void *b, long m, long a, char *s)
@@ -39,106 +61,75 @@ void sigabsmin_assist(t_sigabsmin *x, void *b, long m, long a, char *s)
 		case 1: // inlet
 			switch(a) {
 				case 0:
-				sprintf(s, "(Signal) Input 1");
-				break;
+                    sprintf(s, "(Signal) Input 1");
+                    break;
 				case 1:
-				sprintf(s, "(Signal) Input 2");
-				break;
+                    sprintf(s, "(Signal) Input 2");
+                    break;
 			}
-		break;
+            break;
 		case 2: // outlet
 			switch(a) {
 				case 0:
-				sprintf(s, "(Signal) Output");
-				break;
+                    sprintf(s, "(Signal) Output");
+                    break;
 			}
-		break;
+            break;
 	}
 }
 
-void *sigabsmin_new(double val)
-{
-    t_sigabsmin *x = (t_sigabsmin *)newobject(sigabsmin_class);
-    dsp_setup((t_pxobject *)x,2);
-    outlet_new((t_pxobject *)x, "signal");
-    x->x_val = val;
-    return (x);
-}
-
 // this routine covers both inlets. It doesn't matter which one is involved
-
 void sigabsmin_float(t_sigabsmin *x, double f)
 {
 	x->x_val = f;
 }
 
-void sigabsmin_int(t_sigabsmin *x, long n)
+void sigabsmin_dsp64(t_sigabsmin *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	x->x_val = (float)n;
+    if (!count[0]) {
+        object_method(dsp64, gensym("dsp_add64"), x, sigabsmin1_perform64, 0, NULL);
+    } else if (!count[1]) {
+        object_method(dsp64, gensym("dsp_add64"), x, sigabsmin1_perform64, 0, NULL);
+    } else {
+        object_method(dsp64, gensym("dsp_add64"), x, sigabsmin2_perform64, 0, NULL);
+    }
 }
 
-t_int *offset_perform(t_int *w)
+void sigabsmin1_perform64(t_sigabsmin *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-    t_float *in = (t_float *)(w[1]);
-    t_float *out = (t_float *)(w[2]);
-	t_sigabsmin *x = (t_sigabsmin *)(w[3]);
-	float val2 = fabs(x->x_val);
-	float val1;
-	int n = (int)(w[4]);
-	
-	if (x->x_obj.z_disabled)
-		goto out;
-	
-	while (--n) {
-		val1 = *++in;
-    	if (fabs(val1)<=fabs(val2)) {
-	    		*++out = val1;
-    	}
-		else {
-    		*++out = val2;
-    	}
-	}
+    t_double *in = ins[0];
+    t_double *out = outs[0];
+    t_float val1;
+    t_float val2 = x->x_val;
     
-out:
-    return (w+5);
+    int n = sampleframes;
+    
+    while (n--) {
+        val1 = *in++;
+        if (fabs(val1) <= fabs(val2)) {
+            *out++ = val1;
+        } else {
+            *out++ = val2;
+        }
+    }
 }
 
-t_int *sigabsmin2_perform(t_int *w)
+void sigabsmin2_perform64(t_sigabsmin *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_float *in1,*in2,*out;
-	int n;
-	float val1, val2;
-
-	if (*(long *)(w[1]))
-	    goto out;
-
-	in1 = (t_float *)(w[2]);
-	in2 = (t_float *)(w[3]);
-	out = (t_float *)(w[4]);
-	n = (int)(w[5]);
-	while (--n) {
-		val1 = *++in1;
-		val2 = *++in2;
-    	if (fabs(val1)<=fabs(val2)) {
-	    		*++out = val1;
-    	}
-		else {
-    		*++out = val2;
-    	}
-	}
-out:
-	return (w+6);
-}		
-
-void sigabsmin_dsp(t_sigabsmin *x, t_signal **sp, short *count)
-{
-	long i;
-		
-	if (!count[0])
-		dsp_add(offset_perform, 4, sp[1]->s_vec-1, sp[2]->s_vec-1, x, sp[0]->s_n+1);
-	else if (!count[1])
-		dsp_add(offset_perform, 4, sp[0]->s_vec-1, sp[2]->s_vec-1, x, sp[0]->s_n+1);
-	else
-		dsp_add(sigabsmin2_perform, 5, &x->x_obj.z_disabled, sp[0]->s_vec-1, sp[1]->s_vec-1, sp[2]->s_vec-1, sp[0]->s_n+1);
+    t_double *in1 = ins[0];
+    t_double *in2 = ins[1];
+    t_double *out = outs[0];
+    t_float val1, val2;
+    
+    int n = sampleframes;
+    
+    while (n--) {
+        val1 = *in1++;
+        val2 = *in2++;
+        if (fabs(val1) <= fabs(val2)) {
+            *out++ = val1;
+        } else {
+            *out++ = val2;
+        }
+    }
 }
-

@@ -14,13 +14,16 @@
 /*		  		  CONTROL3 = vibFreq      */
 /*		  		  MOD_WHEEL= vibAmt       */
 /******************************************/
+//
+// Updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 #include "stk_c.h"
 #include <math.h> 
 #define LENGTH 22050	//44100/LOWFREQ + 1 --brass length
 #define VIBLENGTH 1024
 
-void *brass_class;
+t_class *brass_class;
 
 typedef struct _brass
 {
@@ -71,10 +74,13 @@ typedef struct _brass
 //setup funcs
 void *brass_new(double val);
 void brass_free(t_brass *x);
-void brass_dsp(t_brass *x, t_signal **sp, short *count);
-void brass_float(t_brass *x, double f);
-t_int *brass_perform(t_int *w);
 void brass_assist(t_brass *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void brass_dsp64(t_brass *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void brass_perform64(t_brass *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
+void brass_float(t_brass *x, double f);
 
 //vib funcs
 void setVibFreq(t_brass *x, float freq);
@@ -82,7 +88,6 @@ float vib_tick(t_brass *x);
 
 //brass functions
 void setFreq(t_brass *x, float frequency);
-
 
 /****FUNCTIONS****/
 
@@ -123,17 +128,42 @@ float vib_tick(t_brass *x)
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&brass_class, (method)brass_new, (method)brass_free, (short)sizeof(t_brass), 0L, A_DEFFLOAT, 0);
-    addmess((method)brass_dsp, "dsp", A_CANT, 0);
-    addmess((method)brass_assist,"assist",A_CANT,0);
-    addfloat((method)brass_float);
-    dsp_initclass();
-    rescopy('STR#',98021);
+    t_class *c = class_new("brass~", (method)brass_new, (method)brass_free, (long)sizeof(t_brass), 0L, A_DEFFLOAT, 0);
+    class_addmethod(c, (method)brass_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)brass_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)brass_float, "float", A_FLOAT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    brass_class = c;
 }
 
 void brass_assist(t_brass *x, void *b, long m, long a, char *s)
 {
-	assist_string(98021,m,a,1,7,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) lip tension");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) slide targeting");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) vibrato gain");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) maximum pressure");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) vibrato frequency");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) frequency");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void brass_float(t_brass *x, double f)
@@ -157,45 +187,48 @@ void *brass_new(double initial_coeff)
 {
 	int i;
 
-    t_brass *x = (t_brass *)newobject(brass_class);
-     //zero out the struct, to be careful (takk to jkclayton)
-    if (x) { 
-        for(i=sizeof(t_pxobject)-1;i<sizeof(t_brass);i++)  
-                ((char *)x)[i]=0; 
-	} 
-    dsp_setup((t_pxobject *)x,6);
-    outlet_new((t_object *)x, "signal");
-    x->lipTension 			= 0.5;
-    x->lipTension_save 		= 0.5;
-    x->slideTargetMult 		= 0.5;
-    x->slideTargetMult_save = 0.5;
-    x->vibrGain 			= 0.5;
-    x->maxPressure 			= 0.05;
-    x->lipTarget  = x->x_fr = 440.;
-    x->x_vf = 5.;
+    t_brass *x = (t_brass *)object_alloc(brass_class);
     
-    x->srate = sys_getsr();
-    x->one_over_srate = 1./x->srate;
-    
-    DLineA_alloc(&x->delayLine, LENGTH);
-    
-    for(i=0; i<VIBLENGTH; i++) x->vibTable[i] = sin(i*TWO_PI/VIBLENGTH);
-    x->vibRate = 1.;
-    x->vibTime = 0.;
-    
-    //clear stuff
-    DLineA_clear(&x->delayLine);
-    LipFilt_init(&x->lipFilter);
-    
-    //initialize things
-    DLineA_setDelay(&x->delayLine, 100.);
+    if (x) {
+        //zero out the struct, to be careful (takk to jkclayton)
+        for(i=sizeof(t_pxobject)-1;i<sizeof(t_brass);i++)  {
+            ((char *)x)[i]=0;
+        }
 
-    setFreq(x, x->x_fr);
-    setVibFreq(x, 5.925);
+        dsp_setup((t_pxobject *)x,6);
+        outlet_new((t_object *)x, "signal");
+        x->lipTension 			= 0.5;
+        x->lipTension_save 		= 0.5;
+        x->slideTargetMult 		= 0.5;
+        x->slideTargetMult_save = 0.5;
+        x->vibrGain 			= 0.5;
+        x->maxPressure 			= 0.05;
+        x->lipTarget  = x->x_fr = 440.;
+        x->x_vf = 5.;
+        
+        x->srate = sys_getsr();
+        x->one_over_srate = 1./x->srate;
+        
+        DLineA_alloc(&x->delayLine, LENGTH);
+        
+        for(i=0; i<VIBLENGTH; i++) x->vibTable[i] = sin(i*TWO_PI/VIBLENGTH);
+        x->vibRate = 1.;
+        x->vibTime = 0.;
+        
+        //clear stuff
+        DLineA_clear(&x->delayLine);
+        LipFilt_init(&x->lipFilter);
+        
+        //initialize things
+        DLineA_setDelay(&x->delayLine, 100.);
 
-    x->fr_save = x->x_fr;
-    
-    post("what exactly is that sound?");
+        setFreq(x, x->x_fr);
+        setVibFreq(x, 5.925);
+
+        x->fr_save = x->x_fr;
+        
+        post("what exactly is that sound?");
+    }
     
     return (x);
 }
@@ -206,7 +239,7 @@ void brass_free(t_brass *x)
 	DLineA_free(&x->delayLine);
 }
 
-void brass_dsp(t_brass *x, t_signal **sp, short *count)
+void brass_dsp64(t_brass *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->x_ltconnected = count[0];
 	x->x_stconnected = count[1];
@@ -214,28 +247,26 @@ void brass_dsp(t_brass *x, t_signal **sp, short *count)
 	x->x_mpconnected = count[3];
 	x->x_vfconnected = count[4];
 	x->x_frconnected = count[5];
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
     x->one_over_srate = 1./x->srate;
-	dsp_add(brass_perform, 9, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[0]->s_n);	
-	
+    
+    object_method(dsp64, gensym("dsp_add64"), x, brass_perform64, 0, NULL);
 }
 
-t_int *brass_perform(t_int *w)
+void brass_perform64(t_brass *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_brass *x = (t_brass *)(w[1]);
-
-	float lipTension 		= x->x_ltconnected? *(float *)(w[2]) : x->lipTension;
-	float slideTargetMult 	= x->x_stconnected? *(float *)(w[3]) : x->slideTargetMult;
-	float vibrGain 			= x->x_vgconnected? *(float *)(w[4]) : x->vibrGain;
-	float maxPressure		= x->x_mpconnected? *(float *)(w[5]) : x->maxPressure;
-	float vf 				= x->x_vfconnected? *(float *)(w[6]) : x->x_vf;
-	float fr 				= x->x_frconnected? *(float *)(w[7]) : x->x_fr;
+	double lipTension 		= x->x_ltconnected? *(double *)(ins[0]) : x->lipTension;
+	double slideTargetMult 	= x->x_stconnected? *(double *)(ins[1]) : x->slideTargetMult;
+	double vibrGain 		= x->x_vgconnected? *(double *)(ins[2]) : x->vibrGain;
+	double maxPressure		= x->x_mpconnected? *(double *)(ins[3]) : x->maxPressure;
+	double vf 				= x->x_vfconnected? *(double *)(ins[4]) : x->x_vf;
+	double fr 				= x->x_frconnected? *(double *)(ins[5]) : x->x_fr;
 	
-	float *out = (float *)(w[8]);
-	long n = w[9];
+	double *out = (double *)(outs[0]);
+	long n = sampleframes;
 	
-	float temp, breathPressure;	
-
+	double temp, breathPressure;
+    
 	if(fr != x->fr_save) {
 		if(fr < 20.) fr = 20.;
   		x->slideTarget = (x->srate / fr * 2.0) + 3.0;
@@ -255,8 +286,8 @@ t_int *brass_perform(t_int *w)
    		x->slideTargetMult_save = slideTargetMult;
    	}
 	
-	x->vibRate = VIBLENGTH * x->one_over_srate * vf; 
-
+	x->vibRate = VIBLENGTH * x->one_over_srate * vf;
+    
 	while(n--) {
 		breathPressure = maxPressure;
   		breathPressure += vibrGain * vib_tick(x);
@@ -265,5 +296,5 @@ t_int *brass_perform(t_int *w)
   		temp = DCBlock_tick(&x->killdc, temp);			/* block DC    */
   		*out++ = DLineA_tick(&x->delayLine, temp);		/* bore delay  */
 	}
-	return w + 10;
-}	
+}
+

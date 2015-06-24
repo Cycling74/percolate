@@ -4,14 +4,17 @@
 //
 // objects and source are provided without warranty of any kind, express or implied.
 //
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 // include files...
 #include <stdlib.h>
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 
 // global for the class definition
-void *jitter_class;
+t_class *jitter_class;
 
 // my object structure
 typedef struct _jitter
@@ -22,26 +25,30 @@ typedef struct _jitter
 	float jitter;
 } t_jitter;
 
-void *jitter_new(float flag, float a); // creation function
-t_int *jitter_perform(t_int *w); // dsp perform function
-void jitter_range(t_jitter *x, long n); // set jitter range
-void jitter_manual(t_jitter *x, long n); // set jitter auto flag
-void jitter_dsp(t_jitter *x, t_signal **sp, short *count); // dsp add function
+void *jitter_new(double flag, double a); // creation function
 void jitter_assist(t_jitter *x, void *b, long m, long a, char *s); // assistance function
 void jitter_bang(t_jitter *x); // bang function
 
+void jitter_range(t_jitter *x, long n); // set jitter range
+void jitter_manual(t_jitter *x, long n); // set jitter auto flag
+
+// dsp stuff
+void jitter_dsp64(t_jitter *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void jitter_perform64(t_jitter *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
 void ext_main(void* p)
 {
-    setup((t_messlist **)&jitter_class, (method)jitter_new, (method)dsp_free, (short)sizeof(t_jitter), 0L, A_DEFFLOAT, A_DEFFLOAT, 0);
-
-	// declare the methods
-    addmess((method)jitter_dsp, "dsp", A_CANT, 0);
-    addmess((method)jitter_assist,"assist",A_CANT,0);
-	addmess((method)jitter_range, "range", A_DEFLONG, 0);
-	addmess((method)jitter_manual, "manual", A_DEFLONG, 0);
-	addbang((method)jitter_bang);
-    dsp_initclass(); // required for msp
-
+    t_class *c = class_new("jitter~", (method)jitter_new, (method)dsp_free, (long)sizeof(t_jitter), 0L, A_DEFFLOAT, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)jitter_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)jitter_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)jitter_range, "range", A_DEFLONG, 0);
+    class_addmethod(c, (method)jitter_manual, "manual", A_DEFLONG, 0);
+    class_addmethod(c, (method)jitter_bang, "bang", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    jitter_class = c;
 	post("jitter~: by r. luke dubois, cmc");
 }
 
@@ -67,35 +74,45 @@ void jitter_assist(t_jitter *x, void *b, long m, long a, char *s)
 }
 
 // instantiate the object
-void *jitter_new(float flag, float a)
-{	
-    t_jitter *x = (t_jitter *)newobject(jitter_class);
-    dsp_setup((t_pxobject *)x,1);
-    outlet_new((t_pxobject *)x, "signal");
-	x->range = 0.0; // initialize argument
-	x->jitter = 0.0;
-	// if the arguments are there check them and set them
-	if(flag) x->range = flag;
-    if (x->range<=0.0) x->range=0.0;
-    if (x->range>65535) x->range=65535;
+void *jitter_new(double flag, double a)
+{
+    post("flag: %f; a-flag: %f", flag, a);
+    
+    t_jitter *x = (t_jitter *)object_alloc(jitter_class);
+    if (x) {
+        dsp_setup((t_pxobject *)x,1);
+        outlet_new((t_pxobject *)x, "signal");
+        x->range = 0.0; // initialize argument
+        x->jitter = 0.0;
+        
+        // if the arguments are there check them and set them
+        if (flag) x->range = flag;
+        if (x->range<=0.0) x->range=0.0;
+        if (x->range>65535) x->range=65535;
 
-	if(a) x->aflag = (long)a; else	x->aflag = 0; // auto-jitter enabled by default
-    if (x->aflag<0) x->aflag = 0;
-    if (x->aflag>1) x->aflag = 1;
+        if (a) {
+            x->aflag = (long)a;
+        } else {
+            x->aflag = 0;
+        }
+        
+        if (x->aflag<0) x->aflag = 0;
+        if (x->aflag>1) x->aflag = 1;
+    }
 
     return (x);
 }
 
 void jitter_bang(t_jitter *x)
 {
-	x->jitter = ((((float)rand()/(float)RAND_MAX)*x->range)*2)-x->range;
+	x->jitter = ( ( ((float)rand()/(float)RAND_MAX) * x->range) *2) - (x->range);
 }
 
 void jitter_range(t_jitter *x, long n)
 {
-		x->range = n;
+		x->range = (float)n;
 	    if (x->range<0.0) x->range = 0.0;
-	    if (x->range>65535) x->range = 65535;
+	    if (x->range>65535.) x->range = 65535.;
 }
 
 void jitter_manual(t_jitter *x, long n)
@@ -105,34 +122,40 @@ void jitter_manual(t_jitter *x, long n)
 	    if (x->aflag>1) x->aflag = 1;
 }
 
-// go go go...
-t_int *jitter_perform(t_int *w)
+void jitter_dsp64(t_jitter *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	t_jitter *x = (t_jitter *)w[1]; // get current state of my object class
-	t_float *in, *out; // variables for input and output buffer
-	int n; // counter for vector size
+    object_method(dsp64, gensym("dsp_add64"), x, jitter_perform64, 0, NULL);
+}
 
+void jitter_perform64(t_jitter *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+    t_double *in, *out;  // variables for input and output buffer
+	int n;              // counter for vector size
+    
 	// more efficient -- make local copies of class variables so i'm not constantly checking the globals...
-	float range = x->range;
-	int aflag = x->aflag;
-	float jitter = x->jitter;
-
-	in = (t_float *)(w[2]);
-	out = (t_float *)(w[3]); // my output vector
-
-	n = (int)(w[4]); // my vector size
-
+	double range = x->range;
+	long aflag = x->aflag;
+	double jitter = x->jitter;
+    double temp;
+    
+	in = ins[0];
+	out = outs[0]; // my output vector
+    
+	n = sampleframes; // my vector size
+    
 	while (--n) { // loop executes a single vector
+        /*
 		if(!aflag) *++out = *++in + ((((float)rand()/(float)RAND_MAX)*range)*2)-range;
 		else *++out = *++in + jitter;
+         */
+        if (!aflag) {
+            temp = *in++;
+            temp += ((((float)rand()/(float)RAND_MAX)*range)*2)-range;
+            *out++ = temp;
+        } else {
+            temp = *in++;
+            temp += jitter;
+            *out++ = temp;
+        }
 	}
-
-	return (w+6); // return one greater than the arguments in the dsp_add call
 }
-
-void jitter_dsp(t_jitter *x, t_signal **sp, short *count)
-{
-	// add to the dsp chain -- i need my class, my input vector, my output vector, and my vector size...
-	dsp_add(jitter_perform, 5, x, sp[0]->s_vec-1, sp[1]->s_vec-1, sp[0]->s_n+1);
-}
-

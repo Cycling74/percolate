@@ -1,4 +1,8 @@
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
+
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include <math.h>
 #include <stdio.h>
@@ -14,7 +18,7 @@
 #define MAX_RANDOM RAND_MAX
 
 
-void *shaker_class;
+t_class *shaker_class;
 
 typedef struct _shaker
 {
@@ -77,12 +81,15 @@ typedef struct _shaker
 
 //setup funcs
 void *shaker_new(double val);
-void shaker_dsp(t_shaker *x, t_signal **sp, short *count);
+void shaker_assist(t_shaker *x, void *b, long m, long a, char *s);
+
 void shaker_float(t_shaker *x, double f);
 void shaker_int(t_shaker *x, int f);
 void shaker_bang(t_shaker *x);
-t_int *shaker_perform(t_int *w);
-void shaker_assist(t_shaker *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void shaker_dsp64(t_shaker *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void shaker_perform64(t_shaker *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 //noise maker
 float noise_tick();
@@ -102,7 +109,7 @@ void e_setSustainLevel(t_shaker *x, float level);
 void e_setReleaseRate(t_shaker *x, float rate);
 void e_setAll(t_shaker *x, float attRate, float decRate, float susLevel, float relRate);
 float e_tick(t_shaker *x);
-void shaker_adr(t_shaker *x, Symbol *s, short argc, Atom *argv);
+void shaker_adr(t_shaker *x, t_symbol *s, long argc, t_atom *argv);
 
 //shaker funcs
 void shake(t_shaker *x, float amplitude);
@@ -213,7 +220,7 @@ float e_tick(t_shaker *x)
 			x->e_state = SUSTAIN;	
 		}
 	}
-	else if(x->e_state = RELEASE) {
+	else if(x->e_state == RELEASE) {
 		x->e_value -= x->e_releaseRate;
 		if(x->e_value <= 0.) {
 			x->e_value = 0.;
@@ -273,20 +280,44 @@ float noise_tick()
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&shaker_class, (method)shaker_new, (method)dsp_free, (short)sizeof(t_shaker), 0L, A_DEFFLOAT, 0);
-    addmess((method)shaker_dsp, "dsp", A_CANT, 0);
-    addmess((method)shaker_assist,"assist",A_CANT,0);
-    addmess((method)shaker_adr, "envelope", A_GIMME, 0);
-    addfloat((method)shaker_float);
-    addint((method)shaker_int);
-    addbang((method)shaker_bang);
-    dsp_initclass();
-    rescopy('STR#',9803);
+    t_class *c = class_new("shaker~", (method)shaker_new, (method)dsp_free, (long)sizeof(t_shaker), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)shaker_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)shaker_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)shaker_adr, "envelope", A_GIMME, 0);
+    class_addmethod(c, (method)shaker_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)shaker_int, "int", A_LONG, 0);
+    class_addmethod(c, (method)shaker_bang, "bang", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    shaker_class = c;
 }
 
 void shaker_assist(t_shaker *x, void *b, long m, long a, char *s)
 {
-	assist_string(9803,m,a,1,6,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) number of beans");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) resonance");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) damping");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) shake speed");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) shake max");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void shaker_float(t_shaker *x, double f)
@@ -324,7 +355,7 @@ void *shaker_new(double initial_coeff)
 {
 	int i;
 
-    t_shaker *x = (t_shaker *)newobject(shaker_class);
+    t_shaker *x = (t_shaker *)object_alloc(shaker_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_shaker);i++)  
@@ -369,8 +400,21 @@ void *shaker_new(double initial_coeff)
     return (x);
 }
 
+//set attack, decay, release ratios
+void shaker_adr(t_shaker *x, t_symbol *s, long argc, t_atom *argv)
+{
+	if(argc < 3) {
+		post("shaker: need three arguments (attack ratio, decay ratio, release ratio");
+		return;
+	}
+	x->attack_ratio = argv[0].a_w.w_float;
+	x->decay_ratio = argv[1].a_w.w_float;
+	x->release_ratio = argv[2].a_w.w_float;
+	post("attack ratio = %f, decay ratio = %f, release ratio = %f", x->attack_ratio, x->decay_ratio, x->release_ratio);
+	
+}
 
-void shaker_dsp(t_shaker *x, t_signal **sp, short *count)
+void shaker_dsp64(t_shaker *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->num_beansConnected = count[0];
 	x->res_freqConnected = count[1];
@@ -378,33 +422,29 @@ void shaker_dsp(t_shaker *x, t_signal **sp, short *count)
 	x->shake_speedConnected = count[3];
 	x->shake_maxConnected = count[4];
 	
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
 	x->one_over_srate = 1./x->srate;
-	
-	dsp_add(shaker_perform, 8, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[0]->s_n);	
-	
+    object_method(dsp64, gensym("dsp_add64"), x, shaker_perform64, 0, NULL);
 }
 
-t_int *shaker_perform(t_int *w)
+void shaker_perform64(t_shaker *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_shaker *x = (t_shaker *)(w[1]);
+	t_double num_beans		= x->num_beansConnected		? 	*(t_double *)(ins[0]) : x->num_beans;
+	t_double res_freq 		= x->res_freqConnected		? 	*(t_double *)(ins[1]) : x->res_freq;
+	t_double shake_damp 	= x->shake_dampConnected	? 	*(t_double *)(ins[2]) : x->shake_damp;
+	t_double shake_speed	= x->shake_speedConnected	? 	*(t_double *)(ins[3]) : x->shake_speed;
+	t_double shake_max      = x->shake_maxConnected		? 	*(t_double *)(ins[4]) : x->shake_max;
 	
-	float num_beans		= x->num_beansConnected		? 	*(float *)(w[2]) : x->num_beans;
-	float res_freq 		= x->res_freqConnected		? 	*(float *)(w[3]) : x->res_freq;
-	float shake_damp 	= x->shake_dampConnected	? 	*(float *)(w[4]) : x->shake_damp;
-	float shake_speed	= x->shake_speedConnected	? 	*(float *)(w[5]) : x->shake_speed;
-	float shake_max 	= x->shake_maxConnected		? 	*(float *)(w[6]) : x->shake_max;
+	t_double *out = (t_double *)(outs[0]);
+	long n = sampleframes;
 	
-	float *out = (float *)(w[7]);
-	long n = w[8];
-	
-	float temp;
+	t_double temp;
 	int state = x->e_state;
 	long shake_num = x->shake_num;
-	float gain_norm = x->gain_norm;
+	t_double gain_norm = x->gain_norm;
 	long wait_time = x->wait_time;
-	float lastOutput;
-	float coll_damp = x->coll_damp;
+	t_double lastOutput;
+	t_double coll_damp = x->coll_damp;
 	
 	if(num_beans != x->num_beansSave) {
 		num_beans = 129 - num_beans;
@@ -433,9 +473,9 @@ t_int *shaker_perform(t_int *w)
 		temp += shake_speed;
 		e_setAll(x, temp*x->attack_ratio, temp*x->decay_ratio, 0., temp*x->release_ratio);
 		e_keyOn(x);
-	}	
+	}
 	
-
+    
 	while(n--) {
 		temp = e_tick(x) * shake_max;
 		if(shake_num > 0) {
@@ -459,22 +499,5 @@ t_int *shaker_perform(t_int *w)
 		
 		*out++ = lastOutput;
 	}
-	return w + 9;
-}	
-
-//set attack, decay, release ratios
-void shaker_adr(t_shaker *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	float temp;
-	long temp2; 
-	if(argc < 3) {
-		post("shaker: need three arguments (attack ratio, decay ratio, release ratio");
-		return;
-	}
-	x->attack_ratio = argv[0].a_w.w_float;
-	x->decay_ratio = argv[1].a_w.w_float;
-	x->release_ratio = argv[2].a_w.w_float;
-	post("attack ratio = %f, decay ratio = %f, release ratio = %f", x->attack_ratio, x->decay_ratio, x->release_ratio);
-	
 }
+

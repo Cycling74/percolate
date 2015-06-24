@@ -8,11 +8,14 @@
 /*										     */
 /*  ported to MSP by Dan Trueman, 2000	     */
 /*********************************************/
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 #include "stk_c.h"
 #include <math.h> 
 
-void *bowedbar_class;
+t_class *bowedbar_class;
 
 typedef struct _bowedbar
 {
@@ -70,10 +73,13 @@ typedef struct _bowedbar
 //setup funcs
 void *bowedbar_new(double val);
 void bowedbar_free(t_bowedbar *x);
-void bowedbar_dsp(t_bowedbar *x, t_signal **sp, short *count);
-void bowedbar_float(t_bowedbar *x, double f);
-t_int *bowedbar_perform(t_int *w);
 void bowedbar_assist(t_bowedbar *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void bowedbar_dsp64(t_bowedbar *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void bowedbar_perform64(t_bowedbar *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
+void bowedbar_float(t_bowedbar *x, double f);
 
 //bowedbar functions
 void setFreq(t_bowedbar *x, float freq);
@@ -107,8 +113,10 @@ void setFreq(t_bowedbar *x, float freq)
     
 	  BiQuad_clear(&x->bandpass_[i]);    
 
+      // x->Zs[i][1] = 0.0;
+      // x->Zs[i][2] = 0.0;
+      x->Zs[i][0] = 0.0;
       x->Zs[i][1] = 0.0;
-      x->Zs[i][2] = 0.0;
       x->filtOut[i] = 0.0;
       x->filtIn[i] = 0.0;
     }
@@ -123,8 +131,12 @@ void clear(t_bowedbar *x)
     {
       DLineN_clear(&x->delay[i]);
       BiQuad_clear(&x->bandpass_[i]);
+        
+      // x->Zs[i][1] = 0.0;
+      // x->Zs[i][2] = 0.0;
+      x->Zs[i][0] = 0.0;
       x->Zs[i][1] = 0.0;
-      x->Zs[i][2] = 0.0;
+        
       x->filtOut[i] = 0.0;
       x->filtIn[i] = 0.0;
     }
@@ -179,17 +191,111 @@ void pluck(t_bowedbar *x, float amplitude)
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&bowedbar_class, (method)bowedbar_new, (method)bowedbar_free, (short)sizeof(t_bowedbar), 0L, A_DEFFLOAT, 0);
-    addmess((method)bowedbar_dsp, "dsp", A_CANT, 0);
-    addmess((method)bowedbar_assist,"assist",A_CANT,0);
-    addfloat((method)bowedbar_float);
-    dsp_initclass();
-    rescopy('STR#',9979);
+    t_class *c = class_new("bowedbar~", (method)bowedbar_new, (method)bowedbar_free, (long)sizeof(t_bowedbar), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)bowedbar_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)bowedbar_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)bowedbar_float, "float", A_FLOAT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    bowedbar_class = c;
+}
+
+void *bowedbar_new(double initial_coeff)
+{
+	int i;
+    
+    t_bowedbar *x = (t_bowedbar *)object_alloc(bowedbar_class);
+    
+    if (x) {
+        //zero out the struct, to be careful (takk to jkclayton)
+        for(i=sizeof(t_pxobject)-1;i<sizeof(t_bowedbar);i++) {
+            ((char *)x)[i]=0;
+        }
+        dsp_setup((t_pxobject *)x,6);
+        outlet_new((t_object *)x, "signal");
+        
+        x->x_bp = 0.5;
+        x->x_bpos = 0.15;
+        x->x_bv = 0.5;
+        x->x_freq = 440.;
+        
+        x->modes[0] = 1.0;
+        x->modes[1] = 2.756;
+        x->modes[2] = 5.404;
+        x->modes[3] = 8.933;
+        
+        x->length = 100.;
+        
+        for (i=0;i<4;i++)	{
+            x->gains[i] = pow(0.9,(double) i);
+            DLineN_alloc(&x->delay[i], 2408);
+            DLineN_setDelay(&x->delay[i], (int)(x->length/x->modes[i]));
+            DLineN_clear(&x->delay[i]);
+            BiQuad_init(&x->bandpass_[i]);
+            BiQuad_clear(&x->bandpass_[i]);
+            x->Zs[i][0] = 0.0;
+            x->Zs[i][1] = 0.0;
+            x->filtOut[i] = 0.0;
+            x->filtIn[i] = 0.0;
+        }
+        
+        x->srate = sys_getsr();
+        x->one_over_srate = 1./x->srate;
+        
+        //initialize things
+        BowTabl_init(&x->bowTabl);
+        x->bowTabl.slope = 3.0;
+        x->slope = 3.;
+        x->R = 0.97;
+        x->x_GAIN = 0.999;
+        x->integration_const_ = 0.;
+        x->velinput = 0.;
+        
+        x->fr_save = x->x_freq;
+        
+        post("some people do this for a living...");
+    }
+    
+    return (x);
+}
+
+void bowedbar_free(t_bowedbar *x)
+{
+	int i;
+	dsp_free((t_pxobject *)x);
+	for(i=0;i<4;i++) {
+		DLineN_free(&x->delay[i]);
+	}
 }
 
 void bowedbar_assist(t_bowedbar *x, void *b, long m, long a, char *s)
 {
-	assist_string(9979,m,a,1,7,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) bow pressure");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) bow position");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) bow velocity");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) gain");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) integration");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) frequency");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void bowedbar_float(t_bowedbar *x, double f)
@@ -209,101 +315,33 @@ void bowedbar_float(t_bowedbar *x, double f)
 	}
 }
 
-void *bowedbar_new(double initial_coeff)
+void bowedbar_dsp64(t_bowedbar *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	int i;
-
-    t_bowedbar *x = (t_bowedbar *)newobject(bowedbar_class);
-     //zero out the struct, to be careful (takk to jkclayton)
-    if (x) { 
-        for(i=sizeof(t_pxobject)-1;i<sizeof(t_bowedbar);i++)  
-                ((char *)x)[i]=0; 
-	} 
-    dsp_setup((t_pxobject *)x,6);
-    outlet_new((t_object *)x, "signal");
-    
-    x->x_bp = 0.5;
-    x->x_bpos = 0.15;
-    x->x_bv = 0.5;
-    x->x_freq = 440.;
-    
-    x->modes[0] = 1.0;
-    x->modes[1] = 2.756;
-  	x->modes[2] = 5.404;
-  	x->modes[3] = 8.933;
-  	
-    x->length = 100.;
-  	
-  	for (i=0;i<4;i++)	{
-    	x->gains[i] = pow(0.9,(double) i);
-    	DLineN_alloc(&x->delay[i], 2408);
-    	DLineN_setDelay(&x->delay[i], (int)(x->length/x->modes[i]));
-    	DLineN_clear(&x->delay[i]);
-    	BiQuad_init(&x->bandpass_[i]);
-    	BiQuad_clear(&x->bandpass_[i]);
-      	x->Zs[i][1] = 0.0;
-      	x->Zs[i][2] = 0.0;
-      	x->filtOut[i] = 0.0;
-      	x->filtIn[i] = 0.0;
-  	}
-    
-    x->srate = sys_getsr();
-    x->one_over_srate = 1./x->srate;
-    
-    //initialize things
-    BowTabl_init(&x->bowTabl);
-    x->bowTabl.slope = 3.0;
-    x->slope = 3.;
-  	x->R = 0.97;
-  	x->x_GAIN = 0.999;
-  	x->integration_const_ = 0.;
-  	x->velinput = 0.;
-
-    x->fr_save = x->x_freq;
-    
-    post("some people do this for a living...");
-    
-    return (x);
-}
-
-void bowedbar_free(t_bowedbar *x)
-{
-	int i;
-	dsp_free((t_pxobject *)x);
-	for(i=0;i<4;i++) {
-		DLineN_free(&x->delay[i]);
-	}
-}
-
-void bowedbar_dsp(t_bowedbar *x, t_signal **sp, short *count)
-{
-	x->x_bpconnected = count[0];
+    x->x_bpconnected = count[0];
 	x->x_bposconnected = count[1];
 	x->x_bvconnected = count[2];
 	x->x_GAINconnected = count[3];
 	x->x_ic_connected = count[4];
 	x->x_freqconnected = count[5];
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
     x->one_over_srate = 1./x->srate;
-	dsp_add(bowedbar_perform, 9, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[0]->s_n);	
-	
+
+    object_method(dsp64, gensym("dsp_add64"), x, bowedbar_perform64, 0, NULL);
 }
 
-t_int *bowedbar_perform(t_int *w)
+void bowedbar_perform64(t_bowedbar *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_bowedbar *x = (t_bowedbar *)(w[1]);
+	double bp 	= x->x_bpconnected                  ? *(double *)(ins[0]) : x->x_bp;
+	double bpos = x->x_bposconnected                ? *(double *)(ins[1]) : x->x_bpos;
+	double bv 	= x->x_bvconnected                  ? *(double *)(ins[2]) : x->x_bv;
+	double GAIN = x->x_GAINconnected                ? *(double *)(ins[3]) : x->x_GAIN;
+	double integration_const_ = x->x_ic_connected   ? *(double *)(ins[4]) : x->x_integration_const_;
+	double fr 	= x->x_freqconnected                ? *(double *)(ins[5]) : x->x_freq;
 	
-	float bp 	= x->x_bpconnected? *(float *)(w[2]) : x->x_bp;
-	float bpos 	= x->x_bposconnected? *(float *)(w[3]) : x->x_bpos;
-	float bv 	= x->x_bvconnected? *(float *)(w[4]) : x->x_bv;
-	float GAIN 	= x->x_GAINconnected? *(float *)(w[5]) : x->x_GAIN;
-	float integration_const_ = x->x_ic_connected? *(float *)(w[6]) : x->x_integration_const_;
-	float fr 	= x->x_freqconnected? *(float *)(w[7]) : x->x_freq;
-	
-	float *out = (float *)(w[8]);
-	long n = w[9];
-
-	float temp, input, data;	
+	double *out = (double *)(outs[0]);
+	long n = sampleframes;
+    
+	double input, data;
 	long k;
 	
 	if(fr != x->fr_save) {
@@ -314,33 +352,32 @@ t_int *bowedbar_perform(t_int *w)
 	x->bowTabl.slope = bp;
 	x->slope = bp;
 	setStrikePosition(x, bpos);
-
+    
 	while(n--) {
-  
+        
  		data = 0.0;
   		input = 0.0;
-  
+        
   		if(integration_const_ == 0.0)
     		x->velinput = 0.0;
   		else
     		x->velinput = integration_const_ * x->velinput;
-  
+        
   		for(k=0; k<x->NR_MODES; k++) {
       		x->velinput += GAIN * x->delay[k].lastOutput;
     	}
-
+        
       	input = bv - x->velinput;
       	input = input * BowTabl_lookup(&x->bowTabl, input);
-      	input = input/(float)x->NR_MODES;
-  
-  		for(k=0; k<x->NR_MODES; k++) {	
+      	input = input/(double)x->NR_MODES;
+        
+  		for(k=0; k<x->NR_MODES; k++) {
   			BiQuad_tick(&x->bandpass_[k], input*x->gains[k] + GAIN * x->delay[k].lastOutput);
       		DLineN_tick(&x->delay[k], x->bandpass_[k].lastOutput);
       		data += x->bandpass_[k].lastOutput;
     	}
-  
+        
 		*out++ =  data * 4.0;
- 		 
 	}
-	return w + 10;
-}	
+}
+

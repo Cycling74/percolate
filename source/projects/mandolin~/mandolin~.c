@@ -23,7 +23,7 @@
 #include "mandimpulses.h"
 #define LENGTH 2048 	//44100/LOWFREQ + 1 --mando length
 
-void *mando_class;
+t_class *mando_class;
 
 typedef struct _mando
 {
@@ -81,18 +81,21 @@ typedef struct _mando
 //setup funcs
 void *mando_new(double val);
 void mando_free(t_mando *x);
-void mando_dsp(t_mando *x, t_signal **sp, short *count);
-void mando_float(t_mando *x, double f);
-void mando_bang(t_mando *x);
-t_int *mando_perform(t_int *w);
 void mando_assist(t_mando *x, void *b, long m, long a, char *s);
+
+void mando_bang(t_mando *x);
+void mando_float(t_mando *x, double f);
+
+// dsp stuff
+void mando_dsp64(t_mando *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void mando_perform64(t_mando *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 //mando functions
 void setFreq(t_mando *x, float frequency);
 void pluck(t_mando *x, float amplitude, float position);
 void setDetune(t_mando *x, float detune);
 void setBodySize(t_mando *x, float size);
-void setmic(t_mando *x, Symbol *s, short argc, Atom *argv);
+void setmic(t_mando *x, t_symbol *s, short argc, t_atom *argv);
 void setBaseLoopGain(t_mando *x, float aGain);
 
 
@@ -159,17 +162,21 @@ void setBaseLoopGain(t_mando *x, float aGain)
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&mando_class, (method)mando_new, (method)mando_free, (short)sizeof(t_mando), 0L, A_DEFFLOAT, 0);
-    addmess((method)mando_dsp, "dsp", A_CANT, 0);
-    addmess((method)mando_assist,"assist",A_CANT,0);
-    addmess((method)setmic, "mic", A_GIMME, 0);
-    addfloat((method)mando_float);
-    addbang((method)mando_bang);
-    dsp_initclass();
-    rescopy('STR#',9981);
+    t_class *c = class_new("mando~", (method)mando_new, (method)mando_free, (long)sizeof(t_mando), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)mando_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)mando_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)mando_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)mando_bang, "bang", A_CANT, 0);
+    class_addmethod(c, (method)setmic, "mic", A_GIMME, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    mando_class = c;
 }
 
-void setmic(t_mando *x, Symbol *s, short argc, Atom *argv)
+void setmic(t_mando *x, t_symbol *s, short argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -191,7 +198,30 @@ void setmic(t_mando *x, Symbol *s, short argc, Atom *argv)
 
 void mando_assist(t_mando *x, void *b, long m, long a, char *s)
 {
-	assist_string(9981,m,a,1,7,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) pluck amplitude");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) pluck position");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) string damping");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) detuning");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) body size");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) frequency");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void mando_float(t_mando *x, double f)
@@ -214,60 +244,58 @@ void mando_float(t_mando *x, double f)
 void *mando_new(double initial_coeff)
 {
 	int i;
-	char temp[128];
 	
-	
-    t_mando *x = (t_mando *)newobject(mando_class);
+    t_mando *x = (t_mando *)object_alloc(mando_class);
      //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
-        for(i=sizeof(t_pxobject)-1;i<sizeof(t_mando);i++)  
-                ((char *)x)[i]=0; 
-	} 
-    dsp_setup((t_pxobject *)x,6);
-    outlet_new((t_object *)x, "signal");
-   
-    x->length = LENGTH;
-    x->baseLoopGain = 0.995;
-    x->loopGain = 0.999;
-    x->directBody = 1.0;
-  	x->mic = 0;
-  	x->dampTime = 0;
-  	x->waveDone = 1;
-  	x->pluckAmp = 0.3;
-  	x->pluckPos = 0.4;
-  	x->detuning = 0.995;
-  	x->lastFreq = 80.;
-  	x->lastLength = x->length * 0.5;
-  	x->x_fr = 440.;
-  	x->pluck = 0;
-    
-    x->srate = sys_getsr();
-    x->one_over_srate = 1./x->srate;
-    
-    DLineA_alloc(&x->delayLine, LENGTH);
-    DLineA_alloc(&x->delayLine2, LENGTH);
-    DLineL_alloc(&x->combDelay, LENGTH);
-    
-    //clear stuff
-    DLineA_clear(&x->delayLine);
-    DLineA_clear(&x->delayLine2);
-    DLineL_clear(&x->combDelay);
-    OneZero_init(&x->filter);
-    OneZero_init(&x->filter2);
-    
-    //impulse responses    
-    for (i=0;i<12;i++) {
-    	HeaderSnd_alloc(&x->soundfile[i], &mand[i][0], 721, "oneshot");
-    }
+        for(i=sizeof(t_pxobject)-1;i<sizeof(t_mando);i++) {
+            ((char *)x)[i]=0;
+        }
 
-    setFreq(x, x->x_fr);
-   
-    x->fr_save = x->x_fr;
-    x->detuning_save = x->detuning;
-    
-    post("if you believe the mandolin is linear, i've got another one for ya...");
-    
-    
+        dsp_setup((t_pxobject *)x,6);
+        outlet_new((t_object *)x, "signal");
+       
+        x->length = LENGTH;
+        x->baseLoopGain = 0.995;
+        x->loopGain = 0.999;
+        x->directBody = 1.0;
+        x->mic = 0;
+        x->dampTime = 0;
+        x->waveDone = 1;
+        x->pluckAmp = 0.3;
+        x->pluckPos = 0.4;
+        x->detuning = 0.995;
+        x->lastFreq = 80.;
+        x->lastLength = x->length * 0.5;
+        x->x_fr = 440.;
+        x->pluck = 0;
+        
+        x->srate = sys_getsr();
+        x->one_over_srate = 1./x->srate;
+        
+        DLineA_alloc(&x->delayLine, LENGTH);
+        DLineA_alloc(&x->delayLine2, LENGTH);
+        DLineL_alloc(&x->combDelay, LENGTH);
+        
+        //clear stuff
+        DLineA_clear(&x->delayLine);
+        DLineA_clear(&x->delayLine2);
+        DLineL_clear(&x->combDelay);
+        OneZero_init(&x->filter);
+        OneZero_init(&x->filter2);
+        
+        //impulse responses    
+        for (i=0;i<12;i++) {
+            HeaderSnd_alloc(&x->soundfile[i], &mand[i][0], 721, "oneshot");
+        }
+
+        setFreq(x, x->x_fr);
+       
+        x->fr_save = x->x_fr;
+        x->detuning_save = x->detuning;
+        
+        post("if you believe the mandolin is linear, i've got another one for ya...");
+    }
     return (x);
 }
 
@@ -282,7 +310,8 @@ void mando_free(t_mando *x)
 		HeaderSnd_free(&x->soundfile[i]);
 }
 
-void mando_dsp(t_mando *x, t_signal **sp, short *count)
+
+void mando_dsp64(t_mando *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
    	x->pluckAmpconnected 		= count[0];
 	x->pluckPosconnected 		= count[1];
@@ -291,31 +320,28 @@ void mando_dsp(t_mando *x, t_signal **sp, short *count)
 	x->bodySizeconnected 		= count[4];
 	x->x_frconnected 			= count[5];
 
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
     x->one_over_srate = 1./x->srate;
-	dsp_add(mando_perform, 9, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, 
-		sp[3]->s_vec, sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[0]->s_n);	
+    object_method(dsp64, gensym("dsp_add64"), x, mando_perform64, 0, NULL);
 }
 
-t_int *mando_perform(t_int *w)
+void mando_perform64(t_mando *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_mando *x = (t_mando *)(w[1]);
-	
-	float pluckAmp = x->pluckAmpconnected? *(float *)(w[2]) : x->pluckAmp;
-	float pluckPos = x->pluckPosconnected? *(float *)(w[3]) : x->pluckPos;
-	float stringDamping = x->stringDampingconnected? *(float *)(w[4]) : x->stringDamping;
-	float detuning = x->detuningconnected? *(float *)(w[5]) : x->detuning;
-	float bodySize = x->bodySizeconnected? *(float *)(w[6]) : x->bodySize;
-	float fr = x->x_frconnected? *(float *)(w[7]) : x->x_fr;
-	float *out = (float *)(w[8]);
-	long n = w[9];
-
-	float temp, lastOutput;	
-
+	t_double pluckAmp = x->pluckAmpconnected            ? *(t_double *)(ins[0]) : x->pluckAmp;
+	t_double pluckPos = x->pluckPosconnected            ? *(t_double *)(ins[1]) : x->pluckPos;
+	t_double stringDamping = x->stringDampingconnected  ? *(t_double *)(ins[2]) : x->stringDamping;
+	t_double detuning = x->detuningconnected            ? *(t_double *)(ins[3]) : x->detuning;
+	t_double bodySize = x->bodySizeconnected            ? *(t_double *)(ins[4]) : x->bodySize;
+	t_double fr = x->x_frconnected                      ? *(t_double *)(ins[5]) : x->x_fr;
+	t_double *out = (t_double *)(outs[0]);
+	long n = sampleframes;
+    
+	t_double temp, lastOutput;
+    
 	if(fr != x->fr_save) {
 		setFreq(x, fr);
 		x->fr_save = fr;
-	} 
+	}
 	
 	setBodySize(x, bodySize);
 	setBaseLoopGain(x, stringDamping);
@@ -329,40 +355,40 @@ t_int *mando_perform(t_int *w)
 		pluck(x, pluckAmp, pluckPos);
 		x->pluck = 0;
 	}
-
+    
 	while(n--) {
 		/* //this is busted, for some mysterious reason...
-  		if (!x->waveDone)      {
-  			x->waveDone = HeaderSnd_informTick(&x->soundfile[x->mic]);
-    		temp = x->soundfile[x->mic].lastOutput * pluckAmp; 		
-    		temp = temp - DLineL_tick(&x->combDelay, temp);			        		
-  		}
-  		*/	
+         if (!x->waveDone)      {
+         x->waveDone = HeaderSnd_informTick(&x->soundfile[x->mic]);
+         temp = x->soundfile[x->mic].lastOutput * pluckAmp;
+         temp = temp - DLineL_tick(&x->combDelay, temp);
+         }
+         */
   		
-  		x->waveDone = HeaderSnd_informTick(&x->soundfile[x->mic]);   	
-    	temp = x->soundfile[x->mic].lastOutput * pluckAmp; 	
-    	temp = temp - DLineL_tick(&x->combDelay, temp);	 
-    	                                 
+  		x->waveDone = HeaderSnd_informTick(&x->soundfile[x->mic]);
+    	temp = x->soundfile[x->mic].lastOutput * pluckAmp;
+    	temp = temp - DLineL_tick(&x->combDelay, temp);
+        
   		if (x->dampTime>=0) {                             		/* Damping hack to help avoid */
     		x->dampTime -= 1;                               	/* overflow on replucking     */
     		lastOutput = DLineA_tick(&x->delayLine,				/* Calculate 1st delay */
-    			OneZero_tick(&x->filter, temp +					/* filterered reflection      */
-    			(x->delayLine.lastOutput * .7)));				/* plus pluck excitation      */
+                OneZero_tick(&x->filter, temp +					/* filterered reflection      */
+                (x->delayLine.lastOutput * .7)));				/* plus pluck excitation      */
     		lastOutput += DLineA_tick(&x->delayLine2,			/* and 2nd delay              */
-    			OneZero_tick(&x->filter2, temp +				/* just like the 1st          */
-    			(x->delayLine2.lastOutput * .7)));
+                OneZero_tick(&x->filter2, temp +				/* just like the 1st          */
+                (x->delayLine2.lastOutput * .7)));
   		}
   		else { /*  No damping hack after 1 period */
   			lastOutput = DLineA_tick(&x->delayLine,				/* Calculate 1st delay */
-    			OneZero_tick(&x->filter, temp +					/* filterered reflection      */
-    			(x->delayLine.lastOutput * x->loopGain)));		/* plus pluck excitation      */
+                OneZero_tick(&x->filter, temp +					/* filterered reflection      */
+                (x->delayLine.lastOutput * x->loopGain)));		/* plus pluck excitation      */
     		lastOutput += DLineA_tick(&x->delayLine2,			/* and 2nd delay              */
-    			OneZero_tick(&x->filter2, temp +				/* just like the 1st          */
-    			(x->delayLine2.lastOutput * x->loopGain)));
+                OneZero_tick(&x->filter2, temp +				/* just like the 1st          */
+                (x->delayLine2.lastOutput * x->loopGain)));
   		}
     	
 		*out++ = lastOutput;
 		
 	}
-	return w + 10;
-}	
+
+}

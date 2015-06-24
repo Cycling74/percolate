@@ -4,15 +4,18 @@
 //
 // objects and source are provided without warranty of any kind, express or implied.
 //
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 // include files...
 // #include <stdlib.h>
-#include "ext.h"
-#include "z_dsp.h"
 #include "math.h"
+#include "ext.h"
+#include "ext_obex.h"
+#include "z_dsp.h"
 
 // global for the class definition
-void *klutz_class;
+t_class *klutz_class;
 
 // my object structure
 typedef struct _klutz
@@ -21,19 +24,21 @@ typedef struct _klutz
 } t_klutz;
 
 void *klutz_new(float flag, float a); // creation function
-t_int *klutz_perform(t_int *w); // dsp perform function
-void klutz_dsp(t_klutz *x, t_signal **sp, short *count); // dsp add function
 void klutz_assist(t_klutz *x, void *b, long m, long a, char *s); // assistance function
+
+// dsp stuff
+void klutz_dsp64(t_klutz *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void klutz_perform64(t_klutz *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 void ext_main(void* p)
 {
-    setup((t_messlist **)&klutz_class, (method)klutz_new, (method)dsp_free, (short)sizeof(t_klutz), 0L, A_DEFFLOAT, A_DEFFLOAT, 0);
-
-	// declare the methods
-    addmess((method)klutz_dsp, "dsp", A_CANT, 0);
-    addmess((method)klutz_assist,"assist",A_CANT,0);
-    dsp_initclass(); // required for msp
-
+    t_class *c = class_new("klutz~", (method)klutz_new, (method)dsp_free, (long)sizeof(t_klutz), 0L, A_DEFFLOAT, A_DEFFLOAT, 0);
+    class_addmethod(c, (method)klutz_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)klutz_dsp64, "dsp64", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    klutz_class = c;
 	post("klutz~: by r. luke dubois, cmc");
 }
 
@@ -61,7 +66,7 @@ void klutz_assist(t_klutz *x, void *b, long m, long a, char *s)
 // instantiate the object
 void *klutz_new(float flag, float a)
 {	
-    t_klutz *x = (t_klutz *)newobject(klutz_class);
+    t_klutz *x = (t_klutz *)object_alloc(klutz_class);
     dsp_setup((t_pxobject *)x,1);
     outlet_new((t_pxobject *)x, "signal");
 
@@ -69,29 +74,25 @@ void *klutz_new(float flag, float a)
 }
 
 
-// go go go...
-t_int *klutz_perform(t_int *w)
+void klutz_dsp64(t_klutz *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	t_klutz *x = (t_klutz *)w[1]; // get current state of my object class
-	t_float *in, *out; // variables for input and output buffer
+    object_method(dsp64, gensym("dsp_add64"), x, klutz_perform64, 0, NULL);
+}
+
+void klutz_perform64(t_klutz *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+	t_double *in, *out; // variables for input and output buffer
 	int n; // counter for vector size
-
-	in = (t_float *)(w[2]);
-	out = (t_float *)(w[3]); // my output vector
-
-	for (n=0;n<(int)(w[4]);n++) {
+    
+	in = (t_double *)(ins[0]);
+	out = (t_double *)(outs[0]); // my output vector
+    
+	for (n=0; n<sampleframes; n++) {
 		*++in; // my vector size
 	}
+
 	while(--n) {
 	    *++out = *--in;
 	}
-
-	return (w+6); // return one greater than the arguments in the dsp_add call
-}
-
-void klutz_dsp(t_klutz *x, t_signal **sp, short *count)
-{
-	// add to the dsp chain -- i need my class, my input vector, my output vector, and my vector size...
-	dsp_add(klutz_perform, 5, x, sp[0]->s_vec-1, sp[1]->s_vec-1, sp[0]->s_n+1);
 }
 

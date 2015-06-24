@@ -1,9 +1,14 @@
-#include "ext.h"
-#include "z_dsp.h"
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+
+#include "ext.h"
+#include "ext_obex.h"
+#include "z_dsp.h"
+
 #define TWO_PI 6.283185307
 //#define ONE_OVER_RANDLIMIT 0.00006103516 // constant = 1. / 16384.0
 #define ATTACK 0
@@ -70,7 +75,7 @@
 #define MARA 16
 #define OFF 17
 
-void *metashake_class;
+t_class *metashake_class;
 
 typedef struct _metashake
 {
@@ -137,12 +142,14 @@ typedef struct _metashake
 
 //setup funcs
 void *metashake_new(double val);
-void metashake_dsp(t_metashake *x, t_signal **sp, short *count);
+void metashake_assist(t_metashake *x, void *b, long m, long a, char *s);
+
+void metashake_dsp64(t_metashake *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void metashake_perform64(t_metashake *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
 void metashake_float(t_metashake *x, double f);
 void metashake_int(t_metashake *x, int f);
 void metashake_bang(t_metashake *x);
-t_int *metashake_perform(t_int *w);
-void metashake_assist(t_metashake *x, void *b, long m, long a, char *s);
 
 //setups and ticks
 void sleigh_setup(t_metashake *x);
@@ -159,15 +166,15 @@ void cabasa_setup(t_metashake *x);
 float cabasa_tick(t_metashake *x);
 void maraca_setup(t_metashake *x);
 float maraca_tick(t_metashake *x);
-void metashake_setsleigh(t_metashake *x, Symbol *s, short argc, Atom *argv);
-void metashake_setbamboo(t_metashake *x, Symbol *s, short argc, Atom *argv);
-void metashake_setguiro(t_metashake *x, Symbol *s, short argc, Atom *argv);
-void metashake_settamb(t_metashake *x, Symbol *s, short argc, Atom *argv);
-void metashake_setseke(t_metashake *x, Symbol *s, short argc, Atom *argv);
-void metashake_setcabasa(t_metashake *x, Symbol *s, short argc, Atom *argv);
-void metashake_setmaraca(t_metashake *x, Symbol *s, short argc, Atom *argv);
-void metashake_setoff(t_metashake *x, Symbol *s, short argc, Atom *argv);
-void setpower(t_metashake *x, Symbol *s, short argc, Atom *argv);
+void metashake_setsleigh(t_metashake *x, t_symbol *s, short argc, t_atom *argv);
+void metashake_setbamboo(t_metashake *x, t_symbol *s, short argc, t_atom *argv);
+void metashake_setguiro(t_metashake *x, t_symbol *s, short argc, t_atom *argv);
+void metashake_settamb(t_metashake *x, t_symbol *s, short argc, t_atom *argv);
+void metashake_setseke(t_metashake *x, t_symbol *s, short argc, t_atom *argv);
+void metashake_setcabasa(t_metashake *x, t_symbol *s, short argc, t_atom *argv);
+void metashake_setmaraca(t_metashake *x, t_symbol *s, short argc, t_atom *argv);
+void metashake_setoff(t_metashake *x, t_symbol *s, short argc, t_atom *argv);
+void setpower(t_metashake *x, t_symbol *s, short argc, t_atom *argv);
 
 void metashake_clear_dlines(t_metashake *x);
 
@@ -517,26 +524,31 @@ float noise_tick()
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&metashake_class, (method)metashake_new, (method)dsp_free, (short)sizeof(t_metashake), 0L, A_DEFFLOAT, 0);
-    addmess((method)metashake_dsp, "dsp", A_CANT, 0);
-    addmess((method)metashake_assist,"assist",A_CANT,0);
-    addmess((method)metashake_setsleigh, "sleigh", A_GIMME, 0);
-    addmess((method)metashake_setbamboo, "bamboo", A_GIMME, 0);
-    addmess((method)metashake_setguiro, "guiro", A_GIMME, 0);
-    addmess((method)metashake_settamb, "tambourine", A_GIMME, 0);
-    addmess((method)metashake_setseke, "sekere", A_GIMME, 0);
-    addmess((method)metashake_setcabasa, "cabasa", A_GIMME, 0);
-    addmess((method)metashake_setmaraca, "maraca", A_GIMME, 0);
-    addmess((method)metashake_setoff, "off", A_GIMME, 0);
-    addmess((method)setpower, "power", A_GIMME, 0);
-    addfloat((method)metashake_float);
-    addint((method)metashake_int);
-    addbang((method)metashake_bang);
-    dsp_initclass();
-    rescopy('STR#',9323);
+    t_class *c = class_new("metashake~", (method)metashake_new, (method)dsp_free, (long)sizeof(t_metashake), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)metashake_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)metashake_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)metashake_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)metashake_int, "int", A_LONG, 0);
+    class_addmethod(c, (method)metashake_bang, "bang", A_CANT, 0);
+
+    class_addmethod(c, (method)metashake_setsleigh, "sleigh", A_GIMME, 0);
+    class_addmethod(c, (method)metashake_setbamboo, "bamboo", A_GIMME, 0);
+    class_addmethod(c, (method)metashake_setguiro, "guiro", A_GIMME, 0);
+    class_addmethod(c, (method)metashake_settamb, "tambourine", A_GIMME, 0);
+    class_addmethod(c, (method)metashake_setseke, "sekere", A_GIMME, 0);
+    class_addmethod(c, (method)metashake_setcabasa, "cabasa", A_GIMME, 0);
+    class_addmethod(c, (method)metashake_setmaraca, "maraca", A_GIMME, 0);
+    class_addmethod(c, (method)metashake_setoff, "off", A_GIMME, 0);
+    class_addmethod(c, (method)setpower, "power", A_GIMME, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    metashake_class = c;
 }
 
-void metashake_setsleigh(t_metashake *x, Symbol *s, short argc, Atom *argv)
+void metashake_setsleigh(t_metashake *x, t_symbol *s, short argc, t_atom *argv)
 {	
 	post("metashaker: sleigh bells");
 	metashake_clear_dlines(x);
@@ -549,7 +561,7 @@ void metashake_setsleigh(t_metashake *x, Symbol *s, short argc, Atom *argv)
 	sleigh_setup(x);
 }
 
-void metashake_setoff(t_metashake *x, Symbol *s, short argc, Atom *argv)
+void metashake_setoff(t_metashake *x, t_symbol *s, short argc, t_atom *argv)
 {	
 	post("metashaker: turning off");
 	metashake_clear_dlines(x);
@@ -562,7 +574,7 @@ void metashake_setoff(t_metashake *x, Symbol *s, short argc, Atom *argv)
 }
 
 
-void metashake_setseke(t_metashake *x, Symbol *s, short argc, Atom *argv)
+void metashake_setseke(t_metashake *x, t_symbol *s, short argc, t_atom *argv)
 {	
 	post("metashaker: sekere");
 	metashake_clear_dlines(x);
@@ -575,7 +587,7 @@ void metashake_setseke(t_metashake *x, Symbol *s, short argc, Atom *argv)
 	sekere_setup(x);
 }
 
-void metashake_settamb(t_metashake *x, Symbol *s, short argc, Atom *argv)
+void metashake_settamb(t_metashake *x, t_symbol *s, short argc, t_atom *argv)
 {	
 	post("metashaker: tambourine");
 	metashake_clear_dlines(x);
@@ -588,7 +600,7 @@ void metashake_settamb(t_metashake *x, Symbol *s, short argc, Atom *argv)
 	tamb_setup(x);
 }
 
-void metashake_setguiro(t_metashake *x, Symbol *s, short argc, Atom *argv)
+void metashake_setguiro(t_metashake *x, t_symbol *s, short argc, t_atom *argv)
 {	
 	post("metashaker: guiro");
 	metashake_clear_dlines(x);
@@ -600,7 +612,7 @@ void metashake_setguiro(t_metashake *x, Symbol *s, short argc, Atom *argv)
 	guiro_setup(x);
 }
 
-void metashake_setbamboo(t_metashake *x, Symbol *s, short argc, Atom *argv)
+void metashake_setbamboo(t_metashake *x, t_symbol *s, short argc, t_atom *argv)
 {	
 	post("metashaker: bamboo chimes");
 	metashake_clear_dlines(x);
@@ -613,7 +625,7 @@ void metashake_setbamboo(t_metashake *x, Symbol *s, short argc, Atom *argv)
 	bamboo_setup(x);
 }
 
-void metashake_setcabasa(t_metashake *x, Symbol *s, short argc, Atom *argv)
+void metashake_setcabasa(t_metashake *x, t_symbol *s, short argc, t_atom *argv)
 {	
 	post("metashaker: cabasa");
 	metashake_clear_dlines(x);
@@ -626,7 +638,7 @@ void metashake_setcabasa(t_metashake *x, Symbol *s, short argc, Atom *argv)
 	cabasa_setup(x);
 }
 
-void metashake_setmaraca(t_metashake *x, Symbol *s, short argc, Atom *argv)
+void metashake_setmaraca(t_metashake *x, t_symbol *s, short argc, t_atom *argv)
 {	
 	post("metashaker: maraca");
 	metashake_clear_dlines(x);
@@ -641,7 +653,46 @@ void metashake_setmaraca(t_metashake *x, Symbol *s, short argc, Atom *argv)
 
 void metashake_assist(t_metashake *x, void *b, long m, long a, char *s)
 {
-	assist_string(9323,m,a,1,12,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) number of items");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) resonant frequency");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) damping");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) maximum shake");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) resonance frequency 1");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) resonance frequency 2");
+                break;
+            case 6:
+                sprintf(s,"(signal/float) resonance frequency 3");
+                break;
+            case 7:
+                sprintf(s,"(signal/float) resonance frequency 4");
+                break;
+            case 8:
+                sprintf(s,"(signal/float) scrape velocity");
+                break;
+            case 9:
+                sprintf(s,"(signal/float) resonant spread");
+                break;
+            case 10:
+                sprintf(s,"(signal/float) resonance random");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
+
 }
 
 void metashake_float(t_metashake *x, double f)
@@ -697,7 +748,7 @@ void metashake_bang(t_metashake *x)
 	}
 }
 
-void setpower(t_metashake *x, Symbol *s, short argc, Atom *argv)
+void setpower(t_metashake *x, t_symbol *s, short argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -743,7 +794,7 @@ void *metashake_new(double initial_coeff)
 {
 	int i;
 
-    t_metashake *x = (t_metashake *)newobject(metashake_class);
+    t_metashake *x = (t_metashake *)object_alloc(metashake_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_metashake);i++)  
@@ -800,8 +851,7 @@ void *metashake_new(double initial_coeff)
     return (x);
 }
 
-
-void metashake_dsp(t_metashake *x, t_signal **sp, short *count)
+void metashake_dsp64(t_metashake *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
 	x->num_objectsConnected = count[0];
 	x->shake_dampConnected = count[1];
@@ -815,45 +865,38 @@ void metashake_dsp(t_metashake *x, t_signal **sp, short *count)
 	x->res_spreadConnected = count[9];
 	x->res_randomConnected = count[10];
 	
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
 	x->one_over_srate = 1./x->srate;
-	
-	dsp_add(metashake_perform, 14, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, \
-									  sp[4]->s_vec, sp[5]->s_vec, sp[6]->s_vec, sp[7]->s_vec, \
-									  sp[8]->s_vec, sp[9]->s_vec, sp[10]->s_vec, sp[11]->s_vec, \
-									  sp[0]->s_n);	
-	
+    object_method(dsp64, gensym("dsp_add64"), x, metashake_perform64, 0, NULL);
 }
 
-t_int *metashake_perform(t_int *w)
+void metashake_perform64(t_metashake *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_metashake *x = (t_metashake *)(w[1]);
+	t_double num_objects	= x->num_objectsConnected	? 	*(t_double *)(ins[0]) : x->num_objects;
+	t_double shake_damp 	= x->shake_dampConnected	? 	*(t_double *)(ins[1]) : x->shake_damp;
+	t_double shake_max 	= x->shake_maxConnected         ? 	*(t_double *)(ins[2]) : x->shake_max;
+	t_double res_freq 		= x->res_freqConnected		? 	*(t_double *)(ins[3]) : x->res_freq;
+	t_double res_freq1 	= x->res_freq1Connected         ? 	*(t_double *)(ins[4]) : x->res_freq1;
+	t_double res_freq2 	= x->res_freq2Connected         ? 	*(t_double *)(ins[5]) : x->res_freq2;
+	t_double res_freq3 	= x->res_freq3Connected         ? 	*(t_double *)(ins[6]) : x->res_freq3;
+	t_double res_freq4 	= x->res_freq4Connected         ? 	*(t_double *)(ins[7]) : x->res_freq4;
 	
-	float num_objects	= x->num_objectsConnected	? 	*(float *)(w[2]) : x->num_objects;
-	float shake_damp 	= x->shake_dampConnected	? 	*(float *)(w[3]) : x->shake_damp;
-	float shake_max 	= x->shake_maxConnected		? 	*(float *)(w[4]) : x->shake_max;
-	float res_freq 		= x->res_freqConnected		? 	*(float *)(w[5]) : x->res_freq;
-	float res_freq1 	= x->res_freq1Connected		? 	*(float *)(w[6]) : x->res_freq1;
-	float res_freq2 	= x->res_freq2Connected		? 	*(float *)(w[7]) : x->res_freq2;
-	float res_freq3 	= x->res_freq3Connected		? 	*(float *)(w[8]) : x->res_freq3;
-	float res_freq4 	= x->res_freq4Connected		? 	*(float *)(w[9]) : x->res_freq4;
-	
-	float scrapeVel 	= x->scrapeVelConnected		? 	*(float *)(w[10]) : x->scrapeVel;
-	float res_spread 	= x->res_spreadConnected	? 	*(float *)(w[11]) : x->res_spread;
-	float res_random 	= x->res_randomConnected	? 	*(float *)(w[12]) : x->res_random;
-		
-	float *out = (float *)(w[13]);
-	long n = w[14];
-
-	float lastOutput, temp;
-
+	t_double scrapeVel 	= x->scrapeVelConnected         ? 	*(t_double *)(ins[8]) : x->scrapeVel;
+	t_double res_spread 	= x->res_spreadConnected	? 	*(t_double *)(ins[9]) : x->res_spread;
+	t_double res_random 	= x->res_randomConnected	? 	*(t_double *)(ins[10]) : x->res_random;
+    
+	t_double *out = (t_double *)(outs[0]);
+	long n = sampleframes;
+    
+	t_double lastOutput, temp;
+    
 	//if(num_objects < 1.) num_objects *= NUMOBJECTS_SCALE;
 	
 	if(!x->power)  {
 		while(n--) *out++ = 0.;
 	}
 	else if(x->shakertype == MARA) {
-	
+        
 		if(num_objects != x->num_objectsSave) {
 			if(num_objects < 1.) num_objects = 1.;
 			x->num_objects = num_objects;
@@ -876,16 +919,16 @@ t_int *metashake_perform(t_int *w)
 			x->shake_maxSave = x->shake_max = shake_max;
 		 	x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
 	    	if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-		}	
-
+		}
+        
 		while(n--) {
-			lastOutput = maraca_tick(x);		
+			lastOutput = maraca_tick(x);
 			*out++ = lastOutput;
 		}
 	}
 	
 	else if(x->shakertype == CABA) {
-	
+        
 		if(num_objects != x->num_objectsSave) {
 			if(num_objects < 1.) num_objects = 1.;
 			x->num_objects = num_objects;
@@ -907,16 +950,16 @@ t_int *metashake_perform(t_int *w)
 			x->shake_maxSave = x->shake_max = shake_max;
 		 	x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
 	    	if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-		}	
-
+		}
+        
 		while(n--) {
-			lastOutput = cabasa_tick(x);		
+			lastOutput = cabasa_tick(x);
 			*out++ = 10.*lastOutput;
 		}
 	}
 	
 	else if(x->shakertype == SEKE) {
-	
+        
 		if(num_objects != x->num_objectsSave) {
 			if(num_objects < 1.) num_objects = 1.;
 			x->num_objects = num_objects;
@@ -940,14 +983,14 @@ t_int *metashake_perform(t_int *w)
 			x->shake_maxSave = x->shake_max = shake_max;
 		 	x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
 	    	if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-		}	
-
+		}
+        
 		while(n--) {
-			lastOutput = sekere_tick(x);		
+			lastOutput = sekere_tick(x);
 			*out++ = 10.*lastOutput;
 		}
 	}
-		
+    
 	else if(x->shakertype == GUIRO) {
 		if(num_objects != x->num_objectsSave) {
 			if(num_objects < 1.) num_objects = 1.;
@@ -970,24 +1013,24 @@ t_int *metashake_perform(t_int *w)
 		if(shake_max != x->shake_maxSave) {
 			x->shake_maxSave = x->shake_max = shake_max;
 	    	x->guiroScrape = shake_max;
-		}	
-
+		}
+        
 		if(res_freq1 != x->res_freq1Save) {
 			//res_freq1 *= FREQ_SCALE;
 			x->res_freq1Save = x->res_freq1 = res_freq1;
 			x->coeffs1[0] = -GUIR_GOURD_RESON2 * 2.0 * cos(res_freq1 * TWO_PI / x->srate);
-		}			
+		}
 		
 		while(n--) {
-		  if (x->guiroScrape < 1.0)      {
-	      	x->guiroScrape += x->scrapeVel;
-	      	x->totalEnergy = x->guiroScrape;
-	      	x->ratchet -= (x->ratchetDelta + (0.002*x->totalEnergy));
-	      	if (x->ratchet<0.0) x->ratchet = 1.0;
-	      	lastOutput = guiro_tick(x);
-	      }
-	      else lastOutput = 0.0;
-	      *out++ = lastOutput;
+            if (x->guiroScrape < 1.0)      {
+                x->guiroScrape += x->scrapeVel;
+                x->totalEnergy = x->guiroScrape;
+                x->ratchet -= (x->ratchetDelta + (0.002*x->totalEnergy));
+                if (x->ratchet<0.0) x->ratchet = 1.0;
+                lastOutput = guiro_tick(x);
+            }
+            else lastOutput = 0.0;
+            *out++ = lastOutput;
 		}
 	}
 	
@@ -1015,8 +1058,8 @@ t_int *metashake_perform(t_int *w)
 			x->shake_maxSave = x->shake_max = shake_max;
 		 	x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
 	    	if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-		}	
-
+		}
+        
 		if(res_freq1 != x->res_freq1Save) {
 			//res_freq1 *= FREQ_SCALE;
 			x->res_freq1Save = x->res_freq1 = res_freq1;
@@ -1031,14 +1074,14 @@ t_int *metashake_perform(t_int *w)
 		if(res_random != x->res_randomSave) {
 			x->res_random = x->res_randomSave = res_random;
 			if (x->res_random > .4) x->res_random = .4;
-			if (x->res_random < 0.) x->res_random = 0.;		
-		}	
+			if (x->res_random < 0.) x->res_random = 0.;
+		}
 		
 		while(n--) {
-			lastOutput = tamb_tick(x);		
+			lastOutput = tamb_tick(x);
 			*out++ = lastOutput;
 		}
-	
+        
 	}
 	
 	else if(x->shakertype == SLEIGH) {
@@ -1062,15 +1105,15 @@ t_int *metashake_perform(t_int *w)
 			x->shake_maxSave = x->shake_max = shake_max;
 		 	x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
 	    	if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-		}	
-
+		}
+        
 		if(res_freq1 != x->res_freq1Save) {
 			x->res_freq1Save = x->res_freq1 = res_freq1;//*FREQ_SCALE;
 		}
 		
 		if(res_freq2 != x->res_freq2Save) {
 			x->res_freq2Save = x->res_freq2 = res_freq2;//*FREQ_SCALE;
-		}	
+		}
 		
 		if(res_freq3 != x->res_freq3Save) {
 			x->res_freq3Save = x->res_freq3 = res_freq3;//*FREQ_SCALE;
@@ -1078,9 +1121,9 @@ t_int *metashake_perform(t_int *w)
 		
 		if(res_freq4 != x->res_freq4Save) {
 			x->res_freq4Save = x->res_freq4 = res_freq4;//*FREQ_SCALE;
-		}	
+		}
 		while(n--) {
-			lastOutput = sleigh_tick(x);		
+			lastOutput = sleigh_tick(x);
 			*out++ = lastOutput;
 		}
 	}
@@ -1091,7 +1134,7 @@ t_int *metashake_perform(t_int *w)
 			x->num_objectsSave = num_objects;
 			x->gain = log(num_objects) * 30. / (float)num_objects;
 		}
-
+        
 		if(res_freq != x->res_freqSave) {
 			x->res_freqSave = x->res_freq = res_freq;//*FREQ_SCALE;
 		}
@@ -1105,22 +1148,22 @@ t_int *metashake_perform(t_int *w)
 			x->shake_maxSave = x->shake_max = shake_max;
 		 	x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
 	    	if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-		}	
+		}
 		
 		if(res_spread != x->res_spreadSave) {
 			x->res_spread = x->res_spreadSave = res_spread;
 			if (x->res_spread > .4) x->res_spread = .4;
-			if (x->res_spread < 0.) x->res_spread = 0.;		
+			if (x->res_spread < 0.) x->res_spread = 0.;
 		}
 		
 		if(res_random != x->res_randomSave) {
 			x->res_random = x->res_randomSave = res_random;
 			if (x->res_random > .4) x->res_random = .4;
-			if (x->res_random < 0.) x->res_random = 0.;		
+			if (x->res_random < 0.) x->res_random = 0.;
 		}
-			
+        
 		while(n--) {
-			lastOutput = bamboo_tick(x);		
+			lastOutput = bamboo_tick(x);
 			*out++ = lastOutput;
 		}
 	}
@@ -1131,8 +1174,4 @@ t_int *metashake_perform(t_int *w)
 			*out++ = lastOutput;
 		}
 	}
-	
-	
-	return w + 15;
-}	
-
+}

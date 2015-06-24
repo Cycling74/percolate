@@ -7,71 +7,75 @@
 //
 //	objects and source are provided without warranty of any kind, express or implied.
 //
+// updated for Max 7 by Darwin Grosse and Tim Place
+// -------------------------------------------------
 
 /* the required include files */
-#include "ext.h"
 #include <math.h>
+#include "ext.h"
+#include "ext_obex.h"
 
 #define BUFFER 32768
 // maximum size of table -- this memory is allocated with NewPtr()
-#define      M_PI     3.141592654 // the big number...
+// #define      M_PI     3.141592654 // the big number...
 
 // object definition structure...
 typedef struct gen25
 {
-	Object g_ob;				// required header
+	t_object g_ob;				// required header
 	void *g_out;				// an outlet
 	long g_wintype;			// number of points in the bpf
 	long g_buffsize;			// size of buffer
 	long g_offset;				// offset into the output buffer (for list output)
 	float *g_table;				// internal array for the wavetable
-} gen25;
+} t_gen25;
 
 
 /* globalthat holds the class definition */
-void *class;
+t_class *gen25_class;
 
 // function prototypes here...
-void gen25_int(gen25 *x, long n);
-void gen25_assist(gen25 *x, void *b, long m, long a, char *s);
-void gen25_bang(gen25 *x);
-void gen25_offset(gen25 *x, long n);
-void gen25_size(gen25 *x, long n);
-void gen25_size(gen25 *x, long n);
+void gen25_int(t_gen25 *x, long n);
+void gen25_assist(t_gen25 *x, void *b, long m, long a, char *s);
+void gen25_bang(t_gen25 *x);
+void gen25_offset(t_gen25 *x, long n);
+void gen25_size(t_gen25 *x, long n);
+void gen25_size(t_gen25 *x, long n);
 void *gen25_new(long n, long o);
-void *gen25_free(gen25 *x);
-void DoTheDo(gen25 *x);
+void gen25_free(t_gen25 *x);
+void DoTheDo(t_gen25 *x);
 
 // init routine...
 void ext_main(void *f)
 {
-
-	// define the class
-	setup((t_messlist **)&class, (method)gen25_new, (method)gen25_free, (short)sizeof(gen25), 0L, A_DEFLONG, A_DEFLONG, 0);
-	// methods, methods, methods...
-	addbang((method)gen25_bang); /* put out the same shit */
-	addmess((method)gen25_size, "size", A_DEFLONG, 0); /* change buffer */
-	addmess((method)gen25_offset, "offset", A_DEFLONG, 0); /* change buffer offset */
-	addint((method)gen25_int); /* the goods... */
-	addmess((method)gen25_assist,"assist",A_CANT,0); /* help */
-	
+	t_class *c;
+    
+	c = class_new("gen25", (method)gen25_new, (method)gen25_free, sizeof(t_gen25), 0L, A_DEFLONG, A_DEFLONG, 0);
+	class_addmethod(c, (method)gen25_bang,		"bang",		0);             // the method it uses when it gets a bang in the left inlet
+	class_addmethod(c, (method)gen25_size,      "size",     A_DEFLONG, 0);  /* change buffer */
+	class_addmethod(c, (method)gen25_offset,    "offset",   A_DEFLONG, 0);  /* change buffer offset */
+	class_addmethod(c, (method)gen25_int,       "int",      A_LONG, 0);     /* change array rescaling */
+	class_addmethod(c, (method)gen25_assist,    "assist",	A_CANT, 0);	// (optional) assistance method needs to be declared like this
+    
+	class_register(CLASS_BOX, c);
+	gen25_class = c;
 	post("gen25: by r. luke dubois, cmc");
 }
 
 // those methods
 
-void gen25_bang(gen25 *x)
+void gen25_bang(t_gen25 *x)
 {
 	DoTheDo(x);
 }
 
-void gen25_size(gen25 *x, long n)
+void gen25_size(t_gen25 *x, long n)
 {
 	x->g_buffsize = n; // resize buffer
 	if (x->g_buffsize>BUFFER) x->g_buffsize = BUFFER;
 }
 
-void gen25_offset(gen25 *x, long n)
+void gen25_offset(t_gen25 *x, long n)
 {
 	x->g_offset = n; // change buffer offset
 }
@@ -79,7 +83,7 @@ void gen25_offset(gen25 *x, long n)
 
 // instance creation...
 
-void gen25_int(gen25 *x, long n)
+void gen25_int(t_gen25 *x, long n)
 {
 	switch (n) {
 		case 1: // hanning
@@ -96,10 +100,10 @@ void gen25_int(gen25 *x, long n)
 	DoTheDo(x);
 }
 
-void DoTheDo(gen25 *x)
+void DoTheDo(t_gen25 *x)
 {
 	register short i, j;
-	Atom thestuff[2];
+	t_atom thestuff[2];
 	float wmax, xmax=0.0;
 
 	switch (x->g_wintype) {
@@ -131,10 +135,10 @@ void DoTheDo(gen25 *x)
 
 void *gen25_new(long n, long o)
 {
-	gen25 *x;
+	t_gen25 *x;
 	register short c;
 	
-	x = newobject(class);		// get memory for the object
+	x = (t_gen25 *)object_alloc(gen25_class);		// get memory for the object
 	
 	x->g_offset = 0;
 	if (o) {
@@ -164,7 +168,7 @@ if (n) {
 	return (x);							// return newly created object and go go go...
 }
 
-void *gen25_free(gen25 *x)
+void gen25_free(t_gen25 *x)
 {
 	if (x != NULL) {
 		if (x->g_table != NULL) {
@@ -173,7 +177,7 @@ void *gen25_free(gen25 *x)
 	}
 }
 
-void gen25_assist(gen25 *x, void *b, long msg, long arg, char *dst)
+void gen25_assist(t_gen25 *x, void *b, long msg, long arg, char *dst)
 {
 	switch(msg) {
 		case 1: // inlet

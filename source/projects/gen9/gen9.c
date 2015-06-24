@@ -7,22 +7,26 @@
 //
 //	objects and source are provided without warranty of any kind, express or implied.
 //
+// updated for Max 7 by Darwin Grosse and Tim Place
+// -------------------------------------------------
 
 /* the required include files */
-#include "ext.h"
 #include <math.h>
+#include "ext.h"
+#include "ext_obex.h"
 
 // maximum number of p-fields specified in a list -- if you make it larger you better 
 // allocated the memory dynamically (right now it's using built-in memory)...
 #define MAXSIZE 64
 #define BUFFER 32768
+
 // maximum size of wavetable -- this memory is allocated with NewPtr()
 #define      PI2    6.2831853 // the big number...
 
-// object definition structure...
+// t_object definition structure...
 typedef struct gen9
 {
-	Object g_ob;				// required header
+	t_object g_ob;				// required header
 	void *g_out;				// an outlet
 	long g_numpoints;			// number of points in the bpf
 	long g_buffsize;			// size of buffer
@@ -30,50 +34,52 @@ typedef struct gen9
 	float g_args[MAXSIZE];		// array for the harmonic fields
 	float *g_table;				// internal array for the wavetable
 	long g_rescale;				// flag to rescale array
-} gen9;
+} t_gen9;
 
 
 /* globalthat holds the class definition */
-void *class;
+t_class *gen9_class;
 
 // function prototypes here...
-void gen9_list(gen9 *x, Symbol *s, short ac, Atom *av);
-void gen9_assist(gen9 *x, void *b, long m, long a, char *s);
-void gen9_bang(gen9 *x);
-void gen9_offset(gen9 *x, long n);
-void gen9_size(gen9 *x, long n);
-void gen9_rescale(gen9 *x, long n);
+void gen9_list(t_gen9 *x, t_symbol *s, long ac, t_atom *av);
+void gen9_assist(t_gen9 *x, void *b, long m, long a, char *s);
+void gen9_bang(t_gen9 *x);
+void gen9_offset(t_gen9 *x, long n);
+void gen9_size(t_gen9 *x, long n);
+void gen9_rescale(t_gen9 *x, long n);
 void *gen9_new(long n, long o);
-void *gen9_free(gen9 *x);
-void DoTheDo(gen9 *x);
+void gen9_free(t_gen9 *x);
+void DoTheDo(t_gen9 *x);
 
 // init routine...
 void ext_main(void *f)
 {
-	
-	// define the class
-	setup((t_messlist **)&class, (method)gen9_new, (method)gen9_free, (short)sizeof(gen9), 0L, A_DEFLONG, A_DEFLONG, 0);
-	// methods, methods, methods...
-	addbang((method)gen9_bang); /* put out the same shit */
-	addmess((method)gen9_size, "size", A_DEFLONG, 0); /* change buffer */
-	addmess((method)gen9_offset, "offset", A_DEFLONG, 0); /* change buffer offset */
-	addmess((method)gen9_rescale, "rescale", A_DEFLONG, 0); /* change array rescaling */
-	addmess((method)gen9_list, "list", A_GIMME, 0); /* the goods... */
-	addmess((method)gen9_assist,"assist",A_CANT,0); /* help */
-	
+	t_class *c;
+    
+	c = class_new("gen9", (method)gen9_new, (method)gen9_free, sizeof(t_gen9), 0L, A_DEFLONG, A_DEFLONG, 0);
+    
+	class_addmethod(c, (method)gen9_bang,		"bang",		0);             // the method it uses when it gets a bang in the left inlet
+	class_addmethod(c, (method)gen9_size,       "size",     A_DEFLONG, 0);  /* change buffer */
+	class_addmethod(c, (method)gen9_offset,     "offset",   A_DEFLONG, 0);  /* change buffer offset */
+	class_addmethod(c, (method)gen9_rescale,    "rescale",  A_DEFLONG, 0);  /* change array rescaling */
+	class_addmethod(c, (method)gen9_list,       "list",     A_GIMME, 0);    /* the goods... */
+	class_addmethod(c, (method)gen9_assist,     "assist",	A_CANT, 0);	// (optional) assistance method needs to be declared like this
+    
+	class_register(CLASS_BOX, c);
+	gen9_class = c;
 	post("gen9: by r. luke dubois, cmc");
 }
 
 // those methods
 
-void gen9_bang(gen9 *x)
+void gen9_bang(t_gen9 *x)
 {
 						
 	DoTheDo(x);
 	
 }
 
-void gen9_size(gen9 *x, long n)
+void gen9_size(t_gen9 *x, long n)
 {
 	
 	x->g_buffsize = n; // resize buffer
@@ -81,14 +87,14 @@ void gen9_size(gen9 *x, long n)
 
 }
 
-void gen9_offset(gen9 *x, long n)
+void gen9_offset(t_gen9 *x, long n)
 {
 	
 	x->g_offset = n; // change buffer offset
 
 }
 
-void gen9_rescale(gen9 *x, long n)
+void gen9_rescale(t_gen9 *x, long n)
 {
 	if(n>1) n = 1;
 	if(n<0) n = 0;
@@ -98,7 +104,7 @@ void gen9_rescale(gen9 *x, long n)
 
 // instance creation...
 
-void gen9_list(gen9 *x, Symbol *s, short argc, Atom *argv)
+void gen9_list(t_gen9 *x, t_symbol *s, long argc, t_atom *argv)
 {
 
 	// parse the list of incoming harmonics...
@@ -115,11 +121,11 @@ void gen9_list(gen9 *x, Symbol *s, short argc, Atom *argv)
 	DoTheDo(x);
 }
 
-void DoTheDo(gen9 *x)
+void DoTheDo(t_gen9 *x)
 {
-	register short i,j,k,l;
-	Atom thestuff[2];
-	float scaler, amp2, amp1, wmax, xmax=0.0;
+	short i,j;
+	t_atom thestuff[2];
+	float wmax, xmax=0.0;
 	double sin();
 	
 
@@ -134,16 +140,16 @@ void DoTheDo(gen9 *x)
 				}
 			}
 		}
-
-if(x->g_rescale) {
-	// rescale the wavetable to go between -1. and 1.
-	for(j = 0; j < x->g_buffsize; j++) {
-		if ((wmax = fabs(x->g_table[j])) > xmax) xmax = wmax;
-	}
-	for(j = 0; j < x->g_buffsize; j++) {
-		x->g_table[j] /= xmax;
-	}
-}
+    
+    if(x->g_rescale) {
+        // rescale the wavetable to go between -1. and 1.
+        for(j = 0; j < x->g_buffsize; j++) {
+            if ((wmax = fabs(x->g_table[j])) > xmax) xmax = wmax;
+        }
+        for(j = 0; j < x->g_buffsize; j++) {
+            x->g_table[j] /= xmax;
+        }
+    }
 
 	// output the wavetable in index, amplitude pairs...
 	for(i=0;i<x->g_buffsize;i++) {
@@ -155,10 +161,10 @@ if(x->g_rescale) {
 
 void *gen9_new(long n, long o)
 {
-	gen9 *x;
-	register short c;
+	t_gen9 *x;
+	short c;
 	
-	x = newobject(class);		// get memory for the object
+	x = (t_gen9 *)object_alloc(gen9_class);		// get memory for the object
 	
 	x->g_offset = 0;
 	if (o) {
@@ -170,15 +176,15 @@ void *gen9_new(long n, long o)
 		x->g_args[c] =0.0;
 	}
 
-// initialize wavetable size (must allocate memory)
+    // initialize wavetable size (must allocate memory)
 	x->g_buffsize=512;
 	
 	x->g_rescale=1;
 
 
-if (n) {
-	x->g_buffsize=n;
-	if (x->g_buffsize>BUFFER) x->g_buffsize=BUFFER; // size the wavetable
+    if (n) {
+        x->g_buffsize=n;
+        if (x->g_buffsize>BUFFER) x->g_buffsize=BUFFER; // size the wavetable
 	}
 
 	x->g_table=NULL;
@@ -193,10 +199,10 @@ if (n) {
 		x->g_table[c]=0.0;
 	}
 	x->g_out = listout(x);				// create a list outlet
-	return (x);							// return newly created object and go go go...
+	return (x);							// return newly created t_object and go go go...
 }
 
-void *gen9_free(gen9 *x)
+void gen9_free(t_gen9 *x)
 {
 	if (x != NULL) {
 		if (x->g_table != NULL) {
@@ -205,7 +211,7 @@ void *gen9_free(gen9 *x)
 	}
 }
 
-void gen9_assist(gen9 *x, void *b, long msg, long arg, char *dst)
+void gen9_assist(t_gen9 *x, void *b, long msg, long arg, char *dst)
 {
 	switch(msg) {
 		case 1: // inlet

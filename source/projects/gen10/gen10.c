@@ -7,22 +7,26 @@
 //
 //	objects and source are provided without warranty of any kind, express or implied.
 //
+// updated for Max 7 by Darwin Grosse and Tim Place
+// -------------------------------------------------
 
 /* the required include files */
-#include "ext.h"
 #include <math.h>
+#include "ext.h"
+#include "ext_obex.h"
 
 // maximum number of harmonics specified in a list -- if you make it larger you better 
 // allocated the memory dynamically (right now it's using built-in memory)...
 #define MAXSIZE 64
 #define BUFFER 32768
+
 // maximum size of wavetable -- this memory is allocated with NewPtr()
 #define      PI2    6.2831853 // the big number...
 
 // object definition structure...
 typedef struct gen10
 {
-	Object g_ob;				// required header
+	t_object g_ob;				// required header
 	void *g_out;				// an outlet
 	long g_numharmonics;		// number of harmonics
 	long g_buffsize;			// size of buffer
@@ -30,50 +34,50 @@ typedef struct gen10
 	float g_args[MAXSIZE];		// array for the harmonic fields
 	float *g_table;				// internal array for the wavetable
 	long g_rescale;				// flag to rescale array
-} Gen10;
+} t_gen10;
 
 /* globalthat holds the class definition */
-void *class;
+t_class *gen10_class;
 
 // function prototypes here...
-void gen10_list(Gen10 *x, Symbol *s, short ac, Atom *av);
-void gen10_assist(Gen10 *x, void *b, long m, long a, char *s);
-void gen10_bang(Gen10 *x);
-void gen10_offset(Gen10 *x, long n);
-void gen10_size(Gen10 *x, long n);
-void gen10_rescale(Gen10 *x, long n);
+void gen10_list(t_gen10 *x, t_symbol *s, long ac, t_atom *av);
+void gen10_assist(t_gen10 *x, void *b, long m, long a, char *s);
+void gen10_bang(t_gen10 *x);
+void gen10_offset(t_gen10 *x, long n);
+void gen10_size(t_gen10 *x, long n);
+void gen10_rescale(t_gen10 *x, long n);
 void *gen10_new(long n, long o);
-void *gen10_free(Gen10 *x);
-void DoTheDo(Gen10 *x);
+void gen10_free(t_gen10 *x);
+void DoTheDo(t_gen10 *x);
 
 // init routine...
 void ext_main(void *f)
 {
-	
-	// define the class
-	setup((t_messlist **)&class, (method)gen10_new, (method)gen10_free, (short)sizeof(Gen10), 0L, A_DEFLONG, A_DEFLONG, 0);
-	// methods, methods, methods...
-	addbang((method)gen10_bang); /* put out the same shit */
-	addmess((method)gen10_size, "size", A_DEFLONG, 0); /* change buffer */
-	addmess((method)gen10_offset, "offset", A_DEFLONG, 0); /* change buffer offset */
-	addmess((method)gen10_rescale, "rescale", A_DEFLONG, 0); /* change array rescaling */
-	addmess((method)gen10_list, "list", A_GIMME, 0); /* the goods... */
-	addmess((method)gen10_assist,"assist",A_CANT,0); /* help */
-	// restore old value of A4 (68K only)
-	
+	t_class *c;
+    
+	c = class_new("gen10", (method)gen10_new, (method)gen10_free, sizeof(t_gen10), 0L, A_DEFLONG, A_DEFLONG, 0);
+	class_addmethod(c, (method)gen10_bang,		"bang",		0);             // the method it uses when it gets a bang in the left inlet
+	class_addmethod(c, (method)gen10_size,       "size",     A_DEFLONG, 0);  /* change buffer */
+	class_addmethod(c, (method)gen10_offset,     "offset",   A_DEFLONG, 0);  /* change buffer offset */
+	class_addmethod(c, (method)gen10_rescale,    "rescale",  A_DEFLONG, 0);  /* change array rescaling */
+	class_addmethod(c, (method)gen10_list,       "list",     A_GIMME, 0);    /* the goods... */
+	class_addmethod(c, (method)gen10_assist,     "assist",	A_CANT, 0);	// (optional) assistance method needs to be declared like this
+    
+	class_register(CLASS_BOX, c);
+	gen10_class = c;
 	post("gen10: by r. luke dubois, cmc");
 }
 
 // those methods
 
-void gen10_bang(Gen10 *x)
+void gen10_bang(t_gen10 *x)
 {
 						
 	DoTheDo(x);
 	
 }
 
-void gen10_size(Gen10 *x, long n)
+void gen10_size(t_gen10 *x, long n)
 {
 	
 	x->g_buffsize = n; // resize buffer
@@ -81,14 +85,14 @@ void gen10_size(Gen10 *x, long n)
 
 }
 
-void gen10_offset(Gen10 *x, long n)
+void gen10_offset(t_gen10 *x, long n)
 {
 	
 	x->g_offset = n; // change buffer offset
 
 }
 
-void gen10_rescale(Gen10 *x, long n)
+void gen10_rescale(t_gen10 *x, long n)
 {
 	if(n>1) n = 1;
 	if(n<0) n = 0;
@@ -99,7 +103,7 @@ void gen10_rescale(Gen10 *x, long n)
 
 // instance creation...
 
-void gen10_list(Gen10 *x, Symbol *s, short argc, Atom *argv)
+void gen10_list(t_gen10 *x, t_symbol *s, long argc, t_atom *argv)
 {
 
 	// parse the list of incoming harmonics...
@@ -116,10 +120,10 @@ void gen10_list(Gen10 *x, Symbol *s, short argc, Atom *argv)
 	DoTheDo(x);
 }
 
-void DoTheDo(Gen10 *x)
+void DoTheDo(t_gen10 *x)
 {
 	register short i,j;
-	Atom thestuff[2];
+	t_atom thestuff[2];
 	float wmax, xmax=0.0;
 	
 	// compute the wavetable...
@@ -154,10 +158,10 @@ if(x->g_rescale) {
 
 void *gen10_new(long n, long o)
 {
-	Gen10 *x;
-	register short c;
+	t_gen10 *x;
+	short c;
 	
-	x = newobject(class);		// get memory for the object
+	x = (t_gen10 *)object_alloc(gen10_class);		// get memory for the object
 	
 	x->g_offset = 0;
 	if (o) {
@@ -194,7 +198,7 @@ if (n) {
 	return (x);							// return newly created object and go go go...
 }
 
-void *gen10_free(Gen10 *x)
+void gen10_free(t_gen10 *x)
 {
 	if (x != NULL) {
 		if (x->g_table != NULL) {
@@ -203,7 +207,7 @@ void *gen10_free(Gen10 *x)
 	}
 }
 
-void gen10_assist(Gen10 *x, void *b, long msg, long arg, char *dst)
+void gen10_assist(t_gen10 *x, void *b, long msg, long arg, char *dst)
 {
 	switch(msg) {
 		case 1: // inlet

@@ -9,6 +9,9 @@
 //it that *requires* that you run itt in pfft~. sounds kinda funny.
 
 //another PeRColate hack: dan trueman, 2002
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 
 #include "stk_c.h"
@@ -33,37 +36,43 @@ typedef struct _vectorwarp
 
 //setup funcs
 void *vectorwarp_new(double val);
-void vectorwarp_dsp(t_vectorwarp *x, t_signal **sp, short *count); 
-t_int *vectorwarp_perform(t_int *w);
 void vectorwarp_assist(t_vectorwarp *x, void *b, long m, long a, char *s);
-void vectorwarp_setstretch(t_vectorwarp *x, Symbol *s, short argc, Atom *argv);
-void vectorwarp_setlinear(t_vectorwarp *x, Symbol *s, short argc, Atom *argv);
-void vectorwarp_setpoly(t_vectorwarp *x, Symbol *s, short argc, Atom *argv);
-void vectorwarp_setpoly2(t_vectorwarp *x, Symbol *s, short argc, Atom *argv);
-void vectorwarp_setpower(t_vectorwarp *x, Symbol *s, short argc, Atom *argv);
+
+// dsp stuff
+void vectorwarp_dsp64(t_vectorwarp *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void vectorwarp_perform64(t_vectorwarp *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
+void vectorwarp_setstretch(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv);
+void vectorwarp_setlinear(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv);
+void vectorwarp_setpoly(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv);
+void vectorwarp_setpoly2(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv);
+void vectorwarp_setpower(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv);
 
 //t_symbol *ps_spvector;
-void *vectorwarp_class;
+t_class *vectorwarp_class;
 
 
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&vectorwarp_class, (method)vectorwarp_new, (method)dsp_free, (short)sizeof(t_vectorwarp), 0L, A_GIMME, 0);
-    addmess((method)vectorwarp_dsp, "dsp", A_CANT, 0);
-    addmess((method)vectorwarp_assist,"assist",A_CANT,0);
-    addmess((method)vectorwarp_setpower, "power", A_GIMME, 0);
-    addmess((method)vectorwarp_setstretch, "stretch", A_GIMME, 0);
-    addmess((method)vectorwarp_setlinear, "linear", A_GIMME, 0);
-    addmess((method)vectorwarp_setpoly, "poly", A_GIMME, 0);
-    addmess((method)vectorwarp_setpoly, "poly2", A_GIMME, 0);
-    dsp_initclass();
- 
-    rescopy('STR#',RSRC_ID);
+    t_class *c = class_new("vectorwarp~", (method)vectorwarp_new, (method)dsp_free, (long)sizeof(t_vectorwarp), 0L, A_GIMME, 0);
+    
+    class_addmethod(c, (method)vectorwarp_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)vectorwarp_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)vectorwarp_setpower, "power", A_GIMME, 0);
+    class_addmethod(c, (method)vectorwarp_setstretch, "stretch", A_GIMME, 0);
+    class_addmethod(c, (method)vectorwarp_setlinear, "linear", A_GIMME, 0);
+    class_addmethod(c, (method)vectorwarp_setpoly, "poly", A_GIMME, 0);
+    class_addmethod(c, (method)vectorwarp_setpoly, "poly2", A_GIMME, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    vectorwarp_class = c;
 }
 
 //what to do when we get the message "mymessage" and a value (or list of values)
-void vectorwarp_setpower(t_vectorwarp *x, Symbol *s, short argc, Atom *argv)
+void vectorwarp_setpower(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -93,7 +102,7 @@ void *vectorwarp_new(double initial_coeff)
 {
 	int i;
 
-    t_vectorwarp *x = (t_vectorwarp *)newobject(vectorwarp_class);
+    t_vectorwarp *x = (t_vectorwarp *)object_alloc(vectorwarp_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_vectorwarp);i++)  
@@ -115,93 +124,88 @@ void *vectorwarp_new(double initial_coeff)
     return (x);
 }
 
-
-void vectorwarp_dsp(t_vectorwarp *x, t_signal **sp, short *count)
+void vectorwarp_setstretch(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv)
 {
-		dsp_add(vectorwarp_perform, 5, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);	
+    short i;
+    float temp;
+    for (i=0; i < argc; i++) {
+        switch (argv[i].a_type) {
+            case A_LONG:
+                temp = (float)argv[i].a_w.w_long;
+                if (temp < 0.) temp = 0.;
+                //post("vwarp: setting stretch to: %f ", temp);
+                x->stretch = temp;
+                break;
+            case A_FLOAT:
+                temp = argv[i].a_w.w_float;
+                if (temp < 0.) temp = 0.;
+                //post("vwarp: setting stretch to: %f ", temp);
+                x->stretch = temp;
+                break;
+        }
+    }
 }
 
-t_int *vectorwarp_perform(t_int *w)
+void vectorwarp_setlinear(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv)
 {
-	t_vectorwarp *x = (t_vectorwarp *)(w[1]);
-
-	long i;
-
-	float *in 			= (float *)(w[2]);
-	float *warptable 	= (float *)(w[3]);
-	float *out 			= (float *)(w[4]);
-	long n 				= w[5];
-	
-	double temp, temp2;
-	long warpStart, warpEnd;
-	double warpOffset;
-	
-	if (x->x_obj.z_disabled) goto skipout;
-	if (!x->power) goto skipout;
-	
-	if (x->interp_method == INT_LINEAR) {	
-		for(i=0;i<n;i++) {
-			temp = (double)i * (double)x->stretch * warptable[i]; 		//float index for startpoint
-			warpStart = (long)temp;										//integer value of index
-			warpOffset = temp - (double)warpStart;						//interpolation factor 
-			warpEnd = warpStart + 1;									//interpolation endpoint index
-			
-			if (warpStart >= n) temp = 0.;								//requests for frames above max are set to 0.
-				else temp = in[warpStart];
-			
-			if (warpEnd >= n) temp2 = 0.;
-				else temp2 = in[warpEnd];
-
-			*out++ = temp + warpOffset * (temp2 - temp);
-		}
-	}
-	
-	else if(x->interp_method == INT_POLY) {
-		for(i=0;i<n;i++) {
-			temp = (double)i*(double)x->stretch * warptable[i]; 	//what's the index we want
-			*out++ = polyinterpolate(in, x->polylen, n, temp);		//2nd order poly interpolate
-		}	
-	}
-
-skipout:
-	return w + 6;
-}	
-
-void vectorwarp_setstretch(t_vectorwarp *x, Symbol *s, short argc, Atom *argv)
-{
-	short i;
-	float temp;
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp = (float)argv[i].a_w.w_long;
-				if (temp < 0.) temp = 0.;
-    			//post("vwarp: setting stretch to: %f ", temp);
-    			x->stretch = temp;
-				break;
-			case A_FLOAT:
-				temp = argv[i].a_w.w_float;
-				if (temp < 0.) temp = 0.;
-				//post("vwarp: setting stretch to: %f ", temp);
-				x->stretch = temp;
-				break;
-		}
-	}
+    x->interp_method = INT_LINEAR;
 }
 
-void vectorwarp_setlinear(t_vectorwarp *x, Symbol *s, short argc, Atom *argv)
+void vectorwarp_setpoly(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv)
 {
-	x->interp_method = INT_LINEAR;
+    x->interp_method = INT_POLY;
+    x->polylen = 3;
 }
 
-void vectorwarp_setpoly(t_vectorwarp *x, Symbol *s, short argc, Atom *argv)
+void vectorwarp_setpoly2(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv)
 {
-	x->interp_method = INT_POLY;
-	x->polylen = 3;
+    x->interp_method = INT_POLY;
+    x->polylen = 4;
 }
 
-void vectorwarp_setpoly2(t_vectorwarp *x, Symbol *s, short argc, Atom *argv)
+void vectorwarp_dsp64(t_vectorwarp *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	x->interp_method = INT_POLY;
-	x->polylen = 4;
+    object_method(dsp64, gensym("dsp_add64"), x, vectorwarp_perform64, 0, NULL);
+}
+
+void vectorwarp_perform64(t_vectorwarp *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+    long i;
+    
+    t_double *in 			= (t_double *)(ins[2]);
+    t_double *warptable 	= (t_double *)(ins[3]);
+    t_double *out 			= (t_double *)(outs[4]);
+    long n                  = sampleframes;
+    
+    double temp, temp2;
+    long warpStart, warpEnd;
+    double warpOffset;
+    
+    if (x->x_obj.z_disabled) return;
+    if (!x->power) return;
+    
+    if (x->interp_method == INT_LINEAR) {
+        for(i=0;i<n;i++) {
+            temp = (double)i * (double)x->stretch * warptable[i]; 		//float index for startpoint
+            warpStart = (long)temp;										//integer value of index
+            warpOffset = temp - (double)warpStart;						//interpolation factor
+            warpEnd = warpStart + 1;									//interpolation endpoint index
+            
+            if (warpStart >= n) temp = 0.;								//requests for frames above max are set to 0.
+            else temp = in[warpStart];
+            
+            if (warpEnd >= n) temp2 = 0.;
+            else temp2 = in[warpEnd];
+            
+            *out++ = temp + warpOffset * (temp2 - temp);
+        }
+    }
+    
+    else if(x->interp_method == INT_POLY) {
+        for(i=0;i<n;i++) {
+            temp = (double)i*(double)x->stretch * warptable[i]; 	//what's the index we want
+            *out++ = polyinterpolate(in, x->polylen, n, temp);		//2nd order poly interpolate
+        }	
+    }
+
 }

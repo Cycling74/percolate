@@ -1,8 +1,12 @@
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
+
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
 #include "buffer.h"
 
-void *pokef_class;
+t_class *pokef_class;
 
 typedef struct _pokef
 {
@@ -11,35 +15,54 @@ typedef struct _pokef
     t_buffer *l_buf;
     long l_chan;
     long length;
-
     
 } t_pokef;
 
 long Constrain(long v, long lo, long hi);
-t_int *pokef_perform(t_int *w);
-void pokef_dsp(t_pokef *x, t_signal **sp);
 void pokef_set(t_pokef *x, t_symbol *s);
+
 void *pokef_new(t_symbol *s, long chan);
-void pokef_in1(t_pokef *x, long n);
+void pokef_in3(t_pokef *x, long n);
 void pokef_assist(t_pokef *x, void *b, long m, long a, char *s);
 void pokef_dblclick(t_pokef *x);
-void pokef_length(t_pokef *x, Symbol *s, short argc, Atom *argv);
+void pokef_length(t_pokef *x, t_symbol *s, long argc, t_atom *argv);
+
+// dsp stuff
+void pokef_dsp64(t_pokef *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void pokef_perform64(t_pokef *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 t_symbol *ps_buffer;
 
 void ext_main(void* p)
 {
-	setup((struct messlist **)&pokef_class, (method)pokef_new, (method)dsp_free, (short)sizeof(t_pokef), 0L, 
-		A_SYM, A_DEFLONG, 0);
-	addmess((method)pokef_dsp, "dsp", A_CANT, 0);
-	addmess((method)pokef_set, "set", A_SYM, 0);
-	addmess((method)pokef_length, "length", A_GIMME, 0);
-	addinx((method)pokef_in1,3);
-	addmess((method)pokef_assist, "assist", A_CANT, 0);
-	addmess((method)pokef_dblclick, "dblclick", A_CANT, 0);
-	dsp_initclass();
+    t_class *c = class_new("pokef~", (method)pokef_new, (method)dsp_free, (long)sizeof(t_pokef), 0L, A_SYM, A_DEFLONG, 0);
+    
+    class_addmethod(c, (method)pokef_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)pokef_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)pokef_in3, "in3", A_LONG, 0);
+    
+	class_addmethod(c, (method)pokef_set, "set", A_SYM, 0);
+	class_addmethod(c, (method)pokef_length, "length", A_GIMME, 0);
+    class_addmethod(c, (method)pokef_dblclick, "dblclick", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    pokef_class = c;
+    
 	ps_buffer = gensym("buffer~");
-	rescopy('STR#',19987);
+}
+
+void *pokef_new(t_symbol *s, long chan)
+{
+	t_pokef *x = (t_pokef *)object_alloc(pokef_class);
+	//dsp_setup((t_pxobject *)x, 1);
+    intin((t_object *)x, 3);
+	dsp_setup((t_pxobject *)x, 3);
+	outlet_new((t_object *)x, "signal");
+	x->l_sym = s;
+	pokef_in3(x,chan);
+	//x->l_obj.z_misc = Z_NO_INPLACE;
+	return (x);
 }
 
 long Constrain(long v, long lo, long hi)
@@ -50,88 +73,6 @@ long Constrain(long v, long lo, long hi)
 		return hi;
 	else
 		return v;
-}
-
-t_int *pokef_perform(t_int *w)
-{
-    t_pokef *x = (t_pokef *)(w[1]);
-    float *in = (float *)(w[2]);
-    float *index = (float *)(w[3]);
-    float *fcoeff = (float *)(w[4]);
-    float *out = (float *)(w[5]);
-    int n = (int)(w[6]);
-    
-    double alpha, om_alpha, output;
-    
-	t_buffer *b = x->l_buf;
-	float *tab;
-	float temp, input, coeff, bufsample;
-	float chan, frames, nc, length;
-	
-	long pokef, pokef_next, pokef_nextnext, pokef_nextnextnext;
-	
-	if (x->l_obj.z_disabled)
-		goto out;
-	if (!b)
-		goto zero;
-	if (!b->b_valid)
-		goto zero;
-		
-		
-	tab = b->b_samples;
-	chan = (float)x->l_chan;
-	frames = (float)b->b_frames;
-	nc = (float)b->b_nchans;
-	length = (float)x->length;
-	if (length <= 0.) length = frames;
-	else if (length >= frames) length = frames;
-	
-	while (n--) {
-		input 	= *in++;
-		temp 	= *index++;
-		coeff 	= *fcoeff++;
-				
-		temp += 0.5;
-		
-		if (temp < 0.)
-			temp = 0.;
-		else while (temp >= length)
-			temp -= length;
-	
-		temp = temp * nc + chan;
-			
-		pokef = (long)temp;	
-		//bufsample = tab[pokef];
-						
-		alpha = temp - (double)pokef;
-		om_alpha = 1. - alpha;
-		
-		pokef_next = pokef + nc;
-		while (pokef_next >= length*nc) pokef_next -= length*nc;
-		pokef_nextnext = pokef_next + nc;
-		while (pokef_nextnext >= length*nc) pokef_nextnext -= length*nc;
-		pokef_nextnextnext = pokef_nextnext + nc;
-		while (pokef_nextnextnext >= length*nc) pokef_nextnextnext -= length*nc;
-		
-		//output two ahead of record point...., with interpolation
-		//*out++ = tab[pokef_nextnext]*om_alpha + tab[pokef_nextnextnext]*alpha;
-		//*out++ = tab[pokef_next]*om_alpha + tab[pokef_nextnext]*alpha;
-		*out++ = tab[pokef_next];
-		
-		//interpolate recording...
-		//tab[pokef] = coeff * tab[pokef] + om_alpha*input;
-		//tab[pokef_next] = coeff * tab[pokef_next] + alpha*input;
-		//or not....
-		tab[pokef] = coeff * tab[pokef] + input;
-
-		//*out++ = bufsample;
-		//tab[pokef] = coeff * bufsample + input;
-
-	}
-
-zero:
-out:
-	return (w+7);
 }
 
 void pokef_set(t_pokef *x, t_symbol *s)
@@ -147,7 +88,7 @@ void pokef_set(t_pokef *x, t_symbol *s)
 	}
 }
 
-void pokef_in1(t_pokef *x, long n)
+void pokef_in3(t_pokef *x, long n)
 {
 	if (n)
 		x->l_chan = Constrain(n,1,4) - 1;
@@ -155,14 +96,7 @@ void pokef_in1(t_pokef *x, long n)
 		x->l_chan = 0;
 }
 
-void pokef_dsp(t_pokef *x, t_signal **sp)
-{
-    pokef_set(x,x->l_sym);
-    //dsp_add(pokef_perform, 5, x, sp[0]->s_vec-1, sp[1]->s_vec-1, sp[2]->s_vec-1, sp[0]->s_n+1);
-    dsp_add(pokef_perform, 6, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[0]->s_n);
-}
-
-void pokef_length(t_pokef *x, Symbol *s, short argc, Atom *argv)
+void pokef_length(t_pokef *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -194,16 +128,86 @@ void pokef_assist(t_pokef *x, void *b, long m, long a, char *s)
 	assist_string(19987,m,a,1,4,s);
 }
 
-void *pokef_new(t_symbol *s, long chan)
+void pokef_dsp64(t_pokef *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	t_pokef *x = (t_pokef *)newobject(pokef_class);
-	//dsp_setup((t_pxobject *)x, 1);
-    intin((t_object *)x, 3);
-	dsp_setup((t_pxobject *)x, 3);
-	outlet_new((t_object *)x, "signal");
-	x->l_sym = s;
-	pokef_in1(x,chan);
-	//x->l_obj.z_misc = Z_NO_INPLACE;
-	return (x);
+    pokef_set(x,x->l_sym);
+    object_method(dsp64, gensym("dsp_add64"), x, pokef_perform64, 0, NULL);
 }
 
+void pokef_perform64(t_pokef *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+    float *in = (float *)(ins[0]);
+    t_double *index = (t_double *)(ins[1]);
+    t_double *fcoeff = (t_double *)(ins[2]);
+    t_double *out = (t_double *)(outs[0]);
+    int n = sampleframes;
+    
+    double alpha, om_alpha, output;
+    
+	t_buffer *b = x->l_buf;
+	t_double *tab;
+	t_double temp, input, coeff, bufsample;
+	t_double chan, frames, nc, length;
+	
+	long pokef, pokef_next, pokef_nextnext, pokef_nextnextnext;
+	
+	if (x->l_obj.z_disabled)
+		return;
+	if (!b)
+		return;
+	if (!b->b_valid)
+		return;
+    
+    
+	tab = b->b_samples;
+	chan = (t_double)x->l_chan;
+	frames = (t_double)b->b_frames;
+	nc = (t_double)b->b_nchans;
+	length = (t_double)x->length;
+	if (length <= 0.) length = frames;
+	else if (length >= frames) length = frames;
+	
+	while (n--) {
+		input 	= *in++;
+		temp 	= *index++;
+		coeff 	= *fcoeff++;
+        
+		temp += 0.5;
+		
+		if (temp < 0.)
+			temp = 0.;
+		else while (temp >= length)
+			temp -= length;
+        
+		temp = temp * nc + chan;
+        
+		pokef = (long)temp;
+		//bufsample = tab[pokef];
+        
+		alpha = temp - (double)pokef;
+		om_alpha = 1. - alpha;
+		
+		pokef_next = pokef + nc;
+		while (pokef_next >= length*nc) pokef_next -= length*nc;
+		pokef_nextnext = pokef_next + nc;
+		while (pokef_nextnext >= length*nc) pokef_nextnext -= length*nc;
+		pokef_nextnextnext = pokef_nextnext + nc;
+		while (pokef_nextnextnext >= length*nc) pokef_nextnextnext -= length*nc;
+		
+		//output two ahead of record point...., with interpolation
+		//*out++ = tab[pokef_nextnext]*om_alpha + tab[pokef_nextnextnext]*alpha;
+		//*out++ = tab[pokef_next]*om_alpha + tab[pokef_nextnext]*alpha;
+		*out++ = tab[pokef_next];
+		
+		//interpolate recording...
+		//tab[pokef] = coeff * tab[pokef] + om_alpha*input;
+		//tab[pokef_next] = coeff * tab[pokef_next] + alpha*input;
+		//or not....
+		tab[pokef] = coeff * tab[pokef] + input;
+        
+		//*out++ = bufsample;
+		//tab[pokef] = coeff * bufsample + input;
+        
+	}
+
+}

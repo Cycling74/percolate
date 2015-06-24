@@ -1,11 +1,17 @@
 //reallly the wuter drops, not wuter
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
+
 
 #include "ext.h"
+#include "ext_obex.h"
 #include "z_dsp.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+
 #define TWO_PI 6.283185307
 //#define ONE_OVER_RANDLIMIT 0.00006103516 // constant = 1. / 16384.0
 #define ONE_OVER_RANDLIMIT 1./RAND_MAX
@@ -23,7 +29,7 @@
 #define BAMB_NUM_TUBES 5
 #define BAMB_BASE_FREQ  2800
 
-void *wuter_class;
+t_class *wuter_class;
 
 typedef struct _wuter
 {
@@ -74,12 +80,15 @@ typedef struct _wuter
 
 //setup funcs
 void *wuter_new(double val);
-void wuter_dsp(t_wuter *x, t_signal **sp, short *count);
+void wuter_assist(t_wuter *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void wuter_dsp64(t_wuter *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void wuter_perform64(t_wuter *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
 void wuter_float(t_wuter *x, double f);
 void wuter_int(t_wuter *x, int f);
 void wuter_bang(t_wuter *x);
-t_int *wuter_perform(t_int *w);
-void wuter_assist(t_wuter *x, void *b, long m, long a, char *s);
 
 void wuter_setup(t_wuter *x);
 float wuter_tick(t_wuter *x);
@@ -206,19 +215,40 @@ float noise_tick()
 //primary MSP funcs
 void ext_main(void* p)
 {
-    setup((struct messlist **)&wuter_class, (method)wuter_new, (method)dsp_free, (short)sizeof(t_wuter), 0L, A_DEFFLOAT, 0);
-    addmess((method)wuter_dsp, "dsp", A_CANT, 0);
-    addmess((method)wuter_assist,"assist",A_CANT,0);
-    addfloat((method)wuter_float);
-    addint((method)wuter_int);
-    addbang((method)wuter_bang);
-    dsp_initclass();
-    rescopy('STR#',9821);
+    t_class *c = class_new("wuter~", (method)wuter_new, (method)dsp_free, (long)sizeof(t_wuter), 0L, A_DEFFLOAT, 0);
+    
+    class_addmethod(c, (method)wuter_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)wuter_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)wuter_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)wuter_int, "int", A_LONG, 0);
+    class_addmethod(c, (method)wuter_bang, "bang", A_CANT, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    wuter_class = c;
 }
 
 void wuter_assist(t_wuter *x, void *b, long m, long a, char *s)
 {
-	assist_string(9821,m,a,1,5,s);
+    if (m == ASSIST_INLET) {
+        switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) number of items");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) resonant frequency");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) damping");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) maximum shake");
+                break;
+        }
+    } else {
+        sprintf(s,"(signal) output");
+    }
 }
 
 void wuter_float(t_wuter *x, double f)
@@ -261,7 +291,7 @@ void *wuter_new(double initial_coeff)
 {
 	int i;
 
-    t_wuter *x = (t_wuter *)newobject(wuter_class);
+    t_wuter *x = (t_wuter *)object_alloc(wuter_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_wuter);i++)  
@@ -311,67 +341,61 @@ void *wuter_new(double initial_coeff)
 }
 
 
-void wuter_dsp(t_wuter *x, t_signal **sp, short *count)
+// dsp stuff
+void wuter_dsp64(t_wuter *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	x->num_objectsConnected = count[0];
-	x->res_freqConnected = count[1];
-	x->shake_dampConnected = count[2];
-	x->shake_maxConnected = count[3];
-	
-	x->srate = sp[0]->s_sr;
-	x->one_over_srate = 1./x->srate;
-	
-	dsp_add(wuter_perform, 8, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, \
-								  sp[4]->s_vec, sp[5]->s_vec, sp[0]->s_n);	
-	
+    x->num_objectsConnected = count[0];
+    x->res_freqConnected = count[1];
+    x->shake_dampConnected = count[2];
+    x->shake_maxConnected = count[3];
+    
+    x->srate = samplerate;
+    x->one_over_srate = 1./x->srate;
+    
+    object_method(dsp64, gensym("dsp_add64"), x, wuter_perform64, 0, NULL);
 }
 
-t_int *wuter_perform(t_int *w)
+void wuter_perform64(t_wuter *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_wuter *x = (t_wuter *)(w[1]);
-	
-	float num_objects	= x->num_objectsConnected	? 	*(float *)(w[2]) : x->num_objects;
-	float res_freq 		= x->res_freqConnected		? 	*(float *)(w[3]) : x->res_freq;
-	float shake_damp 	= x->shake_dampConnected	? 	*(float *)(w[4]) : x->shake_damp;
-	float shake_max 	= x->shake_maxConnected		? 	*(float *)(w[5]) : x->shake_max;
-	
-	float *outL = (float *)(w[6]);
-	float *outR = (float *)(w[7]);
-	long n = w[8];
+    t_double num_objects	= x->num_objectsConnected	? 	*(t_double *)(ins[2]) : x->num_objects;
+    t_double res_freq 		= x->res_freqConnected		? 	*(t_double *)(ins[3]) : x->res_freq;
+    t_double shake_damp 	= x->shake_dampConnected	? 	*(t_double *)(ins[4]) : x->shake_damp;
+    t_double shake_max      = x->shake_maxConnected		? 	*(t_double *)(ins[5]) : x->shake_max;
+    
+    t_double *outL = (t_double *)(outs[6]);
+    t_double *outR = (t_double *)(outs[7]);
+    long n = sampleframes;
 
-	float lastOutput, temp;
-	long temp2;
-
-	if(num_objects != x->num_objectsSave) {
-		if(num_objects < 1.) num_objects = 1.;
-		x->num_objects = (long)num_objects;
-		x->num_objectsSave = (long)num_objects;
-		x->gain = log(num_objects) * 30. / (float)num_objects;
-	}
-	
-	if(res_freq != x->res_freqSave) {
-		x->res_freqSave = x->res_freq = res_freq;
-		//temp = 900. * pow(1.015,res_freq);
-    	//x->coeffs[0] = -0.96 * 2.0 * cos(temp * TWO_PI / x->srate);
-    	//x->coeffs[1] = 0.96*0.96; 
-	}
-	
-	if(shake_damp != x->shake_dampSave) {
-		x->res_spread = x->shake_dampSave = x->shake_damp = shake_damp;
-		x->systemDecay = .998 + (shake_damp * .002);
-	}
-	
-	if(shake_max != x->shake_maxSave) {
-		x->res_random = x->shake_maxSave = x->shake_max = shake_max;
-	 	//x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
-    	//if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
-	}	
-
-	while(n--) {
-		lastOutput = wuter_tick(x);		
-		*outL++ = lastOutput*x->pandropL;
-		*outR++ = lastOutput*x->pandropR;
-	}
-	return w + 9;
-}	
-
+    t_double lastOutput;
+    
+    if(num_objects != x->num_objectsSave) {
+        if(num_objects < 1.) num_objects = 1.;
+        x->num_objects = (long)num_objects;
+        x->num_objectsSave = (long)num_objects;
+        x->gain = log(num_objects) * 30. / (float)num_objects;
+    }
+    
+    if(res_freq != x->res_freqSave) {
+        x->res_freqSave = x->res_freq = res_freq;
+        //temp = 900. * pow(1.015,res_freq);
+        //x->coeffs[0] = -0.96 * 2.0 * cos(temp * TWO_PI / x->srate);
+        //x->coeffs[1] = 0.96*0.96;
+    }
+    
+    if(shake_damp != x->shake_dampSave) {
+        x->res_spread = x->shake_dampSave = x->shake_damp = shake_damp;
+        x->systemDecay = .998 + (shake_damp * .002);
+    }
+    
+    if(shake_max != x->shake_maxSave) {
+        x->res_random = x->shake_maxSave = x->shake_max = shake_max;
+        //x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
+        //if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
+    }	
+    
+    while(n--) {
+        lastOutput = wuter_tick(x);		
+        *outL++ = lastOutput*x->pandropL;
+        *outR++ = lastOutput*x->pandropR;
+    }
+}

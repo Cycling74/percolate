@@ -9,9 +9,13 @@
 /*  can i say. always a work in progress	*/
 /*											*/
 /********************************************/
+//
+// updated for Max 7 by Darwin Grosse and Tim Place
+// -------------------------------------------------
 
 #include "stk_c.h"
 #include "buffer.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,7 +41,7 @@
 
 /****MAIN STRUCT****/
 
-void *munger_class;
+t_class *munger_class;
 
 typedef struct _munger
 {
@@ -141,13 +145,17 @@ typedef struct _munger
 //setup funcs
 //void *munger_new(double val);
 void *munger_new(double maxdelay, long channels);
-void munger_dsp(t_munger *x, t_signal **sp, short *count);
-void munger_float(t_munger *x, double f);
-t_int *munger_perform(t_int *w);
-void munger_alloc(t_munger *x);
 void munger_free(t_munger *x);
 void munger_assist(t_munger *x, void *b, long m, long a, char *s);
-void setpower(t_munger *x, Symbol *s, short argc, Atom *argv);
+
+void munger_float(t_munger *x, double f);
+
+// dsp stuff
+void munger_dsp64(t_munger *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void munger_perform64(t_munger *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+
+void munger_alloc(t_munger *x);
+void setpower(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //sample buffer funcs
 void recordSamp(t_munger *x, float sample);		//stick a sample in the buffer
@@ -166,54 +174,54 @@ float newNoteSize(t_munger *x, int whichVoice, int newNote);		//creates a size f
 
 //window funcs
 float win_tick(t_munger *x, int whichone);
-void munger_setramp(t_munger *x, Symbol *s, short argc, Atom *argv);
-void munger_sethanning(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_setramp(t_munger *x, t_symbol *s, long argc, t_atom *argv);
+void munger_sethanning(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //scale funcs
-void munger_scale(t_munger *x, Symbol *s, short argc, Atom *argv);
-void munger_tempered(t_munger *x, Symbol *s, short argc, Atom *argv);
-void munger_smooth(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_scale(t_munger *x, t_symbol *s, long argc, t_atom *argv);
+void munger_tempered(t_munger *x, t_symbol *s, long argc, t_atom *argv);
+void munger_smooth(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //multichannel func
-void munger_spat(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_spat(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //note funcs
-void munger_note(t_munger *x, Symbol *s, short argc, Atom *argv);
-void munger_oneshot(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_note(t_munger *x, t_symbol *s, long argc, t_atom *argv);
+void munger_oneshot(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //buffersize change
-void munger_bufsize(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_bufsize(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //buffersize change (ms)
-void munger_bufsize_ms(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_bufsize_ms(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //set maximum number of voices possible
-void munger_maxvoices(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_maxvoices(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //set number of voices to actually use
-void munger_setvoices(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_setvoices(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //set min grain size
-void munger_setminsize(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_setminsize(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //turn on/off backwards grains 
-void munger_ambidirectional(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_ambidirectional(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //turn on/off recording
-void munger_record(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_record(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //clear buffer
-void munger_clear(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_clear(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //set overall gain and rand gain range
-void munger_gain(t_munger *x, Symbol *s, short argc, Atom *argv);
-void munger_randgain(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_gain(t_munger *x, t_symbol *s, long argc, t_atom *argv);
+void munger_randgain(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //fix position for start of grain playback
-void munger_setposition(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_setposition(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //post current parameter values
-void munger_poststate(t_munger *x, Symbol *s, short argc, Atom *argv);
+void munger_poststate(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 
 //external buffer funcs
 void munger_setbuffer(t_munger *x, t_symbol *s);
@@ -377,18 +385,20 @@ float newSetup(t_munger *x, int whichVoice)
 		else if (x->position >= 0. && x->recordOn == 0) {
 			if(x->gvoiceDirection[whichVoice] == 1) {//going forward			
 				newPosition = x->recordCurrent - x->onethirdBufsize - x->position * x->onethirdBufsize;
-			}	
-			else //going backwards
+			} else { //going backwards
 				newPosition = x->recordCurrent - x->position * x->onethirdBufsize;
-		} 	
+            }
+		}
 	}
 	else {
 		if (x->position == -1.) {
 			newPosition = (float)rand() * ONE_OVER_MAXRAND * (double)b->b_frames;
-		}
-		else if (x->position >= 0.) newPosition = x->position * (double)b->b_frames;
+		} else if (x->position >= 0.) {
+            newPosition = x->position * (double)b->b_frames;
+        } else {
+            newPosition = 0.0;
+        }
 	}
-	
 	
 	return newPosition;
 	
@@ -671,40 +681,43 @@ float getExternalSamp(t_munger *x, double where)
 //primary MSP funcs
 void ext_main(void *f)
 {
-    setup((struct messlist **)&munger_class, (method)munger_new, (method)munger_free, (short)sizeof(t_munger), 0L, A_DEFFLOAT, A_DEFLONG, 0);
-    dsp_initclass();
-	
-    addmess((method)munger_dsp, "dsp", A_CANT, 0);
-    addmess((method)munger_assist,"assist",A_CANT,0);
-    addmess((method)munger_setramp, "ramptime", A_GIMME, 0);
-    addmess((method)munger_sethanning, "hanning", A_GIMME, 0);
-    addmess((method)munger_tempered, "tempered", A_GIMME, 0);
-    addmess((method)munger_smooth, "smooth", A_GIMME, 0);
-    addmess((method)munger_scale, "scale", A_GIMME, 0);
-    addmess((method)munger_spat, "spatialize", A_GIMME, 0);
-    addmess((method)munger_note, "note", A_GIMME, 0);
-    addmess((method)munger_oneshot, "oneshot", A_GIMME, 0);
-    addmess((method)munger_bufsize, "delaylength", A_GIMME, 0);
-    addmess((method)munger_bufsize_ms, "delaylength_ms", A_GIMME, 0);
-    addmess((method)munger_setvoices, "voices", A_GIMME, 0);
-    addmess((method)munger_maxvoices, "maxvoices", A_GIMME, 0);
-    addmess((method)munger_setminsize, "minsize", A_GIMME, 0);
-    addmess((method)setpower, "power", A_GIMME, 0);
-    addmess((method)munger_ambidirectional, "ambidirectional", A_GIMME, 0);
-    addmess((method)munger_record, "record", A_GIMME, 0);
-    addmess((method)munger_gain, "gain", A_GIMME, 0);
-    addmess((method)munger_randgain, "rand_gain", A_GIMME, 0);
-    addmess((method)munger_setposition, "position", A_GIMME, 0);
-    addmess((method)munger_poststate, "state", A_GIMME, 0);
-    addmess((method)munger_clear, "clear", A_GIMME, 0);
-    addmess((method)munger_setbuffer, "buffer", A_SYM, 0);
-    addfloat((method)munger_float);
-
+    t_class *c = class_new("munger~", (method)munger_new, (method)munger_free, (long)sizeof(t_munger), 0L, A_DEFFLOAT, A_DEFLONG, 0);
+    
+    class_addmethod(c, (method)munger_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)munger_dsp64, "dsp64", A_CANT, 0);
+    
+    class_addmethod(c, (method)munger_float, "float", A_FLOAT, 0);
+    class_addmethod(c, (method)munger_assist,"assist",A_CANT,0);
+    class_addmethod(c, (method)munger_setramp, "ramptime", A_GIMME, 0);
+    class_addmethod(c, (method)munger_sethanning, "hanning", A_GIMME, 0);
+    class_addmethod(c, (method)munger_tempered, "tempered", A_GIMME, 0);
+    class_addmethod(c, (method)munger_smooth, "smooth", A_GIMME, 0);
+    class_addmethod(c, (method)munger_scale, "scale", A_GIMME, 0);
+    class_addmethod(c, (method)munger_spat, "spatialize", A_GIMME, 0);
+    class_addmethod(c, (method)munger_note, "note", A_GIMME, 0);
+    class_addmethod(c, (method)munger_oneshot, "oneshot", A_GIMME, 0);
+    class_addmethod(c, (method)munger_bufsize, "delaylength", A_GIMME, 0);
+    class_addmethod(c, (method)munger_bufsize_ms, "delaylength_ms", A_GIMME, 0);
+    class_addmethod(c, (method)munger_setvoices, "voices", A_GIMME, 0);
+    class_addmethod(c, (method)munger_maxvoices, "maxvoices", A_GIMME, 0);
+    class_addmethod(c, (method)munger_setminsize, "minsize", A_GIMME, 0);
+    class_addmethod(c, (method)setpower, "power", A_GIMME, 0);
+    class_addmethod(c, (method)munger_ambidirectional, "ambidirectional", A_GIMME, 0);
+    class_addmethod(c, (method)munger_record, "record", A_GIMME, 0);
+    class_addmethod(c, (method)munger_gain, "gain", A_GIMME, 0);
+    class_addmethod(c, (method)munger_randgain, "rand_gain", A_GIMME, 0);
+    class_addmethod(c, (method)munger_setposition, "position", A_GIMME, 0);
+    class_addmethod(c, (method)munger_poststate, "state", A_GIMME, 0);
+    class_addmethod(c, (method)munger_clear, "clear", A_GIMME, 0);
+    class_addmethod(c, (method)munger_setbuffer, "buffer", A_SYM, 0);
+    class_dspinit(c);
+    
+    class_register(CLASS_BOX, c);
+    munger_class = c;
     ps_buffer = gensym("buffer~");
-    rescopy('STR#',9810);
 }
 
-void munger_setramp(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_setramp(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	x->doHanning = 0;
@@ -724,7 +737,7 @@ void munger_setramp(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_scale(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_scale(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	int i,j;
 	
@@ -755,7 +768,7 @@ void munger_scale(t_munger *x, Symbol *s, short argc, Atom *argv)
 		
 }
 
-void munger_spat(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_spat(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	int i, j;
 	
@@ -781,7 +794,7 @@ void munger_spat(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_note(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_note(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 
 	int i, temp;
@@ -878,7 +891,7 @@ void munger_note(t_munger *x, Symbol *s, short argc, Atom *argv)
 
 //turn oneshot mode on/off. in oneshot mode, the internal granular voice allocation method goes away
 //	so the munger will be silent, except when it receives "note" messages
-void munger_oneshot(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_oneshot(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -898,7 +911,7 @@ void munger_oneshot(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_bufsize(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_bufsize(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -932,7 +945,7 @@ void munger_bufsize(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_bufsize_ms(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_bufsize_ms(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -966,7 +979,7 @@ void munger_bufsize_ms(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_setminsize(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_setminsize(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -997,7 +1010,7 @@ void munger_setminsize(t_munger *x, Symbol *s, short argc, Atom *argv)
 }
 
 
-void munger_setvoices(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_setvoices(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -1021,7 +1034,7 @@ void munger_setvoices(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_maxvoices(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_maxvoices(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -1046,7 +1059,7 @@ void munger_maxvoices(t_munger *x, Symbol *s, short argc, Atom *argv)
 }
 
 
-void setpower(t_munger *x, Symbol *s, short argc, Atom *argv)
+void setpower(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -1066,7 +1079,7 @@ void setpower(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_record(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_record(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -1102,7 +1115,7 @@ void munger_record(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_ambidirectional(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_ambidirectional(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	int temp;
@@ -1122,7 +1135,7 @@ void munger_ambidirectional(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_gain(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_gain(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -1142,7 +1155,7 @@ void munger_gain(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_setposition(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_setposition(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -1166,7 +1179,7 @@ void munger_setposition(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_randgain(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_randgain(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -1186,13 +1199,13 @@ void munger_randgain(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void munger_sethanning(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_sethanning(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	post("munger: hanning window is busted");
 	x->doHanning = 1;
 }
 
-void munger_tempered(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_tempered(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	int i;
 	//post("munger: doing tempered scale");
@@ -1204,7 +1217,7 @@ void munger_tempered(t_munger *x, Symbol *s, short argc, Atom *argv)
 	}
 	x->scale_len = PITCHTABLESIZE;
 }
-void munger_smooth(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_smooth(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	//post("munger: doing smooth scale");
 	x->smoothPitch = 1;
@@ -1221,7 +1234,7 @@ void munger_alloc(t_munger *x)
 	}
 }
 
-void munger_clear(t_munger *x, Symbol *s, short argc, Atom *argv)
+void munger_clear(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	long i;
 	for(i=0; i<x->initbuflen; i++) x->recordBuf[i] = 0.;
@@ -1239,7 +1252,33 @@ void munger_free(t_munger *x)
 
 void munger_assist(t_munger *x, void *b, long m, long a, char *s)
 {
-	assist_string(9810,m,a,1,9,s);
+	if (m == ASSIST_INLET) {
+		switch (a) {
+            case 0:
+                sprintf(s,"(signal/float) grain rate");
+                break;
+            case 1:
+                sprintf(s,"(signal/float) grain rate variation");
+                break;
+            case 2:
+                sprintf(s,"(signal/float) grain length");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) grain length variation");
+                break;
+            case 4:
+                sprintf(s,"(signal/float) grain pitch");
+                break;
+            case 5:
+                sprintf(s,"(signal/float) grain pitch variation");
+                break;
+            case 6:
+                sprintf(s,"(signal/float) grain pan spread");
+                break;
+        }
+	} else {
+		sprintf(s,"(signal) output");
+    }
 }
 
 void munger_float(t_munger *x, double f)
@@ -1267,7 +1306,7 @@ void *munger_new(double maxdelay, long channels)
 {
 	int i, j;
     
-    t_munger *x = (t_munger *)newobject(munger_class);
+    t_munger *x = (t_munger *)object_alloc(munger_class);
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_munger);i++)  
@@ -1391,12 +1430,8 @@ void *munger_new(double maxdelay, long channels)
     return (x);
 }
 
-
-void munger_dsp(t_munger *x, t_signal **sp, short *count)
+void munger_dsp64(t_munger *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	void *dsp_add_args[100];
-	int i;
-
 	x->grate_connected 			= count[1];
 	x->grate_var_connected		= count[2];
 	x->glen_connected			= count[3];
@@ -1405,50 +1440,39 @@ void munger_dsp(t_munger *x, t_signal **sp, short *count)
 	x->gpitch_var_connected		= count[6];
 	x->gpan_spread_connected	= count[7];
 	
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
     x->one_over_srate = 1./x->srate;
-
+    
     x->srate_ms = x->srate * .001;
     x->one_over_srate_ms = 1000. * x->one_over_srate;
     
-    dsp_add_args[0] = x;
-    for(i=0;i<(x->num_channels+8);i++) {
-    	dsp_add_args[i+1] = sp[i]->s_vec;
-    }
-    dsp_add_args[x->num_channels+9] = (void *)sp[0]->s_n;
-	
-	dsp_addv(munger_perform, x->num_channels+10, dsp_add_args);
-
-	//dsp_add(munger_perform, 12, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec, \
-			//sp[5]->s_vec, sp[6]->s_vec, sp[7]->s_vec, sp[8]->s_vec, sp[9]->s_vec, sp[0]->s_n);	
-	
+    object_method(dsp64, gensym("dsp_add64"), x, munger_perform64, 0, NULL);
 }
 
-t_int *munger_perform(t_int *w)
+void munger_perform64(t_munger *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_munger *x = (t_munger *)(w[1]);
-	float *in = (float *)(w[2]);
+	t_double *in = (t_double *)(ins[0]);
 	
-	float grate 		= x->grate_connected? 		*(float *)(w[3]) : x->grate;
-	float grate_var 	= x->grate_var_connected? 	*(float *)(w[4]) : x->grate_var;
-	float glen 			= x->glen_connected? 		*(float *)(w[5]) : x->glen;
-	float glen_var 		= x->glen_var_connected? 	*(float *)(w[6]) : x->glen_var;
-	float gpitch 		= x->gpitch_connected? 		*(float *)(w[7]) : x->gpitch;
-	float gpitch_var	= x->gpitch_var_connected? 	*(float *)(w[8]) : x->gpitch_var;
-	float gpan_spread	= x->gpan_spread_connected? *(float *)(w[9]) : x->gpan_spread;
+	t_double grate 		= x->grate_connected? 		*(t_double *)(ins[0]) : x->grate;
+	t_double grate_var 	= x->grate_var_connected? 	*(t_double *)(ins[1]) : x->grate_var;
+	t_double glen 		= x->glen_connected? 		*(t_double *)(ins[2]) : x->glen;
+	t_double glen_var 	= x->glen_var_connected? 	*(t_double *)(ins[3]) : x->glen_var;
+	t_double gpitch 	= x->gpitch_connected? 		*(t_double *)(ins[4]) : x->gpitch;
+	t_double gpitch_var	= x->gpitch_var_connected? 	*(t_double *)(ins[5]) : x->gpitch_var;
+	t_double gpan_spread= x->gpan_spread_connected? *(t_double *)(ins[6]) : x->gpan_spread;
 	
-	float gimme;
-	float outsamp[MAXCHANNELS], samp;
+	t_double gimme;
+	t_double outsamp[MAXCHANNELS], samp;
 	int newvoice, i, j, state;
 	long n;
-	float *out[MAXCHANNELS];
-	//float *outL = (float *)(w[10]);
-	//float *outR = (float *)(w[11]);
+	t_double *out[MAXCHANNELS];
+	//t_double *outL = (t_double *)(w[10]);
+	//t_double *outR = (t_double *)(w[11]);
 	
 	for (i=0;i<x->num_channels;i++) {
-		out[i] = (float *)(w[10+i]);
+		out[i] = (t_double *)(outs[i]);
 	}
-	n = w[10 + x->num_channels];
+	n = sampleframes;
 	
 	//make sure vars are updated if signals are connected; stupid, lazy, boob.
 	x->grate = grate;
@@ -1460,14 +1484,11 @@ t_int *munger_perform(t_int *w)
 	x->gpan_spread = gpan_spread;
 		
 	//grate = grate + RAND01 * grate_var;
-	//grate = grate + ((float)rand() - 16384.) * ONE_OVER_HALFRAND * grate_var;
+	//grate = grate + ((t_double)rand() - 16384.) * ONE_OVER_HALFRAND * grate_var;
 	//gimme = x->srate_ms * grate; //grate is actually time-distance between grains
 
 	if(gpan_spread > 1.) gpan_spread = 1.;
 	if(gpan_spread < 0.) gpan_spread = 0.;
-	
-	//bypass stuff
-	if(x->x_obj.z_disabled) goto out;
 
 	if(!x->power) {
 		while(n--) { 	//copy and zero out when unpowered (this is slightly less efficient than
@@ -1503,7 +1524,7 @@ t_int *munger_perform(t_int *w)
 					if(newvoice >= 0) {
 						x->gvoiceCurrent[newvoice] = newSetup(x, newvoice);
 					}
-					grate = grate + ((float)rand() - RAND_MAX * 0.5) * ONE_OVER_HALFRAND * grate_var;
+					grate = grate + ((t_double)rand() - RAND_MAX * 0.5) * ONE_OVER_HALFRAND * grate_var;
 					x->gimme = x->srate_ms * grate; //grate is actually time-distance between grains
 				}
 			} 
@@ -1545,12 +1566,10 @@ t_int *munger_perform(t_int *w)
 			}
 		}
 	}
-	out:
-	return (w + 11 + x->num_channels);	
 }
 
 
-void munger_poststate(t_munger *x, Symbol *s, short argc, Atom *argv) {
+void munger_poststate(t_munger *x, t_symbol *s, long argc, t_atom *argv) {
 
 	post (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 	post ("***CURRENT MUNGER PARAMETER VALUES***:");

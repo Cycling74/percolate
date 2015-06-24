@@ -9,20 +9,24 @@
 //playback speed can be variable
 
 //dt 2004; yet another PeRColate hack
+//
+// update for Max 7 by Darwin Grosse and Tim Place
+// ------------------------------------------------
 
 //#define ONE_OVER_HALFRAND 0.00006103516 	// constant = 1. / 16384.0
 //#define ONE_OVER_MAXRAND 0.000030517578 	// 1 / 32768
 #define ONE_OVER_HALFRAND 2./RAND_MAX
 #define ONE_OVER_MAXRAND 1./RAND_MAX
 
-#include "stk_c.h"
-#include "ext.h"
-#include "z_dsp.h"
-#include "ext_strings.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+
+#include "stk_c.h"
+#include "ext.h"
+#include "ext_obex.h"
+#include "ext_strings.h"
+#include "z_dsp.h"
 
 #define MAX_INPUTS 10 	//arbitrary
 #define MAX_OUTPUTS 10	//also arbitrary
@@ -32,7 +36,7 @@
 #define INT_LINEAR 0
 #define INT_POLY 1
 
-void *flapper_class;
+t_class *flapper_class;
 
 typedef struct _flapper
 {
@@ -42,7 +46,7 @@ typedef struct _flapper
     //variables specific to this object
     float srate, one_over_srate, srate_ms;  	//sample rate vars
     long num_inputs, num_outputs; 	//number of inputs and outputs
-    float in[MAX_INPUTS];			//values of input variables
+    double in[MAX_INPUTS];			//values of input variables
     float in_connected[MAX_INPUTS]; //booleans: true if signals connected to the input in question
     //we use this "connected" boolean so that users can connect *either* signals or floats
     //to the various inputs; sometimes it's easier just to have floats, but other times
@@ -52,7 +56,7 @@ typedef struct _flapper
     								//"power" messages so that you can bypass them individually
     								
     double buflen; 					//length of record buffer
-    float *recordBuf;				//pointer to record buffer
+    double *recordBuf;				//pointer to record buffer
     
     long flap_start[MAX_FLAPS];				//start sample for flap
     double flap_current[MAX_FLAPS];			//flap playback position
@@ -90,8 +94,6 @@ typedef struct _flapper
 	long fade_counter[MAX_FLAPS];
 	short fading[MAX_FLAPS];
 	double fade_backposition[MAX_FLAPS];
-
-    
 } t_flapper;
 
 
@@ -101,71 +103,70 @@ typedef struct _flapper
 //args that the user can input, in which case flapper_new will have to change
 void *flapper_new(long num_inputs, long num_outputs);
 void flapper_free(t_flapper *x);
-void flapper_dsp(t_flapper *x, t_signal **sp, short *count); 
-t_int *flapper_perform(t_int *w);
 void flapper_assist(t_flapper *x, void *b, long m, long a, char *s);
+
+// dsp stuff
+void flapper_dsp64(t_flapper *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void flapper_perform64(t_flapper *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 //for getting floats at inputs
 void flapper_float(t_flapper *x, double f);
 
 //for custom messages
-void flapper_overlap(t_flapper *x, Symbol *s, short argc, Atom *argv);
-void flapper_length(t_flapper *x, Symbol *s, short argc, Atom *argv);
-void flapper_setpower(t_flapper *x, Symbol *s, short argc, Atom *argv);
+void flapper_overlap(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
+void flapper_length(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
+void flapper_setpower(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
 
 void flapper_alloc(t_flapper *x);
-void record_sample(t_flapper *x, float sample);
+void record_sample(t_flapper *x, double sample);
 void new_flap(t_flapper *x);
 float get_flap(t_flapper *x,long whichone);
 void queue_put(t_flapper *x, int v);
 int queue_get(t_flapper *x);
 
-void flapper_attack(t_flapper *x, Symbol *s, short argc, Atom *argv);
-void flapper_decay(t_flapper *x, Symbol *s, short argc, Atom *argv);
-void flapper_sustain(t_flapper *x, Symbol *s, short argc, Atom *argv);
-void flapper_release(t_flapper *x, Symbol *s, short argc, Atom *argv);
+void flapper_attack(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
+void flapper_decay(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
+void flapper_sustain(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
+void flapper_release(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
 
-void flapper_setlinear(t_flapper *x, Symbol *s, short argc, Atom *argv);
-void flapper_setpoly(t_flapper *x, Symbol *s, short argc, Atom *argv);
-void flapper_setpoly2(t_flapper *x, Symbol *s, short argc, Atom *argv);
+void flapper_setlinear(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
+void flapper_setpoly(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
+void flapper_setpoly2(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
 
 double interpolator(t_flapper *x, double where);
-void flapper_overlap_len(t_flapper *x, Symbol *s, short argc, Atom *argv);
+void flapper_overlap_len(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
 
 /****FUNCTIONS****/
 
 //primary MSP funcs
 void ext_main(void* p)
 {
-	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
-	//change these if you want different user args
-    setup((struct messlist **)&flapper_class, (method)flapper_new, (method)flapper_free, (short)sizeof(t_flapper), 0L, A_DEFLONG, A_DEFLONG, 0);
-   
-	//standard messages; don't change these  
-    addmess((method)flapper_dsp, "dsp", A_CANT, 0);
-    addmess((method)flapper_assist,"assist", A_CANT,0);
+    t_class *c = class_new("flapper~", (method)flapper_new, (method)flapper_free, (long)sizeof(t_flapper), 0L, A_DEFLONG, A_DEFLONG, 0);
     
+    class_addmethod(c, (method)flapper_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)flapper_dsp64, "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)flapper_float, "float", A_FLOAT, 0);
+
+
     //our own messages
-    addmess((method)flapper_overlap, "trigger_off", A_GIMME, 0);
-    addmess((method)flapper_length, "length", A_GIMME, 0);
-    addmess((method)flapper_setpower, "power", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_overlap, "trigger_off", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_length, "length", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_setpower, "power", A_GIMME, 0);
     
-    addmess((method)flapper_attack, "attack", A_GIMME, 0);
-    addmess((method)flapper_decay, "decay", A_GIMME, 0);
-    addmess((method)flapper_sustain, "sustain", A_GIMME, 0);
-    addmess((method)flapper_release, "release", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_attack, "attack", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_decay, "decay", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_sustain, "sustain", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_release, "release", A_GIMME, 0);
     
-    addmess((method)flapper_setlinear, "linear", A_GIMME, 0);
-    addmess((method)flapper_setpoly, "poly", A_GIMME, 0);
-    addmess((method)flapper_setpoly, "poly2", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_setlinear, "linear", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_setpoly, "poly", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_setpoly, "poly2", A_GIMME, 0);
     
-    addmess((method)flapper_overlap_len, "overlap", A_GIMME, 0);
+    class_addmethod(c, (method)flapper_overlap_len, "overlap", A_GIMME, 0);
+    class_dspinit(c);
     
-    //so we know what to do with floats that we receive at the inputs
-    addfloat((method)flapper_float);
-    
-    //gotta have this one....
-    dsp_initclass();
+    class_register(CLASS_BOX, c);
+    flapper_class = c;
 }
 
 //this gets called when the object is created; everytime the user types in new args, this will get called
@@ -174,110 +175,98 @@ void *flapper_new(long num_inputs, long num_outputs)
 	int i;
 	
 	//leave this; creates our object
-    t_flapper *x = (t_flapper *)newobject(flapper_class);
+    t_flapper *x = (t_flapper *)object_alloc(flapper_class);
     
     //zero out the struct, to be careful (takk to jkclayton)
     if (x) { 
-        for(i=sizeof(t_pxobject);i<sizeof(t_flapper);i++)  
-                ((char *)x)[i]=0; 
-	} 
+        for(i=sizeof(t_pxobject);i<sizeof(t_flapper);i++) {
+            ((char *)x)[i]=0;
+        }
 	
-	//constrain number of inputs and outputs
-	//could also just define these internally, and not have user control via arguments....
-	if (num_inputs < 1) num_inputs = 1;
-	if (num_inputs > MAX_INPUTS) num_inputs = 1;
-	if (num_outputs < 1) num_outputs = 1;
-	if (num_outputs > MAX_OUTPUTS) num_outputs = 1;
-	
-	//obviously, you could ignore the user args if you don't want them to control
-	//the number of ins/outs, and just set them here.
-	x->num_inputs = num_inputs;
-	x->num_outputs = num_outputs;
-	
-	//for now....
-	x->num_inputs = 3;
-	x->num_outputs = 2;
+        //constrain number of inputs and outputs
+        //could also just define these internally, and not have user control via arguments....
+        if (num_inputs < 1) num_inputs = 1;
+        if (num_inputs > MAX_INPUTS) num_inputs = 1;
+        if (num_outputs < 1) num_outputs = 1;
+        if (num_outputs > MAX_OUTPUTS) num_outputs = 1;
+        
+        //obviously, you could ignore the user args if you don't want them to control
+        //the number of ins/outs, and just set them here.
+        x->num_inputs = num_inputs;
+        x->num_outputs = num_outputs;
+        
+        //for now....
+        x->num_inputs = 3;
+        x->num_outputs = 2;
 
-	//setup up inputs and outputs, for audio
-	
-	//inputs
-    dsp_setup((t_pxobject *)x, x->num_inputs);
-    //if you just need one input for message (not using audio), you can just set num_inputs = 1
-    //i don't think this causes a performance hit.
-    
-    //outputs
-    for (i=0;i<x->num_outputs;i++) {
-    	outlet_new((t_object *)x, "signal");
-    }   
-    //can use intin, floatout, listout, etc... for setting up non-audio ins and outs.
-    //but, the order in which you call these funcs is important.
-    //for instance, from gQ~
-    /*    
-    x->outfloat = floatout((t_object *)x);
-    x->outlist = listout((t_object *)x);
-    outlet_new((t_object *)x, "signal");
-    outlet_new((t_object *)x, "signal");
-   */
-   //this will create four outputs, *rightmost* created first, so the outlets, from left to right, will look like
-   //(signal) (signal) (list) (float)
-   //when you instantiate gQ~ in Max/MSP.
-    
-    //initialize some variables; important to do this!
-    for (i=0;i<x->num_inputs;i++){
-    	x->in[i] = 0.;
-    	x->in_connected[i] = 0;
+        //setup up inputs and outputs, for audio
+        
+        //inputs
+        dsp_setup((t_pxobject *)x, x->num_inputs);
+        //if you just need one input for message (not using audio), you can just set num_inputs = 1
+        //i don't think this causes a performance hit.
+        
+        //outputs
+        for (i=0;i<x->num_outputs;i++) {
+            outlet_new((t_object *)x, "signal");
+        }   
+        //can use intin, floatout, listout, etc... for setting up non-audio ins and outs.
+        //but, the order in which you call these funcs is important.
+        //for instance, from gQ~
+        /*    
+        x->outfloat = floatout((t_object *)x);
+        x->outlist = listout((t_object *)x);
+        outlet_new((t_object *)x, "signal");
+        outlet_new((t_object *)x, "signal");
+       */
+       //this will create four outputs, *rightmost* created first, so the outlets, from left to right, will look like
+       //(signal) (signal) (list) (float)
+       //when you instantiate gQ~ in Max/MSP.
+        
+        //initialize some variables; important to do this!
+        for (i=0;i<x->num_inputs;i++){
+            x->in[i] = 0.;
+            x->in_connected[i] = 0;
+        }
+        x->power = 1;
+
+        //occasionally this line is necessary if you are doing weird asynchronous things with the in/out vectors
+        //x->x_obj.z_misc = Z_NO_INPLACE;
+        
+        x->buflen = 5000. * 44.1; //allocate 5 seconds worth for now
+        flapper_alloc(x);
+        x->flap_default_length = 44100;
+        
+        for (i=0;i<MAX_FLAPS;i++) {
+            x->flap_speed[i] = 10.;
+            x->flap_length[i] = 44100; //set to one second by default for now
+            ADSR_init(&x->flap_adsr[i]);
+            x->flapAttack[i] = 20; x->flapDecay[i] = (44100 - 40); x->flapRelease[i] = 20;
+            x->flapSustain[i] = 1.;
+            x->fading[i] = 0;
+            x->overlap_len[i] = 20. * x->srate_ms; //make 20ms by default
+            ADSR_setAllTimes(&x->flap_adsr[i], x->flapAttack[i], x->flapDecay[i], x->flapSustain[i], x->flapRelease[i], x->srate_ms);
+        }
+        
+        //default ADSR values
+        x->flapAttackDefault = 20;
+        x->flapDecayDefault = 44100 - 40;
+        x->flapSustainDefault = 1.;
+        x->flapReleaseDefault = 20;
+        
+        x->which_flap = 0;
+        x->fq_head = x->fq_tail = 0;
+        x->trigger_off = 1; //on by default
+        
+        x->pan_spread = 1.;
+        
+        x->interp_method = INT_LINEAR; //linear by default
+        
+        x->overlap_len_default = 20. * x->srate_ms;
     }
-    x->power = 1;
-
-	//occasionally this line is necessary if you are doing weird asynchronous things with the in/out vectors
-	//x->x_obj.z_misc = Z_NO_INPLACE;
-	
-	x->buflen = 5000. * 44.1; //allocate 5 seconds worth for now
-	flapper_alloc(x);
-	x->flap_default_length = 44100;
-	
-	for (i=0;i<MAX_FLAPS;i++) {
-		x->flap_speed[i] = 10.;
-		x->flap_length[i] = 44100; //set to one second by default for now
-		ADSR_init(&x->flap_adsr[i]);
-		x->flapAttack[i] = 20; x->flapDecay[i] = (44100 - 40); x->flapRelease[i] = 20;
-		x->flapSustain[i] = 1.;
-		x->fading[i] = 0;
-		x->overlap_len[i] = 20. * x->srate_ms; //make 20ms by default
-		ADSR_setAllTimes(&x->flap_adsr[i], x->flapAttack[i], x->flapDecay[i], x->flapSustain[i], x->flapRelease[i], x->srate_ms);
-	}
-	
-	//default ADSR values
-	x->flapAttackDefault = 20;
-	x->flapDecayDefault = 44100 - 40;
-	x->flapSustainDefault = 1.;
-	x->flapReleaseDefault = 20;
-	
-	x->which_flap = 0;
-	x->fq_head = x->fq_tail = 0;
-	x->trigger_off = 1; //on by default
-	
-	x->pan_spread = 1.;
-	
-	x->interp_method == INT_LINEAR; //linear by default
-	
-	x->overlap_len_default = 20. * x->srate_ms;
 	
     return (x);
 }
-
-void flapper_alloc(t_flapper *x)
-{
-	//x->recordBuf = t_getbytes(BUFLENGTH * sizeof(float));
-	//x->recordBuf = t_getbytes(x->buflen * sizeof(float));
-	x->recordBuf = (float *)sysmem_newptr(x->buflen * sizeof(float));
-	if (!x->recordBuf) {
-		error("flapper~: out of memory");
-		return;
-	}
-}
-
-
 
 //this gets called when an object is destroyed. do stuff here if you need to clean up.
 void flapper_free(t_flapper *x)
@@ -290,66 +279,88 @@ void flapper_free(t_flapper *x)
 		sysmem_freeptr(x->recordBuf);
 }
 
-
-//this gets called everytime audio is started; even when audio is running, if the user
-//changes anything (like deletes a patch cord), audio will be turned off and
-//then on again, calling this func.
-//this adds the "perform" method to the DSP chain, and also tells us
-//where the audio vectors are and how big they are
-void flapper_dsp(t_flapper *x, t_signal **sp, short *count)
+//tells the user about the inputs/outputs when mousing over them
+void flapper_assist(t_flapper *x, void *b, long m, long a, char *s)
 {
-	void *dsp_add_args[MAX_INPUTS + MAX_OUTPUTS + 2];
-	int i;
+	//could use switch/case inside for loops, to give more informative assist info....
+	if (m==1) {
+		if (a==0)  sprintf(s, "trigger (signal/float, 0/1)");
+		if (a==1)  sprintf(s, "input (signal)");
+		if (a==2)  sprintf(s, "playback speed (signal/float)");
+	}
+	if (m==2) {
+		if (a==0)  sprintf(s, "out left (signal)");
+		if (a==1)  sprintf(s, "out right (signal)");
+	}
+}
 
+//this gets called when ever a float is received at *any* input
+void flapper_float(t_flapper *x, double f)
+{
+	int i;
+	
+	//check to see which input the float came in, then set the appropriate variable value
+	for(i=0;i<x->num_inputs;i++) {
+		if (x->x_obj.z_in == i) {
+			x->in[i] = f;
+			// post("template~: setting in[%d] =  %f", i, f);
+		}
+	}
+}
+
+void flapper_alloc(t_flapper *x)
+{
+	//x->recordBuf = t_getbytes(BUFLENGTH * sizeof(float));
+	//x->recordBuf = t_getbytes(x->buflen * sizeof(float));
+	x->recordBuf = (double *)sysmem_newptr(x->buflen * sizeof(double));
+	if (!x->recordBuf) {
+		error("flapper~: out of memory");
+		return;
+	}
+}
+
+void flapper_dsp64(t_flapper *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
+{
+	int i;
+    
 	//set sample rate vars
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
 	x->one_over_srate = 1./x->srate;
 	x->srate_ms = x->srate * 0.001;
 	
 	//check to see if there are signals connected to the various inputs
 	for(i=0;i<x->num_inputs;i++) x->in_connected[i]	= count[i];
-	
-	//construct the array of vectors and stuff
-	dsp_add_args[0] = x; //the object itself
-    for(i=0;i< (x->num_inputs + x->num_outputs); i++) { //pointers to the input and output vectors
-    	dsp_add_args[i+1] = sp[i]->s_vec;
-    }
-    dsp_add_args[x->num_inputs + x->num_outputs + 1] = (void *)sp[0]->s_n; //pointer to the vector size
-	dsp_addv(flapper_perform, (x->num_inputs + x->num_outputs + 2), dsp_add_args); //add them to the signal chain
-	
+    
+    object_method(dsp64, gensym("dsp_add64"), x, flapper_perform64, 0, NULL);
 }
 
-//this is where the action is
-//we get vectors of samples (n samples per vector), process them and send them out
-t_int *flapper_perform(t_int *w)
+void flapper_perform64(t_flapper *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_flapper *x = (t_flapper *)(w[1]);
-
-	float *in[MAX_INPUTS]; 		//pointers to the input vectors
-	float *out[MAX_OUTPUTS];	//pointers to the output vectors
-
-	long n = w[x->num_inputs + x->num_outputs + 2];	//number of samples per vector
+	double *in[MAX_INPUTS]; 		//pointers to the input vectors
+	double *out[MAX_OUTPUTS];	//pointers to the output vectors
+    
+	long n = sampleframes;      //number of samples per vector
 	
 	//random local vars
-	int i;
-	float trig, input, outputL, outputR, tempsample;
+	long i;
+	double trig, input, outputL, outputR, tempsample;
 	double temp;
 	
 	//check to see if we should skip this routine if the patcher is "muted"
 	//i also setup of "power" messages for expensive objects, so that the
 	//object itself can be turned off directly. this can be convenient sometimes.
 	//in any case, all audio objects should have this
-	if (x->x_obj.z_disabled || (x->power == 0)) goto out;
+	if (x->power == 0)  return;
 	
 	//check to see if we have a signal or float message connected to input
 	//then assign the pointer accordingly
-	for (i=0;i<x->num_inputs;i++) {
-		in[i] = x->in_connected[i] ? (float *)(w[i+2]) : &x->in[i];
+	for (i=0; i<x->num_inputs; i++) {
+		in[i] = x->in_connected[i] ? (double *)(ins[i]) : &x->in[i];
 	}
 	
 	//assign the output vectors
-	for (i=0;i<x->num_outputs;i++) {
-		out[i] = (float *)(w[x->num_inputs+i+2]);
+	for (i=0; i<x->num_outputs; i++) {
+		out[i] = (double *)(outs[i]);
 	}
 	
 	while(n--) {
@@ -359,15 +370,15 @@ t_int *flapper_perform(t_int *w)
 		
 		//grab signal inputs
 		if(x->in_connected[0]) trig = *in[0]++; //use the signal vector if there is one
-		else trig = *in[0];						//otherwise use the global variable	
+		else trig = *in[0];						//otherwise use the global variable
 		if(x->in_connected[1]) input = *in[1]++;
-		else input = *in[1];				
+		else input = *in[1];
 		if(x->in_connected[2]) temp = (double)*in[2]++; //flap speed
-		else temp = (double)*in[2];	
+		else temp = (double)*in[2];
 		temp *= 2.; //there's a bug somewhere, not sure where. shouldn't have to do this.....
 		
 		//record sample into buffer
-		record_sample(x, input);		
+		record_sample(x, input);
 		
 		//trigger new flap if we have a new trigger and aren't waiting
 		if (trig > 0. && x->wait == 0) 	{
@@ -376,7 +387,7 @@ t_int *flapper_perform(t_int *w)
 		}
 		
 		//turn off waiting if trigger signal goes to 0
-		if (x->wait == 1 && trig <= 0.) x->wait = 0; 
+		if (x->wait == 1 && trig <= 0.) x->wait = 0;
 		
 		//get flap sample
 		for (i=0;i<MAX_FLAPS;i++) {
@@ -391,16 +402,10 @@ t_int *flapper_perform(t_int *w)
 		//send 'em out
 		*out[0]++ = outputL;
 		*out[1]++ = outputR;
-
 	}
-	
-	//return a pointer to the next object in the signal chain.
-out:
-	return w + x->num_inputs + x->num_outputs + 3;
-}	
+}
 
-void record_sample(t_flapper *x, float sample) {
-
+void record_sample(t_flapper *x, double sample) {
 	if(x->record_point >= x->buflen) x->record_point = 0;
 	x->recordBuf[x->record_point++] = sample; //add sample
 }
@@ -418,7 +423,7 @@ void new_flap(t_flapper *x) {
 	for (i=0;i<MAX_FLAPS; i++) {
 		if (!x->flap_on[i]) {
 			x->flap_start[i] = x->record_point - x->overlap_len_default - 1.;
-			x->flap_current[i] = (float)x->record_point  - x->overlap_len_default - 1.; //add arbitrary offset?
+			x->flap_current[i] = (float)x->record_point - x->overlap_len_default - 1.; //add arbitrary offset?
 			x->flap_playcounter[i] = 0;
 			x->flap_on[i] = 1;
 			x->flap_speed[i] = 1.;
@@ -461,9 +466,7 @@ double interpolator(t_flapper *x, double where)
 		}
 	
 	} else if (x->interp_method == INT_POLY) {
-	
-		output = polyinterpolate(x->recordBuf, x->polylen, x->buflen, where);	
-		
+		output = polyinterpolate(x->recordBuf, x->polylen, x->buflen, where);
 	}
 	
 	return output;
@@ -557,58 +560,26 @@ int queue_get(t_flapper *x)
 }
 
 //interpolation messages
-void flapper_setlinear(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_setlinear(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	x->interp_method = INT_LINEAR;
 }
 
-void flapper_setpoly(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_setpoly(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	x->interp_method = INT_POLY;
 	x->polylen = 3;
 }
 
-void flapper_setpoly2(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_setpoly2(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	x->interp_method = INT_POLY;
 	x->polylen = 4;
 }
 
 
-//tells the user about the inputs/outputs when mousing over them
-void flapper_assist(t_flapper *x, void *b, long m, long a, char *s)
-{
-	int i;
-	//could use switch/case inside for loops, to give more informative assist info....
-	if (m==1) {
-		if (a==0)  sprintf(s, "trigger (signal/float, 0/1)");
-		if (a==1)  sprintf(s, "input (signal)");
-		if (a==2)  sprintf(s, "playback speed (signal/float)");
-	}
-	if (m==2) {
-		if (a==0)  sprintf(s, "out left (signal)");
-		if (a==1)  sprintf(s, "out right (signal)");
-	}
-}
-
-
-//this gets called when ever a float is received at *any* input
-void flapper_float(t_flapper *x, double f)
-{
-	int i;
-	
-	//check to see which input the float came in, then set the appropriate variable value
-	for(i=0;i<x->num_inputs;i++) {
-		if (x->x_obj.z_in == i) {
-			x->in[i] = f;
-			post("template~: setting in[%d] =  %f", i, f);
-		} 
-	}
-}
-
-
 //what to do when we get the message "mymessage" and a value (or list of values)
-void flapper_overlap(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_overlap(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -630,7 +601,7 @@ void flapper_overlap(t_flapper *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void flapper_length(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_length(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -652,7 +623,7 @@ void flapper_length(t_flapper *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void flapper_attack(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_attack(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -674,7 +645,7 @@ void flapper_attack(t_flapper *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void flapper_decay(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_decay(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -696,7 +667,7 @@ void flapper_decay(t_flapper *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void flapper_sustain(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_sustain(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -718,7 +689,7 @@ void flapper_sustain(t_flapper *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void flapper_release(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_release(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -740,7 +711,7 @@ void flapper_release(t_flapper *x, Symbol *s, short argc, Atom *argv)
 	}
 }
 
-void flapper_overlap_len(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_overlap_len(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
@@ -765,7 +736,7 @@ void flapper_overlap_len(t_flapper *x, Symbol *s, short argc, Atom *argv)
 }
 
 //what to do when we get the message "mymessage" and a value (or list of values)
-void flapper_setpower(t_flapper *x, Symbol *s, short argc, Atom *argv)
+void flapper_setpower(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
 	float temp;
