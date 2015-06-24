@@ -13,14 +13,15 @@ t_class *indexi_class;
 typedef struct _indexi
 {
     t_pxobject l_obj;
-    t_symbol *l_sym;
-    t_buffer *l_buf;
+    t_buffer_ref *l_buffer;
     long l_chan;
 } t_indexi;
 
 long Constrain(long v, long lo, long hi);
 
 void *indexi_new(t_symbol *s, long chan);
+void indexi_free(t_indexi *x);
+t_max_err indexi_notify(t_indexi *x, t_symbol *s, t_symbol *msg, void *sender, void *data);
 void indexi_assist(t_indexi *x, void *b, long m, long a, char *s);
 void indexi_set(t_indexi *x, t_symbol *s);
 void indexi_in1(t_indexi *x, long n);
@@ -33,13 +34,14 @@ t_symbol *ps_buffer;
 
 void ext_main(void* p)
 {
-    t_class *c = class_new("indexi~", (method)indexi_new, (method)dsp_free, (long)sizeof(t_indexi), 0L, A_SYM, A_DEFLONG, 0);
+    t_class *c = class_new("indexi~", (method)indexi_new, (method)indexi_free, (long)sizeof(t_indexi), 0L, A_SYM, A_DEFLONG, 0);
     
     class_addmethod(c, (method)indexi_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)indexi_dsp64, "dsp64", A_CANT, 0);
     class_addmethod(c, (method)indexi_in1, "int", A_LONG, 0);
 	class_addmethod(c, (method)indexi_set, "set", A_SYM, 0);
 	class_addmethod(c, (method)indexi_dblclick, "dblclick", A_CANT, 0);
+	class_addmethod(c, (method)indexi_notify, "notify", A_CANT, 0);
     class_dspinit(c);
     
     class_register(CLASS_BOX, c);
@@ -52,10 +54,23 @@ void *indexi_new(t_symbol *s, long chan)
 	dsp_setup((t_pxobject *)x, 1);
 	intin((t_object *)x,1);
 	outlet_new((t_object *)x, "signal");
-	x->l_sym = s;
 	indexi_in1(x,chan);
 	return (x);
 }
+
+
+void indexi_free(t_indexi *x)
+{
+	dsp_free((t_pxobject *)x);
+	object_free(x->l_buffer);
+}
+
+
+t_max_err indexi_notify(t_indexi *x, t_symbol *s, t_symbol *msg, void *sender, void *data)
+{
+	return buffer_ref_notify(x->l_buffer, s, msg, sender, data);
+}
+
 
 void indexi_assist(t_indexi *x, void *b, long m, long a, char *s)
 {
@@ -83,24 +98,17 @@ void indexi_in1(t_indexi *x, long n)
 
 void indexi_dblclick(t_indexi *x)
 {
-	t_buffer *b;
-	
-	if ((b = (t_buffer *)(x->l_sym->s_thing)) && ob_sym(b) == ps_buffer)
-		mess0((struct object *)b,gensym("dblclick"));
+	buffer_view(buffer_ref_getobject(x->l_buffer));
 }
 
 void indexi_set(t_indexi *x, t_symbol *s)
 {
-	t_buffer *b;
-	
-	x->l_sym = s;
-	if ((b = (t_buffer *)(s->s_thing)) && ob_sym(b) == ps_buffer) {
-		x->l_buf = b;
-	} else {
-		error("indexi~: no buffer~ %s", s->s_name);
-		x->l_buf = 0;
-	}
+	if (!x->l_buffer)
+		x->l_buffer = buffer_ref_new((t_object *)x, s);
+	else
+		buffer_ref_set(x->l_buffer, s);
 }
+
 
 long Constrain(long v, long lo, long hi)
 {
@@ -114,7 +122,6 @@ long Constrain(long v, long lo, long hi)
 
 void indexi_dsp64(t_indexi *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-    indexi_set(x,x->l_sym);
     object_method(dsp64, gensym("dsp_add64"), x, indexi_perform64, 0, NULL);
 }
 
@@ -124,20 +131,20 @@ void indexi_perform64(t_indexi *x, t_object *dsp64, double **ins, long numins, d
     t_double *out = (t_double *)(outs[0]);
 
     int n = sampleframes;
-	t_buffer *b = x->l_buf;
+	t_buffer_obj *buffer = buffer_ref_getobject(x->l_buffer);
 	float *tab;
 	double temp, alpha, output, blog;
 	//double f;
 	double chan,frames,nc;
 	long indexi;
 	
-	if (!b)             goto zero;
-	if (!b->b_valid)    goto zero;
-    
-	tab = b->b_samples;
+	tab = buffer_locksamples(buffer);
+	if (!tab)
+		goto zero;
+
 	chan = (double)x->l_chan;
-	frames = (double)b->b_frames;
-	nc = (double)b->b_nchans;
+	frames = (double)buffer_getframecount(buffer);
+	nc = (double)buffer_getchannelcount(buffer);
     
 	while (--n) {
 		temp = *++in;
@@ -165,6 +172,8 @@ void indexi_perform64(t_indexi *x, t_object *dsp64, double **ins, long numins, d
 		
 		*++out = output;
 	}
+	buffer_unlocksamples(buffer);
+	return;
 zero:
 	while (--n) *++out = 0.;
 }
