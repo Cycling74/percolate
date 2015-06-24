@@ -94,7 +94,7 @@
 		089C1669FE841209C02AAC07 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0610;
+				LastUpgradeCheck = 0630;
 			};
 			buildConfigurationList = 2FBBEACF08F335010078DB84 /* Build configuration list for PBXProject "indexi~" */;
 			compatibilityVersion = "Xcode 3.2";
