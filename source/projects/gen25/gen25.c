@@ -14,6 +14,7 @@
 #include <math.h>
 #include "ext.h"
 #include "ext_obex.h"
+#include "z_dsp.h"
 
 #define BUFFER 32768
 // maximum size of table -- this memory is allocated with NewPtr()
@@ -109,11 +110,11 @@ void DoTheDo(t_gen25 *x)
 	switch (x->g_wintype) {
 		case 1: /* hanning window */
 			for (i = 0; i < x->g_buffsize; i++)
-				x->g_table[i] = -cos(2.0*M_PI * (float)i/(float)(x->g_buffsize)) * 0.5 + 0.5;
+				x->g_table[i] = -cos(2.0*PI * (float)i/(float)(x->g_buffsize)) * 0.5 + 0.5;
 			break;
 		case 2: /* hamming window */
 			for (i = 0; i < x->g_buffsize; i++)
-				x->g_table[i] = 0.54 - 0.46*cos(2.0*M_PI * (float)i/(float)(x->g_buffsize));
+				x->g_table[i] = 0.54 - 0.46*cos(2.0*PI * (float)i/(float)(x->g_buffsize));
 			break;
 		}
 
