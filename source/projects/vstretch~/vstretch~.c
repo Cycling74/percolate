@@ -174,7 +174,7 @@ void vectorstretch_perform64(t_vectorstretch *x, t_object *dsp64, double **ins, 
     else if(x->interp_method == INT_POLY) {
         for(i=0;i<n;i++) {
             temp = (double)i*(double)x->stretch; 					//what's the index we want
-            *out++ = polyinterpolate(in, x->polylen, n, temp);		//2nd order poly interpolate
+            *out++ = polyinterpolate_d(in, x->polylen, n, temp);		//2nd order poly interpolate
         }	
     }
 

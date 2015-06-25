@@ -1496,3 +1496,49 @@ float polyinterpolate(float yinput[], int n, long vsize, float x)
 	}
 	return output;
 }
+
+// version of the above adapted for doubles instead of floats [tap]
+double polyinterpolate_d(double yinput[], int n, long vsize, float x)
+{
+	int i, m, ns = 2;
+	long closest;
+	// float dif, dift;
+	double den, ho, hp, w, output;
+	double c[MAXORDER], d[MAXORDER], ya[MAXORDER]; //arbitrary max to order of polynomial
+	long xa[MAXORDER];
+	if (n>MAXORDER - 1) n = MAXORDER - 1;
+
+	if (x>vsize) return 0.;
+
+	x += 0.5;
+	closest = (long)(x); //find closest x 
+	if (closest >= vsize) closest = vsize - 1;
+
+	//initialize values in neighborhood around closest
+	for (i = 1; i <= n; i++) {
+		xa[i] = m = closest - 2 + i; //this is bogus: offsetting so closest is always second in arrays.
+		if (m >= 0 && m < vsize)
+			c[i] = d[i] = ya[i] = yinput[m];
+		else { //wrap around vector size
+			while (m < 0) m += vsize;
+			while (m > vsize) m -= vsize;
+			//c[i] = d[i] = ya[i] = 0.;
+			c[i] = d[i] = ya[i] = yinput[m];
+		}
+	}
+
+	output = ya[ns--];
+	for (m = 1; m<n; m++) {
+		for (i = 1; i <= n - m; i++) {
+			ho = (float)xa[i] - x;
+			hp = (float)xa[i + m] - x;
+			w = c[i + 1] - d[i];
+			den = ho - hp; //shouldn't have to check for zeros here....
+			den = w / den;
+			d[i] = hp*den;
+			c[i] = ho*den;
+		}
+		output += (2 * ns < (n - m) ? c[ns + 1] : d[ns--]);
+	}
+	return output;
+}
