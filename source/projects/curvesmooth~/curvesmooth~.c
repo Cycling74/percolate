@@ -241,14 +241,14 @@ void *curvesmooth_new(t_symbol *s, long argc, t_atom *argv)
             x->s_table_k_exp[i]= (double *)sysmem_newptr(TABLE_SIZE*sizeof(double));
             if (!x->s_table_k_exp[i]) {
                 error("curvesmooth~: out of memory");
-                return nil;
+                return NULL;
             }
                 
             //x->s_table_k_log[i] = t_getbytes(TABLE_SIZE*sizeof(double));
             x->s_table_k_log[i] = (double *)sysmem_newptr(TABLE_SIZE*sizeof(double));
             if (!x->s_table_k_log[i]) {
                 error("curvesmooth~: out of memory");
-                return nil;
+                return NULL;
             }
         }
         for(i=2;i<TABLE_SIZE;i++) { //k, indices 2 to 1000 (exp) and 1 to 1000 (log, so .001 to 1, though we should never use 1)
