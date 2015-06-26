@@ -266,7 +266,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="$(C74SUPPORT)\max-includes\common\dllmain_win.c" />
-    <ClCompile Include="..\..\include\stk.c" />
+    <ClCompile Include="..\..\include\src\ADSR.cpp" />
+    <ClCompile Include="..\..\include\src\BiQuad.cpp" />
+    <ClCompile Include="..\..\include\src\BlowHole.cpp" />
+    <ClCompile Include="..\..\include\src\Delay.cpp" />
+    <ClCompile Include="..\..\include\src\DelayL.cpp" />
+    <ClCompile Include="..\..\include\src\Envelope.cpp" />
+    <ClCompile Include="..\..\include\src\Filter.cpp" />
+    <ClCompile Include="..\..\include\src\Function.cpp" />
+    <ClCompile Include="..\..\include\src\Generator.cpp" />
+    <ClCompile Include="..\..\include\src\Instrmnt.cpp" />
+    <ClCompile Include="..\..\include\src\JetTable.cpp" />
+    <ClCompile Include="..\..\include\src\Noise.cpp" />
+    <ClCompile Include="..\..\include\src\OneZero.cpp" />
+    <ClCompile Include="..\..\include\src\PoleZero.cpp" />
+    <ClCompile Include="..\..\include\src\ReedTable.cpp" />
+    <ClCompile Include="..\..\include\src\Stk.cpp" />
+    <ClCompile Include="..\..\include\src\WaveLoop.cpp" />
+    <ClCompile Include="..\..\include\src\WvIn.cpp" />
     <ClCompile Include="blow_hole~.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

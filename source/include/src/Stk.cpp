@@ -97,17 +97,17 @@ void Stk :: swap64(unsigned char *ptr)
   *(ptr+1) = val;
 }
 
-#if (defined(__OS_IRIX__) || defined(__OS_LINUX__) || defined(__OS_MACOSX__))
-  #include <unistd.h>
-#elif defined(__OS_WINDOWS__)
-  #include <windows.h>
+#ifdef WIN_VERSION
+#include <windows.h>
+#else
+#include <unistd.h>
 #endif
 
 void Stk :: sleep(unsigned long milliseconds)
 {
-#if defined(__OS_WINDOWS__)
+#ifdef WIN_VERSION
   Sleep((DWORD) milliseconds);
-#elif (defined(__OS_IRIX__) || defined(__OS_LINUX__) || defined(__OS_MACOSX__))
+#else
   //usleep( (unsigned long) (milliseconds * 1000.0) );
   //nanosleep( (unsigned long) (milliseconds * 1000000.0) );
 #endif

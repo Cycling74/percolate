@@ -266,7 +266,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="$(C74SUPPORT)\max-includes\common\dllmain_win.c" />
-    <ClCompile Include="..\..\include\stk.c" />
+    <ClCompile Include="..\..\include\src\ADSR.cpp" />
+    <ClCompile Include="..\..\include\src\BeeThree.cpp" />
+    <ClCompile Include="..\..\include\src\Envelope.cpp" />
+    <ClCompile Include="..\..\include\src\Filter.cpp" />
+    <ClCompile Include="..\..\include\src\FM.cpp" />
+    <ClCompile Include="..\..\include\src\FMVoices.cpp" />
+    <ClCompile Include="..\..\include\src\Generator.cpp" />
+    <ClCompile Include="..\..\include\src\HevyMetl.cpp" />
+    <ClCompile Include="..\..\include\src\Instrmnt.cpp" />
+    <ClCompile Include="..\..\include\src\PercFlut.cpp" />
+    <ClCompile Include="..\..\include\src\Phonemes.cpp" />
+    <ClCompile Include="..\..\include\src\Rhodey.cpp" />
+    <ClCompile Include="..\..\include\src\Stk.cpp" />
+    <ClCompile Include="..\..\include\src\TubeBell.cpp" />
+    <ClCompile Include="..\..\include\src\TwoZero.cpp" />
+    <ClCompile Include="..\..\include\src\WaveLoop.cpp" />
+    <ClCompile Include="..\..\include\src\Wurley.cpp" />
+    <ClCompile Include="..\..\include\src\WvIn.cpp" />
     <ClCompile Include="prc_fm~.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
