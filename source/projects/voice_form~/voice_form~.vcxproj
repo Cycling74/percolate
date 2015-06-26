@@ -266,8 +266,27 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="$(C74SUPPORT)\max-includes\common\dllmain_win.c" />
-    <ClCompile Include="$(ProjectName).c" />
-    <ClCompile Include="..\..\include\stk.c" />
+    <ClCompile Include="..\..\include\src\ADSR.cpp" />
+    <ClCompile Include="..\..\include\src\BiQuad.cpp" />
+    <ClCompile Include="..\..\include\src\Delay.cpp" />
+    <ClCompile Include="..\..\include\src\DelayA.cpp" />
+    <ClCompile Include="..\..\include\src\Envelope.cpp" />
+    <ClCompile Include="..\..\include\src\Filter.cpp" />
+    <ClCompile Include="..\..\include\src\FormSwep.cpp" />
+    <ClCompile Include="..\..\include\src\Generator.cpp" />
+    <ClCompile Include="..\..\include\src\Instrmnt.cpp" />
+    <ClCompile Include="..\..\include\src\Modulate.cpp" />
+    <ClCompile Include="..\..\include\src\Noise.cpp" />
+    <ClCompile Include="..\..\include\src\OnePole.cpp" />
+    <ClCompile Include="..\..\include\src\OneZero.cpp" />
+    <ClCompile Include="..\..\include\src\Phonemes.cpp" />
+    <ClCompile Include="..\..\include\src\SingWave.cpp" />
+    <ClCompile Include="..\..\include\src\Stk.cpp" />
+    <ClCompile Include="..\..\include\src\SubNoise.cpp" />
+    <ClCompile Include="..\..\include\src\VoicForm.cpp" />
+    <ClCompile Include="..\..\include\src\WaveLoop.cpp" />
+    <ClCompile Include="..\..\include\src\WvIn.cpp" />
+    <ClCompile Include="voice_form~.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -335,4 +335,4 @@ float Modal4_tick(Modal4 *modal);
 
 //non-linear interpolation algorithms
 float polyinterpolate(float ya[], int n, long vsize, float x);
-
+double polyinterpolate_d(double yinput[], int n, long vsize, float x);

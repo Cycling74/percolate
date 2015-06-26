@@ -524,7 +524,7 @@ float noise_tick()
 //primary MSP funcs
 void ext_main(void* p)
 {
-    t_class *c = class_new("metashake~", (method)metashake_new, (method)dsp_free, (long)sizeof(t_metashake), 0L, A_DEFFLOAT, 0);
+    t_class *c = class_new("metashaker~", (method)metashake_new, (method)dsp_free, (long)sizeof(t_metashake), 0L, A_DEFFLOAT, 0);
     
     class_addmethod(c, (method)metashake_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)metashake_dsp64, "dsp64", A_CANT, 0);

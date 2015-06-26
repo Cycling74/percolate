@@ -204,7 +204,7 @@ void vectorwarp_perform64(t_vectorwarp *x, t_object *dsp64, double **ins, long n
     else if(x->interp_method == INT_POLY) {
         for(i=0;i<n;i++) {
             temp = (double)i*(double)x->stretch * warptable[i]; 	//what's the index we want
-            *out++ = polyinterpolate(in, x->polylen, n, temp);		//2nd order poly interpolate
+            *out++ = polyinterpolate_d(in, x->polylen, n, temp);		//2nd order poly interpolate
         }	
     }
 

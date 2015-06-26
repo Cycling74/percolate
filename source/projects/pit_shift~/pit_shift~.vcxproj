@@ -266,8 +266,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="$(C74SUPPORT)\max-includes\common\dllmain_win.c" />
-    <ClCompile Include="$(ProjectName).c" />
-    <ClCompile Include="..\..\include\stk.c" />
+    <ClCompile Include="..\..\include\src\Delay.cpp" />
+    <ClCompile Include="..\..\include\src\DelayL.cpp" />
+    <ClCompile Include="..\..\include\src\Effect.cpp" />
+    <ClCompile Include="..\..\include\src\Filter.cpp" />
+    <ClCompile Include="..\..\include\src\OnePole.cpp" />
+    <ClCompile Include="..\..\include\src\OneZero.cpp" />
+    <ClCompile Include="..\..\include\src\PitShift.cpp" />
+    <ClCompile Include="..\..\include\src\Stk.cpp" />
+    <ClCompile Include="pit_shift~.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -162,7 +162,7 @@ void setBaseLoopGain(t_mando *x, float aGain)
 //primary MSP funcs
 void ext_main(void* p)
 {
-    t_class *c = class_new("mando~", (method)mando_new, (method)mando_free, (long)sizeof(t_mando), 0L, A_DEFFLOAT, 0);
+    t_class *c = class_new("mandolin~", (method)mando_new, (method)mando_free, (long)sizeof(t_mando), 0L, A_DEFFLOAT, 0);
     
     class_addmethod(c, (method)mando_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)mando_dsp64, "dsp64", A_CANT, 0);

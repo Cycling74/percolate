@@ -115,7 +115,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
+      <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).mxe</OutputFile>
@@ -154,7 +154,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
+      <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).mxe64</OutputFile>
@@ -197,7 +197,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
+      <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).mxe</OutputFile>
@@ -243,7 +243,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
+      <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).mxe64</OutputFile>
@@ -266,8 +266,21 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="$(C74SUPPORT)\max-includes\common\dllmain_win.c" />
-    <ClCompile Include="$(ProjectName).c" />
-    <ClCompile Include="..\..\include\stk.c" />
+    <ClCompile Include="..\..\include\src\ADSR.cpp" />
+    <ClCompile Include="..\..\include\src\BiQuad.cpp" />
+    <ClCompile Include="..\..\include\src\BlowBotl.cpp" />
+    <ClCompile Include="..\..\include\src\Envelope.cpp" />
+    <ClCompile Include="..\..\include\src\Filter.cpp" />
+    <ClCompile Include="..\..\include\src\Function.cpp" />
+    <ClCompile Include="..\..\include\src\Generator.cpp" />
+    <ClCompile Include="..\..\include\src\Instrmnt.cpp" />
+    <ClCompile Include="..\..\include\src\JetTable.cpp" />
+    <ClCompile Include="..\..\include\src\Noise.cpp" />
+    <ClCompile Include="..\..\include\src\PoleZero.cpp" />
+    <ClCompile Include="..\..\include\src\Stk.cpp" />
+    <ClCompile Include="..\..\include\src\WaveLoop.cpp" />
+    <ClCompile Include="..\..\include\src\WvIn.cpp" />
+    <ClCompile Include="blow_botl~.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

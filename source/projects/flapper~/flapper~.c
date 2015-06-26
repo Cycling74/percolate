@@ -466,7 +466,7 @@ double interpolator(t_flapper *x, double where)
 		}
 	
 	} else if (x->interp_method == INT_POLY) {
-		output = polyinterpolate(x->recordBuf, x->polylen, x->buflen, where);
+		output = polyinterpolate_d(x->recordBuf, x->polylen, x->buflen, where);
 	}
 	
 	return output;
