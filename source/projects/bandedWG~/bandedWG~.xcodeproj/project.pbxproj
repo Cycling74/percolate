@@ -43,7 +43,7 @@
 		2248D3181B15074A0056F8B2 /* Generator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Generator.cpp; path = ../../include/src/Generator.cpp; sourceTree = "<group>"; };
 		2248D3191B15074A0056F8B2 /* Instrmnt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Instrmnt.cpp; path = ../../include/src/Instrmnt.cpp; sourceTree = "<group>"; };
 		2248D31A1B15074A0056F8B2 /* Stk.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Stk.cpp; path = ../../include/src/Stk.cpp; sourceTree = "<group>"; };
-		2FBBEAE508F335360078DB84 /* absmax~.mxo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "absmax~.mxo"; path = "bandedWG~.mxo"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2FBBEAE508F335360078DB84 /* bandedWG~.mxo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bandedWG~.mxo"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,7 +87,7 @@
 		19C28FB4FE9D528D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2FBBEAE508F335360078DB84 /* absmax~.mxo */,
+				2FBBEAE508F335360078DB84 /* bandedWG~.mxo */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -121,7 +121,7 @@
 			);
 			name = "max-external";
 			productName = iterator;
-			productReference = 2FBBEAE508F335360078DB84 /* absmax~.mxo */;
+			productReference = 2FBBEAE508F335360078DB84 /* bandedWG~.mxo */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
