@@ -373,7 +373,7 @@ void scrub_assist(t_scrub *x, void *b, long m, long a, char *s)
 //primary MSP funcs
 void ext_main(void* p)
 {
-    t_class *c = class_new("scrub~", (method)scrub_new, (method)scrub_free, (long)sizeof(t_scrub), 0L, A_DEFFLOAT, 0);
+    t_class *c = class_new("scrubf~", (method)scrub_new, (method)scrub_free, (long)sizeof(t_scrub), 0L, A_DEFFLOAT, 0);
     
     class_addmethod(c, (method)scrub_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)scrub_dsp64, "dsp64", A_CANT, 0);

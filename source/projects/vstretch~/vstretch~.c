@@ -43,7 +43,7 @@ void *vectorstretch_class;
 //primary MSP funcs
 void ext_main(void* p)
 {
-    t_class *c = class_new("vectorstretch~", (method)vectorstretch_new, (method)dsp_free, (long)sizeof(t_vectorstretch), 0L, A_GIMME, 0);
+    t_class *c = class_new("vstretch~", (method)vectorstretch_new, (method)dsp_free, (long)sizeof(t_vectorstretch), 0L, A_GIMME, 0);
     
     class_addmethod(c, (method)vectorstretch_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)vectorstretch_dsp64, "dsp64", A_CANT, 0);

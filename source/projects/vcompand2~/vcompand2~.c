@@ -40,7 +40,7 @@ t_class *vectorcompand_class;
 //primary MSP funcs
 void ext_main(void* p)
 {
-    t_class *c = class_new("vectorcompand~", (method)vectorcompand_new, (method)dsp_free, (long)sizeof(t_vectorcompand), 0L, A_GIMME, 0);
+    t_class *c = class_new("vcompand2~", (method)vectorcompand_new, (method)dsp_free, (long)sizeof(t_vectorcompand), 0L, A_GIMME, 0);
     
     class_addmethod(c, (method)vectorcompand_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)vectorcompand_dsp64, "dsp64", A_CANT, 0);

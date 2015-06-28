@@ -35,7 +35,7 @@ typedef struct _vectorwarp
 
 
 //setup funcs
-void *vectorwarp_new(double val);
+void *vectorwarp_new(t_double val);
 void vectorwarp_assist(t_vectorwarp *x, void *b, long m, long a, char *s);
 
 // dsp stuff
@@ -55,7 +55,7 @@ t_class *vectorwarp_class;
 //primary MSP funcs
 void ext_main(void* p)
 {
-    t_class *c = class_new("vectorwarp~", (method)vectorwarp_new, (method)dsp_free, (long)sizeof(t_vectorwarp), 0L, A_GIMME, 0);
+    t_class *c = class_new("vwarp~", (method)vectorwarp_new, (method)dsp_free, (long)sizeof(t_vectorwarp), 0L, A_DEFFLOAT, 0);
     
     class_addmethod(c, (method)vectorwarp_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)vectorwarp_dsp64, "dsp64", A_CANT, 0);
@@ -95,10 +95,14 @@ void vectorwarp_setpower(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv)
 
 void vectorwarp_assist(t_vectorwarp *x, void *b, long m, long a, char *s)
 {
-	assist_string(RSRC_ID,m,a,1,3,s);
+    if (m == ASSIST_INLET) {
+        sprintf(s,"(signal/float) input");
+    } else {
+        sprintf(s,"(signal) output");
+    }
 }
 
-void *vectorwarp_new(double initial_coeff)
+void *vectorwarp_new(t_double initial_coeff)
 {
 	int i;
 
