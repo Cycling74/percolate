@@ -133,7 +133,26 @@ void pokef_dblclick(t_pokef *x)
 
 void pokef_assist(t_pokef *x, void *b, long m, long a, char *s)
 {
-	assist_string(19987,m,a,1,4,s);
+
+    if (m == ASSIST_INLET) {
+        switch (a) {
+            case 0:
+                sprintf(s,"(signal) value");
+                break;
+            case 1:
+                sprintf(s,"(signal) index");
+                break;
+            case 2:
+                sprintf(s,"(signal) coefficient");
+                break;
+            case 3:
+                sprintf(s,"(int) channel");
+                break;
+        }
+    } else {
+        sprintf(s,"(signal) output");
+    }
+
 }
 
 void pokef_dsp64(t_pokef *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
