@@ -132,9 +132,7 @@ void flapper_setpoly2(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
 double interpolator(t_flapper *x, double where);
 void flapper_overlap_len(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
 
-/****FUNCTIONS****/
 
-//primary MSP funcs
 void ext_main(void* p)
 {
     t_class *c = class_new("flapper~", (method)flapper_new, (method)flapper_free, (long)sizeof(t_flapper), 0L, A_DEFLONG, A_DEFLONG, 0);
@@ -142,7 +140,6 @@ void ext_main(void* p)
     class_addmethod(c, (method)flapper_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)flapper_dsp64, "dsp64", A_CANT, 0);
     class_addmethod(c, (method)flapper_float, "float", A_FLOAT, 0);
-
 
     //our own messages
     class_addmethod(c, (method)flapper_overlap, "trigger_off", A_GIMME, 0);
@@ -163,66 +160,24 @@ void ext_main(void* p)
     flapper_class = c;
 }
 
+
 //this gets called when the object is created; everytime the user types in new args, this will get called
 void *flapper_new(long num_inputs, long num_outputs)
 {
 	int i;
-	
-	//leave this; creates our object
-    t_flapper *x = (t_flapper *)object_alloc(flapper_class);
+    t_flapper *x = (t_flapper*)object_alloc(flapper_class);
     
-    //zero out the struct, to be careful (takk to jkclayton)
-    if (x) { 
-        for(i=sizeof(t_pxobject);i<sizeof(t_flapper);i++) {
-            ((char *)x)[i]=0;
-        }
-	
-        //constrain number of inputs and outputs
-        //could also just define these internally, and not have user control via arguments....
-        if (num_inputs < 1) num_inputs = 1;
-        if (num_inputs > MAX_INPUTS) num_inputs = 1;
-        if (num_outputs < 1) num_outputs = 1;
-        if (num_outputs > MAX_OUTPUTS) num_outputs = 1;
-        
-        //obviously, you could ignore the user args if you don't want them to control
-        //the number of ins/outs, and just set them here.
-        x->num_inputs = num_inputs;
-        x->num_outputs = num_outputs;
-        
-        //for now....
+    if (x) {
         x->num_inputs = 3;
         x->num_outputs = 2;
 
-        //setup up inputs and outputs, for audio
-        
         //inputs
         dsp_setup((t_pxobject *)x, x->num_inputs);
-        //if you just need one input for message (not using audio), you can just set num_inputs = 1
-        //i don't think this causes a performance hit.
-        
+		
         //outputs
-        for (i=0;i<x->num_outputs;i++) {
+        for (i=0; i<x->num_outputs; i++)
             outlet_new((t_object *)x, "signal");
-        }   
-        //can use intin, floatout, listout, etc... for setting up non-audio ins and outs.
-        //but, the order in which you call these funcs is important.
-        //for instance, from gQ~
-        /*    
-        x->outfloat = floatout((t_object *)x);
-        x->outlist = listout((t_object *)x);
-        outlet_new((t_object *)x, "signal");
-        outlet_new((t_object *)x, "signal");
-       */
-       //this will create four outputs, *rightmost* created first, so the outlets, from left to right, will look like
-       //(signal) (signal) (list) (float)
-       //when you instantiate gQ~ in Max/MSP.
-        
-        //initialize some variables; important to do this!
-        for (i=0;i<x->num_inputs;i++){
-            x->in[i] = 0.;
-            x->in_connected[i] = 0;
-        }
-
+		
         //occasionally this line is necessary if you are doing weird asynchronous things with the in/out vectors
         //x->x_obj.z_misc = Z_NO_INPLACE;
         
@@ -230,7 +185,7 @@ void *flapper_new(long num_inputs, long num_outputs)
         flapper_alloc(x);
         x->flap_default_length = 44100;
         
-        for (i=0;i<MAX_FLAPS;i++) {
+        for (i=0; i<MAX_FLAPS; i++) {
             x->flap_speed[i] = 10.;
             x->flap_length[i] = 44100; //set to one second by default for now
             ADSR_init(&x->flap_adsr[i]);
@@ -258,19 +213,18 @@ void *flapper_new(long num_inputs, long num_outputs)
         x->overlap_len_default = 20. * x->srate_ms;
     }
 	
-    return (x);
+    return x;
 }
+
 
 //this gets called when an object is destroyed. do stuff here if you need to clean up.
 void flapper_free(t_flapper *x)
 {
-	//gotta call this one
 	dsp_free((t_pxobject *)x);
 	if (x->recordBuf)
-		//t_freebytes(x->recordBuf, BUFLENGTH * sizeof(float));
-		//t_freebytes(x->recordBuf, x->buflen * sizeof(float));
 		sysmem_freeptr(x->recordBuf);
 }
+
 
 //tells the user about the inputs/outputs when mousing over them
 void flapper_assist(t_flapper *x, void *b, long m, long a, char *s)
@@ -322,48 +276,42 @@ void flapper_dsp64(t_flapper *x, t_object *dsp64, short *count, double samplerat
 	x->srate_ms = x->srate * 0.001;
 	
 	//check to see if there are signals connected to the various inputs
-	for(i=0;i<x->num_inputs;i++) x->in_connected[i]	= count[i];
+	for (i=0;i<x->num_inputs;i++)
+		x->in_connected[i]	= count[i];
     
     object_method(dsp64, gensym("dsp_add64"), x, flapper_perform64, 0, NULL);
 }
 
 void flapper_perform64(t_flapper *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	double *in[MAX_INPUTS]; 		//pointers to the input vectors
-	double *out[MAX_OUTPUTS];	//pointers to the output vectors
-	long n = sampleframes;      //number of samples per vector
 	long i;
 	double trig, input, tempsample;
 	double temp;
+	double *in0 = ins[0];
+	double *in1 = ins[1];
+	double *in2 = ins[2];
+	double *out0 = outs[0];
+	double *out1 = outs[1];
 	
-	//check to see if we have a signal or float message connected to input
-	//then assign the pointer accordingly
-	for (i=0; i<x->num_inputs; i++) {
-		in[i] = x->in_connected[i] ? (double *)(ins[i]) : &x->in[i];
-	}
-	
-	//assign the output vectors
-	for (i=0; i<x->num_outputs; i++) {
-		out[i] = (double *)(outs[i]);
-	}
-	
-	while (n--) {
+	while (sampleframes--) {
 		double outputL = 0.0;
 		double outputR = 0.0;
 		
 		//grab signal inputs
 		if (x->in_connected[0])
-			trig = *in[0]++; //use the signal vector if there is one
+			trig = *in0++; //use the signal vector if there is one
 		else
-			trig = *in[0];						//otherwise use the global variable
+			trig = x->in[0];						//otherwise use the global variable
+		
 		if (x->in_connected[1])
-			input = *in[1]++;
+			input = *in1++;
 		else
-			input = *in[1];
+			input = x->in[1];
+		
 		if (x->in_connected[2])
-			temp = (double)*in[2]++; //flap speed
+			temp = *in2++; //flap speed
 		else
-			temp = (double)*in[2];
+			temp = x->in[2];
 		temp *= 2.0; //there's a bug somewhere, not sure where. shouldn't have to do this.....
 		
 		//record sample into buffer
@@ -376,35 +324,40 @@ void flapper_perform64(t_flapper *x, t_object *dsp64, double **ins, long numins,
 		}
 		
 		//turn off waiting if trigger signal goes to 0
-		if (x->wait == 1 && trig <= 0.) x->wait = 0;
+		if (x->wait == 1 && trig <= 0.0)
+			x->wait = 0;
 		
 		//get flap sample
-		for (i=0;i<MAX_FLAPS;i++) {
-			if(x->flap_speed[i] < 0.) x->flap_speed[i] = -temp;
-			else x->flap_speed[i] = temp;
+		for (i=0; i<MAX_FLAPS; i++) {
+			if (x->flap_speed[i] < 0.0)
+				x->flap_speed[i] = -temp;
+			else
+				x->flap_speed[i] = temp;
 			
 			tempsample = get_flap(x, i);
 			outputL += tempsample * x->flap_panL[i];
 			outputR += tempsample * x->flap_panR[i];
 		}
 		
-		//send 'em out
-		*out[0]++ = outputL;
-		*out[1]++ = outputR;
+		*out0++ = outputL;
+		*out1++ = outputR;
 	}
 }
 
+
 void record_sample(t_flapper *x, double sample) {
-	if(x->record_point >= x->buflen) x->record_point = 0;
+	if (x->record_point >= x->buflen)
+		x->record_point = 0;
 	x->recordBuf[x->record_point++] = sample; //add sample
 }
+
 
 void new_flap(t_flapper *x) {
 	
 	int i;
 	
 	//turn off oldest flap, if in trigger_off mode 
-	if(x->trigger_off) {
+	if (x->trigger_off) {
 		i = queue_get(x);
 		ADSR_keyOff(&x->flap_adsr[i]);
 	}
@@ -428,6 +381,7 @@ void new_flap(t_flapper *x) {
 			//make equal power panning....
 			x->flap_panL[i] 		= powf(x->flap_panL[i], 0.5);
 			x->flap_panR[i] 		= powf(x->flap_panR[i], 0.5);
+			
 			queue_put(x, i); //add this to queue; newest flap
 			break;	//break out once we've got a new flap
 		}

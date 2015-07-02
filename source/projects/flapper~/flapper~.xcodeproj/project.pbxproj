@@ -21,7 +21,7 @@
 		2248D3071B14FC350056F8B2 /* MaxAudioAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MaxAudioAPI.framework; path = "../../maxsdk/source/c74support/msp-includes/MaxAudioAPI.framework"; sourceTree = "<group>"; };
 		2248D3091B14FC430056F8B2 /* JitterAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JitterAPI.framework; path = "../../maxsdk/source/c74support/jit-includes/JitterAPI.framework"; sourceTree = "<group>"; };
 		2248D3711B15E4000056F8B2 /* stk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stk.c; path = ../../include/stk.c; sourceTree = "<group>"; };
-		2FBBEAE508F335360078DB84 /* absmax~.mxo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "absmax~.mxo"; path = "flapper~.mxo"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2FBBEAE508F335360078DB84 /* flapper~.mxo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "flapper~.mxo"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,7 +54,7 @@
 		19C28FB4FE9D528D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2FBBEAE508F335360078DB84 /* absmax~.mxo */,
+				2FBBEAE508F335360078DB84 /* flapper~.mxo */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -88,7 +88,7 @@
 			);
 			name = "max-external";
 			productName = iterator;
-			productReference = 2FBBEAE508F335360078DB84 /* absmax~.mxo */;
+			productReference = 2FBBEAE508F335360078DB84 /* flapper~.mxo */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
@@ -187,7 +187,7 @@
 			baseConfigurationReference = 2248D3021B14FBC50056F8B2 /* maxmspsdk.xcconfig */;
 			buildSettings = {
 				C74SUPPORT = "$(SRCROOT)/../../maxsdk/source/c74support";
-				COPY_PHASE_STRIP = YES;
+				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/../../../c74support/jit-includes\"",
