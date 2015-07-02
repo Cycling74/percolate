@@ -738,21 +738,5 @@ void flapper_overlap_len(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 //what to do when we get the message "mymessage" and a value (or list of values)
 void flapper_setpower(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 {
-	short i;
-	float temp;
-	long temp2; 
-	for (i=0; i < argc; i++) {
-		switch (argv[i].a_type) {
-			case A_LONG:
-				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-				x->power = temp2;
-    			post("flapper~: power = %d", x->power);
-				break;
-			case A_FLOAT:
-				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
-				break;
-		}
-	}
+	x->power = atom_getlong(argv);
 }
