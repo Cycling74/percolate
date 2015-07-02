@@ -51,10 +51,7 @@ typedef struct _flapper
     //we use this "connected" boolean so that users can connect *either* signals or floats
     //to the various inputs; sometimes it's easier just to have floats, but other times
     //it's essential to have signals.... but we have to know. 
-    
-    short power;					//i like objects, especially CPU intensive ones, to have their own
-    								//"power" messages so that you can bypass them individually
-    								
+	
     double buflen; 					//length of record buffer
     double *recordBuf;				//pointer to record buffer
     
@@ -115,7 +112,6 @@ void flapper_float(t_flapper *x, double f);
 //for custom messages
 void flapper_overlap(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
 void flapper_length(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
-void flapper_setpower(t_flapper *x, t_symbol *s, long argc, t_atom *argv);
 
 void flapper_alloc(t_flapper *x);
 void record_sample(t_flapper *x, double sample);
@@ -151,8 +147,6 @@ void ext_main(void* p)
     //our own messages
     class_addmethod(c, (method)flapper_overlap, "trigger_off", A_GIMME, 0);
     class_addmethod(c, (method)flapper_length, "length", A_GIMME, 0);
-    class_addmethod(c, (method)flapper_setpower, "power", A_GIMME, 0);
-    
     class_addmethod(c, (method)flapper_attack, "attack", A_GIMME, 0);
     class_addmethod(c, (method)flapper_decay, "decay", A_GIMME, 0);
     class_addmethod(c, (method)flapper_sustain, "sustain", A_GIMME, 0);
@@ -228,7 +222,6 @@ void *flapper_new(long num_inputs, long num_outputs)
             x->in[i] = 0.;
             x->in_connected[i] = 0;
         }
-        x->power = 1;
 
         //occasionally this line is necessary if you are doing weird asynchronous things with the in/out vectors
         //x->x_obj.z_misc = Z_NO_INPLACE;
@@ -338,19 +331,10 @@ void flapper_perform64(t_flapper *x, t_object *dsp64, double **ins, long numins,
 {
 	double *in[MAX_INPUTS]; 		//pointers to the input vectors
 	double *out[MAX_OUTPUTS];	//pointers to the output vectors
-    
 	long n = sampleframes;      //number of samples per vector
-	
-	//random local vars
 	long i;
-	double trig, input, outputL, outputR, tempsample;
+	double trig, input, tempsample;
 	double temp;
-	
-	//check to see if we should skip this routine if the patcher is "muted"
-	//i also setup of "power" messages for expensive objects, so that the
-	//object itself can be turned off directly. this can be convenient sometimes.
-	//in any case, all audio objects should have this
-	if (x->power == 0)  return;
 	
 	//check to see if we have a signal or float message connected to input
 	//then assign the pointer accordingly
@@ -363,19 +347,24 @@ void flapper_perform64(t_flapper *x, t_object *dsp64, double **ins, long numins,
 		out[i] = (double *)(outs[i]);
 	}
 	
-	while(n--) {
-		
-		outputL = 0.;
-		outputR = 0.;
+	while (n--) {
+		double outputL = 0.0;
+		double outputR = 0.0;
 		
 		//grab signal inputs
-		if(x->in_connected[0]) trig = *in[0]++; //use the signal vector if there is one
-		else trig = *in[0];						//otherwise use the global variable
-		if(x->in_connected[1]) input = *in[1]++;
-		else input = *in[1];
-		if(x->in_connected[2]) temp = (double)*in[2]++; //flap speed
-		else temp = (double)*in[2];
-		temp *= 2.; //there's a bug somewhere, not sure where. shouldn't have to do this.....
+		if (x->in_connected[0])
+			trig = *in[0]++; //use the signal vector if there is one
+		else
+			trig = *in[0];						//otherwise use the global variable
+		if (x->in_connected[1])
+			input = *in[1]++;
+		else
+			input = *in[1];
+		if (x->in_connected[2])
+			temp = (double)*in[2]++; //flap speed
+		else
+			temp = (double)*in[2];
+		temp *= 2.0; //there's a bug somewhere, not sure where. shouldn't have to do this.....
 		
 		//record sample into buffer
 		record_sample(x, input);
@@ -732,10 +721,4 @@ void flapper_overlap_len(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 				break;
 		}
 	}
-}
-
-//what to do when we get the message "mymessage" and a value (or list of values)
-void flapper_setpower(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
-{
-	x->power = atom_getlong(argv);
 }
