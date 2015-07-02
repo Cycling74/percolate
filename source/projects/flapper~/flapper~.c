@@ -475,55 +475,57 @@ double interpolator(t_flapper *x, double where)
 
 float get_flap(t_flapper *x, long whichone) {
 
-	double alpha, om_alpha, output, where;
+	double om_alpha, output, where;
 	double hc, rp, td;
 	double in_coeff, out_coeff, iw;
-	long first;
 			
-	if(ADSR_getState(&x->flap_adsr[whichone]) == DONE) {
+	if (ADSR_getState(&x->flap_adsr[whichone]) == DONE) {
 		x->flap_on[whichone] = 0;
 		return 0.;
 	}
 	
-	if(x->flap_playcounter[whichone] >= x->flap_length[whichone]) {
+	if (x->flap_playcounter[whichone] >= x->flap_length[whichone])
 		ADSR_keyOff(&x->flap_adsr[whichone]);
-	}
+
 	
 	//flap book-keeping...., overlapping at direction changes
 	x->flap_playcounter[whichone]++;
 	x->flap_current[whichone] += x->flap_speed[whichone];
 	
 	//check to see if we need to cross fade
-	if(!x->fading[whichone]) {
+	if (!x->fading[whichone]) {
 		rp = (double)(x->flap_start[whichone] + x->flap_playcounter[whichone] + (long)x->overlap_len_default); //record point
 		td = fabs((double)(x->flap_playcounter[whichone] + x->overlap_len_default) / x->flap_speed[whichone]);
+		
 		x->overlap_len[whichone] = x->overlap_len_default;
-		if (td < x->overlap_len[whichone]) x->overlap_len[whichone] = td - 1.;
-		if(x->flap_speed[whichone] > 0.) {
+		if (td < x->overlap_len[whichone])
+			x->overlap_len[whichone] = td - 1.0;
+		
+		if (x->flap_speed[whichone] > 0.0)
 			hc = rp - x->flap_current[whichone];
-		} else if (x->flap_speed[whichone] < 0.) {
+		else if (x->flap_speed[whichone] < 0.0)
 			hc = x->flap_current[whichone] - x->flap_start[whichone];
-		}
+		
 		if (hc < x->overlap_len[whichone] * x->flap_speed[whichone]) {
 			x->fading[whichone] = 1;
 			x->fade_counter[whichone] = 0;
-			if(x->flap_speed[whichone] > 0.) 
+			if (x->flap_speed[whichone] > 0.0)
 				x->fade_backposition[whichone] = x->flap_current[whichone] + x->overlap_len[whichone] - x->flap_speed[whichone];
-			else if (x->flap_speed[whichone] < 0.) 
+			else if (x->flap_speed[whichone] < 0.0)
 				x->fade_backposition[whichone] = x->flap_current[whichone] - x->overlap_len[whichone] + x->flap_speed[whichone];
 		}
 	}
 	
 	if (x->fading[whichone]) {
 		in_coeff = x->fade_counter[whichone]++ / x->overlap_len[whichone];
-		out_coeff = 1. - in_coeff;
+		out_coeff = 1.0 - in_coeff;
 		in_coeff = powf(in_coeff, 0.5);
 		out_coeff = powf(out_coeff, 0.5);
 		iw = x->fade_backposition[whichone];
 		x->fade_backposition[whichone] -= x->flap_speed[whichone];
 	}
 	
-	if(x->fade_counter[whichone] >= x->overlap_len[whichone]) {
+	if (x->fade_counter[whichone] >= x->overlap_len[whichone]) {
 		x->flap_speed[whichone] = -x->flap_speed[whichone];
 		x->flap_current[whichone] = x->fade_backposition[whichone];
 		x->fading[whichone] = 0;
@@ -531,13 +533,17 @@ float get_flap(t_flapper *x, long whichone) {
 	}
 	
 	where = x->flap_current[whichone];
-	while(where < 0.) where += x->buflen;
-	while(where >= x->buflen) where -= x->buflen;
+	while (where < 0.0)
+		where += x->buflen;
+	while (where >= x->buflen)
+		where -= x->buflen;
 	
 	output = interpolator(x, where);
-	if(x->fading[whichone]) {
-		while(iw < 0.) iw += x->buflen;
-		while(iw >= x->buflen) iw -= x->buflen;
+	if (x->fading[whichone]) {
+		while (iw < 0.0)
+			iw += x->buflen;
+		while (iw >= x->buflen)
+			iw -= x->buflen;
 		output = output * out_coeff + interpolator(x, iw) * in_coeff;
 	}
 	
