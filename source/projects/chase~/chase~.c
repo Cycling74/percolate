@@ -112,7 +112,7 @@ void chase_perform64(t_chase *x, t_object *dsp64, double **ins, long numins, dou
     t_double *in2 = (t_double *)(ins[1]);
     t_double *sync = (t_double *)(ins[2]);
     t_double *out1 = (t_double *)(outs[0]);
-    t_double *out2 = (t_double *)(outs[2]);
+    t_double *out2 = (t_double *)(outs[1]);
     int n = sampleframes;
     
     double dist1, dist2;
