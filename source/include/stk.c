@@ -1457,42 +1457,46 @@ float polyinterpolate(float yinput[], int n, long vsize, float x)
 	int i, m, ns=2;
 	long closest;
     // float dif, dift;
-	float den, ho, hp, w, output;
+	float den, ho, hp, w, output = 0.0;
 	float c[MAXORDER], d[MAXORDER], ya[MAXORDER]; //arbitrary max to order of polynomial
 	long xa[MAXORDER];
-	if (n>MAXORDER-1) n = MAXORDER-1;
 	
-	if (x>vsize) return 0.;
+	if (n>MAXORDER-1)
+		n = MAXORDER-1;
 	
-	x += 0.5;
-	closest = (long)(x); //find closest x 
-	if (closest >= vsize) closest = vsize - 1;
+	assert(n > 1); // interpolation needs at least 2 points
 	
-	//initialize values in neighborhood around closest
-	for (i=1;i<=n;i++) {
-		xa[i] = m = closest - 2 + i; //this is bogus: offsetting so closest is always second in arrays.
-		if(m >= 0 && m < vsize) 
-			c[i] = d[i] = ya[i] = yinput[m];
-		else { //wrap around vector size
-			while (m < 0) m += vsize;
-			while (m > vsize) m -= vsize;
-			//c[i] = d[i] = ya[i] = 0.;
-			c[i] = d[i] = ya[i] = yinput[m];
-		}
-	}
+	if (n > 1 && x <= vsize) {
+		x += 0.5;
+		closest = (long)(x); //find closest x 
+		if (closest >= vsize) closest = vsize - 1;
 		
-	output = ya[ns--];
-	for (m=1;m<n;m++) {
-		for (i=1;i<=n-m;i++) {
-			ho = (float)xa[i] - x;
-			hp = (float)xa[i+m] - x;
-			w  = c[i+1] - d[i];
-			den = ho - hp; //shouldn't have to check for zeros here....
-			den = w/den;
-			d[i] = hp*den;
-			c[i] = ho*den;
+		//initialize values in neighborhood around closest
+		for (i=1;i<=n;i++) {
+			xa[i] = m = closest - 2 + i; //this is bogus: offsetting so closest is always second in arrays.
+			if(m >= 0 && m < vsize) 
+				c[i] = d[i] = ya[i] = yinput[m];
+			else { //wrap around vector size
+				while (m < 0) m += vsize;
+				while (m > vsize) m -= vsize;
+				//c[i] = d[i] = ya[i] = 0.;
+				c[i] = d[i] = ya[i] = yinput[m];
+			}
 		}
-		output += (2*ns < (n-m) ? c[ns+1] : d[ns--]);
+			
+		output = ya[ns--];
+		for (m=1;m<n;m++) {
+			for (i=1;i<=n-m;i++) {
+				ho = (float)xa[i] - x;
+				hp = (float)xa[i+m] - x;
+				w  = c[i+1] - d[i];
+				den = ho - hp; //shouldn't have to check for zeros here....
+				den = w/den;
+				d[i] = hp*den;
+				c[i] = ho*den;
+			}
+			output += (2*ns < (n-m) ? c[ns+1] : d[ns--]);
+		}
 	}
 	return output;
 }
@@ -1503,42 +1507,44 @@ double polyinterpolate_d(double yinput[], int n, long vsize, float x)
 	int i, m, ns = 2;
 	long closest;
 	// float dif, dift;
-	double den, ho, hp, w, output;
+	double den, ho, hp, w, output = 0.0;
 	double c[MAXORDER], d[MAXORDER], ya[MAXORDER]; //arbitrary max to order of polynomial
 	long xa[MAXORDER];
 	if (n>MAXORDER - 1) n = MAXORDER - 1;
 
-	if (x>vsize) return 0.;
+	assert(n > 1); // interpolation needs at least 2 points
 
-	x += 0.5;
-	closest = (long)(x); //find closest x 
-	if (closest >= vsize) closest = vsize - 1;
+	if (n > 1 && x <= vsize) {
+		x += 0.5;
+		closest = (long)(x); //find closest x 
+		if (closest >= vsize) closest = vsize - 1;
 
-	//initialize values in neighborhood around closest
-	for (i = 1; i <= n; i++) {
-		xa[i] = m = closest - 2 + i; //this is bogus: offsetting so closest is always second in arrays.
-		if (m >= 0 && m < vsize)
-			c[i] = d[i] = ya[i] = yinput[m];
-		else { //wrap around vector size
-			while (m < 0) m += vsize;
-			while (m > vsize) m -= vsize;
-			//c[i] = d[i] = ya[i] = 0.;
-			c[i] = d[i] = ya[i] = yinput[m];
+		//initialize values in neighborhood around closest
+		for (i = 1; i <= n; i++) {
+			xa[i] = m = closest - 2 + i; //this is bogus: offsetting so closest is always second in arrays.
+			if (m >= 0 && m < vsize)
+				c[i] = d[i] = ya[i] = yinput[m];
+			else { //wrap around vector size
+				while (m < 0) m += vsize;
+				while (m > vsize) m -= vsize;
+				//c[i] = d[i] = ya[i] = 0.;
+				c[i] = d[i] = ya[i] = yinput[m];
+			}
 		}
-	}
 
-	output = ya[ns--];
-	for (m = 1; m<n; m++) {
-		for (i = 1; i <= n - m; i++) {
-			ho = (float)xa[i] - x;
-			hp = (float)xa[i + m] - x;
-			w = c[i + 1] - d[i];
-			den = ho - hp; //shouldn't have to check for zeros here....
-			den = w / den;
-			d[i] = hp*den;
-			c[i] = ho*den;
+		output = ya[ns--];
+		for (m = 1; m<n; m++) {
+			for (i = 1; i <= n - m; i++) {
+				ho = (float)xa[i] - x;
+				hp = (float)xa[i + m] - x;
+				w = c[i + 1] - d[i];
+				den = ho - hp; //shouldn't have to check for zeros here....
+				den = w / den;
+				d[i] = hp*den;
+				c[i] = ho*den;
+			}
+			output += (2 * ns < (n - m) ? c[ns + 1] : d[ns--]);
 		}
-		output += (2 * ns < (n - m) ? c[ns + 1] : d[ns--]);
 	}
 	return output;
 }
