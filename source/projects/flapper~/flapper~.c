@@ -376,8 +376,8 @@ void new_flap(t_flapper *x) {
 			x->flapRelease[i] = x->flapReleaseDefault;
 			ADSR_setAllTimes(&x->flap_adsr[i], x->flapAttack[i], x->flapDecay[i], x->flapSustain[i], x->flapRelease[i], x->srate_ms);
 			ADSR_keyOn(&x->flap_adsr[i]);
-			x->flap_panL[i] 		= ((float)rand() - 16384.) * ONE_OVER_MAXRAND * x->pan_spread + 0.5;
-			x->flap_panR[i]			= 1. - x->flap_panL[i];
+			x->flap_panL[i] 		= CLAMP((((float)rand() - ( RAND_MAX /2 )) * ONE_OVER_MAXRAND * x->pan_spread + 0.5), FLT_MIN, 1.0);
+			x->flap_panR[i]			= 1.0 - x->flap_panL[i];
 			//make equal power panning....
 			x->flap_panL[i] 		= powf(x->flap_panL[i], 0.5);
 			x->flap_panR[i] 		= powf(x->flap_panR[i], 0.5);
