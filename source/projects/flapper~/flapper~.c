@@ -475,8 +475,8 @@ double interpolator(t_flapper *x, double where)
 
 float get_flap(t_flapper *x, long whichone) {
 
-	double om_alpha, output, where;
-	double hc, rp, td;
+	double output, where;
+	double hc = 0.0, rp, td;
 	double in_coeff, out_coeff, iw;
 			
 	if (ADSR_getState(&x->flap_adsr[whichone]) == DONE) {
@@ -486,7 +486,6 @@ float get_flap(t_flapper *x, long whichone) {
 	
 	if (x->flap_playcounter[whichone] >= x->flap_length[whichone])
 		ADSR_keyOff(&x->flap_adsr[whichone]);
-
 	
 	//flap book-keeping...., overlapping at direction changes
 	x->flap_playcounter[whichone]++;
