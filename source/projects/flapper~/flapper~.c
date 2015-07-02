@@ -447,27 +447,21 @@ void new_flap(t_flapper *x) {
 
 double interpolator(t_flapper *x, double where)
 {
-	double alpha, om_alpha, output;
-	long first;
+	double output;
 
 	if (x->interp_method == INT_LINEAR) {
-	
-		first = (long)where;
-		
-		alpha = where - first;
-		om_alpha = 1. - alpha;
+		long	first = (long)where;
+		double	alpha = where - first;
+		double	om_alpha = 1.0 - alpha;
 		
 		output = x->recordBuf[first++] * om_alpha;
-		if(first <  x->buflen) {
+		if (first < x->buflen)
 			output += x->recordBuf[first] * alpha;
-		}
-		else {
+		else
 			output += x->recordBuf[0] * alpha;
-		}
-	
-	} else if (x->interp_method == INT_POLY) {
-		output = polyinterpolate_d(x->recordBuf, x->polylen, x->buflen, where);
 	}
+	else // if (x->interp_method == INT_POLY)
+		output = polyinterpolate_d(x->recordBuf, x->polylen, x->buflen, where);
 	
 	return output;
 
