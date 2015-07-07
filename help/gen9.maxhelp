@@ -47,7 +47,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 456.0, 362.487335, 241.0, 40.0 ],
-					"presentation_rect" : [ 479.0, 311.0, 0.0, 0.0 ],
 					"style" : "",
 					"text" : " using non-integer harmonic ratios will result in clicks at the edges."
 				}
@@ -175,6 +174,7 @@
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-37",
@@ -182,9 +182,9 @@
 					"numinlets" : 3,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 26.0, 423.0, 177.0, 23.0 ],
+					"patching_rect" : [ 26.0, 423.0, 164.0, 23.0 ],
 					"style" : "",
-					"text" : "wave~ foo 0. 185.759644"
+					"text" : "wave~ foo9 0. 185.759644"
 				}
 
 			}
@@ -221,6 +221,7 @@
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-24",
@@ -228,14 +229,15 @@
 					"numinlets" : 0,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 188.0, 157.0, 47.0, 23.0 ],
+					"patching_rect" : [ 188.0, 157.0, 50.0, 23.0 ],
 					"style" : "",
-					"text" : "r timb"
+					"text" : "r timb9"
 				}
 
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-25",
@@ -243,15 +245,16 @@
 					"numinlets" : 3,
 					"numoutlets" : 1,
 					"outlettype" : [ "float" ],
-					"patching_rect" : [ 204.0, 257.0, 71.0, 23.0 ],
+					"patching_rect" : [ 204.0, 257.0, 75.0, 23.0 ],
 					"style" : "",
-					"text" : "peek~ foo"
+					"text" : "peek~ foo9"
 				}
 
 			}
 , 			{
 				"box" : 				{
 					"color" : [ 0.4, 0.4, 0.8, 1.0 ],
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-27",
@@ -259,9 +262,9 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "list" ],
-					"patching_rect" : [ 204.0, 219.0, 90.0, 23.0 ],
+					"patching_rect" : [ 204.0, 219.0, 83.0, 23.0 ],
 					"style" : "",
-					"text" : "gen7 8192 0"
+					"text" : "gen9 8192 0"
 				}
 
 			}
@@ -435,9 +438,9 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 119.0, 388.0, 52.0, 23.0 ],
+					"patching_rect" : [ 119.0, 388.0, 57.0, 23.0 ],
 					"style" : "",
-					"text" : "set foo"
+					"text" : "set foo9"
 				}
 
 			}
@@ -473,20 +476,22 @@
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-17",
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 226.0, 518.0, 46.0, 23.0 ],
+					"patching_rect" : [ 226.0, 518.0, 52.0, 23.0 ],
 					"style" : "",
-					"text" : "s timb"
+					"text" : "s timb9"
 				}
 
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-26",
@@ -494,9 +499,9 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "float", "bang" ],
-					"patching_rect" : [ 26.0, 141.0, 112.0, 23.0 ],
+					"patching_rect" : [ 26.0, 141.0, 105.0, 23.0 ],
 					"style" : "",
-					"text" : "buffer~ foo 186"
+					"text" : "buffer~ foo9 186"
 				}
 
 			}
@@ -597,7 +602,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 4.0, 3.0, 131.0, 114.0 ],
+					"patching_rect" : [ 4.0, 3.0, 131.0, 60.0 ],
 					"style" : "",
 					"text" : "gen9\n",
 					"textcolor" : [ 0.2, 0.2, 0.2, 1.0 ],
@@ -905,7 +910,7 @@
 				"implicit" : 1
 			}
 , 			{
-				"name" : "gen7.mxo",
+				"name" : "gen9.mxo",
 				"type" : "iLaX"
 			}
  ],

@@ -53,6 +53,7 @@
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-37",
@@ -60,9 +61,9 @@
 					"numinlets" : 3,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 26.0, 423.0, 177.0, 23.0 ],
+					"patching_rect" : [ 26.0, 423.0, 164.0, 23.0 ],
 					"style" : "",
-					"text" : "wave~ foo 0. 185.759644"
+					"text" : "wave~ foo7 0. 185.759644"
 				}
 
 			}
@@ -159,6 +160,7 @@
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-24",
@@ -166,14 +168,15 @@
 					"numinlets" : 0,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 188.0, 157.0, 47.0, 23.0 ],
+					"patching_rect" : [ 188.0, 157.0, 50.0, 23.0 ],
 					"style" : "",
-					"text" : "r timb"
+					"text" : "r timb7"
 				}
 
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-25",
@@ -181,9 +184,9 @@
 					"numinlets" : 3,
 					"numoutlets" : 1,
 					"outlettype" : [ "float" ],
-					"patching_rect" : [ 204.0, 257.0, 71.0, 23.0 ],
+					"patching_rect" : [ 204.0, 257.0, 75.0, 23.0 ],
 					"style" : "",
-					"text" : "peek~ foo"
+					"text" : "peek~ foo7"
 				}
 
 			}
@@ -373,9 +376,9 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 119.0, 388.0, 52.0, 23.0 ],
+					"patching_rect" : [ 119.0, 388.0, 57.0, 23.0 ],
 					"style" : "",
-					"text" : "set foo"
+					"text" : "set foo7"
 				}
 
 			}
@@ -411,20 +414,22 @@
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-17",
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 226.0, 450.0, 46.0, 23.0 ],
+					"patching_rect" : [ 226.0, 450.0, 52.0, 23.0 ],
 					"style" : "",
-					"text" : "s timb"
+					"text" : "s timb7"
 				}
 
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-26",
@@ -432,9 +437,9 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "float", "bang" ],
-					"patching_rect" : [ 26.0, 141.0, 112.0, 23.0 ],
+					"patching_rect" : [ 26.0, 141.0, 105.0, 23.0 ],
 					"style" : "",
-					"text" : "buffer~ foo 186"
+					"text" : "buffer~ foo7 186"
 				}
 
 			}

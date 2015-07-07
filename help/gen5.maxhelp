@@ -47,7 +47,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 299.5, 157.0, 199.0, 141.0 ],
-					"presentation_rect" : [ 269.5, 338.0, 0.0, 0.0 ],
 					"style" : "",
 					"text" : "arguments are buffer size (default 512) and offset into output buffer (default 0). you can change these with size N and offset N. the rescale N message turns on and off array rescaling. by default, the array is rescaled to fit between -1 and 1."
 				}
@@ -70,6 +69,7 @@
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-24",
@@ -77,14 +77,15 @@
 					"numinlets" : 0,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 188.0, 157.0, 47.0, 23.0 ],
+					"patching_rect" : [ 188.0, 157.0, 50.0, 23.0 ],
 					"style" : "",
-					"text" : "r timb"
+					"text" : "r timb5"
 				}
 
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-25",
@@ -92,9 +93,9 @@
 					"numinlets" : 3,
 					"numoutlets" : 1,
 					"outlettype" : [ "float" ],
-					"patching_rect" : [ 204.0, 257.0, 71.0, 23.0 ],
+					"patching_rect" : [ 204.0, 257.0, 75.0, 23.0 ],
 					"style" : "",
-					"text" : "peek~ foo"
+					"text" : "peek~ foo5"
 				}
 
 			}
@@ -161,6 +162,7 @@
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-5",
@@ -168,9 +170,9 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 105.0, 414.0, 76.0, 23.0 ],
+					"patching_rect" : [ 105.0, 414.0, 78.0, 23.0 ],
 					"style" : "",
-					"text" : "index~ foo"
+					"text" : "index~ foo5"
 				}
 
 			}
@@ -344,9 +346,9 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 156.0, 375.0, 52.0, 23.0 ],
+					"patching_rect" : [ 156.0, 375.0, 57.0, 23.0 ],
 					"style" : "",
-					"text" : "set foo"
+					"text" : "set foo5"
 				}
 
 			}
@@ -382,15 +384,16 @@
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-17",
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 226.0, 440.0, 46.0, 23.0 ],
+					"patching_rect" : [ 226.0, 440.0, 52.0, 23.0 ],
 					"style" : "",
-					"text" : "s timb"
+					"text" : "s timb5"
 				}
 
 			}
@@ -441,6 +444,7 @@
 			}
 , 			{
 				"box" : 				{
+					"fontface" : 0,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-26",
@@ -448,9 +452,9 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "float", "bang" ],
-					"patching_rect" : [ 26.0, 141.0, 112.0, 23.0 ],
+					"patching_rect" : [ 26.0, 141.0, 105.0, 23.0 ],
 					"style" : "",
-					"text" : "buffer~ foo 186"
+					"text" : "buffer~ foo5 186"
 				}
 
 			}
@@ -481,7 +485,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 604.5, 431.0, 192.0, 36.0 ],
-					"presentation_rect" : [ 377.5, 135.0, 0.0, 0.0 ],
 					"style" : "",
 					"text" : "ported from real-time cmix, by brad garton and dave topper."
 				}
@@ -536,7 +539,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 8.0, 65.0, 506.0, 50.0 ],
+					"patching_rect" : [ 8.0, 65.0, 510.0, 50.0 ],
 					"style" : "",
 					"text" : "exponential b.p.f. wavetable generator • gen5 -- give it a list of amplitudes interspersed with a number of points (in array numbers) between values and it will generate the function in time/amplitude pairs for use with peek~ using an exponential interpolation.",
 					"textcolor" : [ 0.2, 0.2, 0.2, 1.0 ],
