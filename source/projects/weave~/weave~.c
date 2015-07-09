@@ -146,8 +146,8 @@ void weave_perform64(t_weave *x, t_object *dsp64, double **ins, long numins, dou
     
     int cval_new; // local variable to get polarity of current sample
     
-    in = (t_double *)(ins[2]); // my input vector
-    out = (t_double *)(outs[3]); // my output vector
+    in = (t_double *)(ins[0]); // my input vector
+    out = (t_double *)(outs[0]); // my output vector
     
     n = sampleframes; // my vector size
     
