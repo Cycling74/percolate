@@ -576,12 +576,12 @@ void gq_dsp64(t_gq *x, t_object *dsp64, short *count, double samplerate, long ma
 
 void gq_performMo64(t_gq *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	double *in = (double *)(ins[2]);
+	double *in = (double *)(ins[0]);
     
 	double cf = x->x_cfconnected? *(double *)(ins[2]) : x->x_cf[x->currentbank];
 	double bw = x->x_bwconnected? *(double *)(ins[3]) : x->x_bw[x->currentbank];
 	double bt = x->x_btconnected? *(double *)(ins[4]) : x->x_bt[x->currentbank];
-	double rf = x->x_rfconnected? *(double *)(ins[5]) : x->x_rf[x->currentbank];
+	// double rf = x->x_rfconnected? *(double *)(ins[5]) : x->x_rf[x->currentbank];
 	
 	double *out = (double *)(outs[0]);
     
@@ -657,18 +657,18 @@ void gq_performMo64(t_gq *x, t_object *dsp64, double **ins, long numins, double 
 
 void gq_performSt64(t_gq *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	double *inL = (double *)(ins[2]);
-	double *inR = (double *)(ins[3]);
+	double *inL = (double *)(ins[0]);
+	double *inR = (double *)(ins[1]);
     
-	double cf = x->x_cfconnected? *(double *)(ins[4]) : x->x_cf[x->currentbank];
-	double bw = x->x_bwconnected? *(double *)(ins[5]) : x->x_bw[x->currentbank];
-	double bt = x->x_btconnected? *(double *)(ins[6]) : x->x_bt[x->currentbank];
-	double rf = x->x_rfconnected? *(double *)(ins[7]) : x->x_rf[x->currentbank];
+	double cf = x->x_cfconnected? *(double *)(ins[2]) : x->x_cf[x->currentbank];
+	double bw = x->x_bwconnected? *(double *)(ins[3]) : x->x_bw[x->currentbank];
+	double bt = x->x_btconnected? *(double *)(ins[4]) : x->x_bt[x->currentbank];
+	// double rf = x->x_rfconnected? *(double *)(ins[5]) : x->x_rf[x->currentbank];
 	
-	double *outL = (double *)(outs[8]);
-	double *outR = (double *)(outs[9]);
+	double *outL = (double *)(outs[0]);
+	double *outR = (double *)(outs[1]);
 	
-	double response;
+	// double response;
 	
 	long n = sampleframes;
 	int i;
