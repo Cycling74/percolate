@@ -176,9 +176,9 @@ void vectorwarp_perform64(t_vectorwarp *x, t_object *dsp64, double **ins, long n
 {
     long i;
     
-    t_double *in 			= (t_double *)(ins[2]);
-    t_double *warptable 	= (t_double *)(ins[3]);
-    t_double *out 			= (t_double *)(outs[4]);
+    t_double *in 			= (t_double *)(ins[0]);
+    t_double *warptable 	= (t_double *)(ins[1]);
+    t_double *out 			= (t_double *)(outs[0]);
     long n                  = sampleframes;
     
     double temp, temp2;
@@ -190,7 +190,7 @@ void vectorwarp_perform64(t_vectorwarp *x, t_object *dsp64, double **ins, long n
     
     if (x->interp_method == INT_LINEAR) {
         for(i=0;i<n;i++) {
-            temp = (double)i * (double)x->stretch * warptable[i]; 		//float index for startpoint
+            temp = (double)i * (float)x->stretch * warptable[i]; 		//float index for startpoint
             warpStart = (long)temp;										//integer value of index
             warpOffset = temp - (double)warpStart;						//interpolation factor
             warpEnd = warpStart + 1;									//interpolation endpoint index
@@ -207,7 +207,7 @@ void vectorwarp_perform64(t_vectorwarp *x, t_object *dsp64, double **ins, long n
     
     else if(x->interp_method == INT_POLY) {
         for(i=0;i<n;i++) {
-            temp = (double)i*(double)x->stretch * warptable[i]; 	//what's the index we want
+            temp = (double)i*(float)x->stretch * warptable[i]; 	//what's the index we want
             *out++ = polyinterpolate_d(in, x->polylen, n, temp);		//2nd order poly interpolate
         }	
     }
