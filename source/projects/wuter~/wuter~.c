@@ -357,13 +357,13 @@ void wuter_dsp64(t_wuter *x, t_object *dsp64, short *count, double samplerate, l
 
 void wuter_perform64(t_wuter *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-    t_double num_objects	= x->num_objectsConnected	? 	*(t_double *)(ins[2]) : x->num_objects;
-    t_double res_freq 		= x->res_freqConnected		? 	*(t_double *)(ins[3]) : x->res_freq;
-    t_double shake_damp 	= x->shake_dampConnected	? 	*(t_double *)(ins[4]) : x->shake_damp;
-    t_double shake_max      = x->shake_maxConnected		? 	*(t_double *)(ins[5]) : x->shake_max;
+    t_double num_objects	= x->num_objectsConnected	? 	*(t_double *)(ins[0]) : x->num_objects;
+    t_double res_freq 		= x->res_freqConnected		? 	*(t_double *)(ins[1]) : x->res_freq;
+    t_double shake_damp 	= x->shake_dampConnected	? 	*(t_double *)(ins[2]) : x->shake_damp;
+    t_double shake_max      = x->shake_maxConnected		? 	*(t_double *)(ins[3]) : x->shake_max;
     
-    t_double *outL = (t_double *)(outs[6]);
-    t_double *outR = (t_double *)(outs[7]);
+    t_double *outL = (t_double *)(outs[0]);
+    t_double *outR = (t_double *)(outs[1]);
     long n = sampleframes;
 
     t_double lastOutput;
