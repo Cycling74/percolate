@@ -107,11 +107,11 @@ void waffle_dsp64(t_waffle *x, t_object *dsp64, short *count, double samplerate,
 
 void waffle_perform64(t_waffle *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-    t_double *in = (t_double *)(ins[2]);
-    t_double *cross = (t_double *)(ins[3]);
-    t_double *sync = (t_double *)(ins[4]);
-    t_double *out1 = (t_double *)(outs[5]);
-    t_double *out2 = (t_double *)(outs[6]);
+    t_double *in = (t_double *)(ins[0]);
+    t_double *cross = (t_double *)(ins[1]);
+    t_double *sync = (t_double *)(ins[2]);
+    t_double *out1 = (t_double *)(outs[0]);
+    t_double *out2 = (t_double *)(outs[1]);
     int n = sampleframes;
     if (x->l_obj.z_disabled)
         return;
