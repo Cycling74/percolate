@@ -141,8 +141,8 @@ void vectorstretch_perform64(t_vectorstretch *x, t_object *dsp64, double **ins, 
     
     long i;
     
-    t_double *in = (t_double *)(ins[2]);
-    t_double *out = (t_double *)(outs[3]);
+    t_double *in = (t_double *)(ins[0]);
+    t_double *out = (t_double *)(outs[0]);
     long n = sampleframes;
     
     double temp, temp2;
@@ -154,7 +154,7 @@ void vectorstretch_perform64(t_vectorstretch *x, t_object *dsp64, double **ins, 
     
     if (x->interp_method == INT_LINEAR) {
         for(i=0;i<n;i++) {
-            temp = (double)i*(double)x->stretch; 			//float index for startpoint
+            temp = (double)i * (float)x->stretch; 			//float index for startpoint
             stretchStart = (long)temp;						//integer value of index
             stretchOffset = temp - (double)stretchStart;	//interpolation factor
             stretchEnd = stretchStart + 1;					//interpolation endpoint index
@@ -173,7 +173,7 @@ void vectorstretch_perform64(t_vectorstretch *x, t_object *dsp64, double **ins, 
     
     else if(x->interp_method == INT_POLY) {
         for(i=0;i<n;i++) {
-            temp = (double)i*(double)x->stretch; 					//what's the index we want
+            temp = (double)i * (float)x->stretch; 					//what's the index we want
             *out++ = polyinterpolate_d(in, x->polylen, n, temp);		//2nd order poly interpolate
         }	
     }
