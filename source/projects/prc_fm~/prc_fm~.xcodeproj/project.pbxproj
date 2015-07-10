@@ -55,7 +55,7 @@
 		2248D4061B15EDD40056F8B2 /* WaveLoop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = WaveLoop.cpp; path = ../../include/src/WaveLoop.cpp; sourceTree = "<group>"; };
 		2248D4071B15EDD40056F8B2 /* Wurley.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Wurley.cpp; path = ../../include/src/Wurley.cpp; sourceTree = "<group>"; };
 		2248D4081B15EDD40056F8B2 /* WvIn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = WvIn.cpp; path = ../../include/src/WvIn.cpp; sourceTree = "<group>"; };
-		2FBBEAE508F335360078DB84 /* absmax~.mxo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "absmax~.mxo"; path = "prc_fm~.mxo"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2FBBEAE508F335360078DB84 /* prc_fm~.mxo */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "prc_fm~.mxo"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -105,7 +105,7 @@
 		19C28FB4FE9D528D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2FBBEAE508F335360078DB84 /* absmax~.mxo */,
+				2FBBEAE508F335360078DB84 /* prc_fm~.mxo */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -139,7 +139,7 @@
 			);
 			name = "max-external";
 			productName = iterator;
-			productReference = 2FBBEAE508F335360078DB84 /* absmax~.mxo */;
+			productReference = 2FBBEAE508F335360078DB84 /* prc_fm~.mxo */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */

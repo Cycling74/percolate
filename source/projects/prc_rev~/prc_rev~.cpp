@@ -228,6 +228,9 @@ void PRC_Rev_setT60(t_PRC_Rev *x, t_symbol *s, long argc, t_atom *argv)
 		}
 	}
 	
+    if (temp < 0.001) {
+        temp = 0.001;
+    }
 	x->myrev->setT60(temp);
 }
 
