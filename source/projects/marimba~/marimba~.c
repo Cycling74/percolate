@@ -242,14 +242,14 @@ void marimba_dsp64(t_marimba *x, t_object *dsp64, short *count, double samplerat
 
 void marimba_perform64(t_marimba *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_float sh = x->x_shconnected       ? *(t_float *)(ins[0]) : x->x_sh;
-	t_float spos = x->x_sposconnected   ? *(t_float *)(ins[1]) : x->x_spos;
-	t_float sa = x->x_saconnected       ? *(t_float *)(ins[2]) : x->x_sa;
-	t_float vf = x->x_vfconnected       ? *(t_float *)(ins[3]) : x->x_vf;
-	t_float va = x->x_vaconnected       ? *(t_float *)(ins[4]) : x->x_va;
-	t_float fr = x->x_frconnected       ? *(t_float *)(ins[5]) : x->x_fr;
+	double sh = x->x_shconnected       ? *(ins[0]) : x->x_sh;
+	double spos = x->x_sposconnected   ? *(ins[1]) : x->x_spos;
+	double sa = x->x_saconnected       ? *(ins[2]) : x->x_sa;
+	double vf = x->x_vfconnected       ? *(ins[3]) : x->x_vf;
+	double va = x->x_vaconnected       ? *(ins[4]) : x->x_va;
+	double fr = x->x_frconnected       ? *(ins[5]) : x->x_fr;
 	
-	t_float *out = (t_float *)(outs[0]);
+	double *out = outs[0];
 	long n = sampleframes;
     
 	if(fr != x->fr_save) {
