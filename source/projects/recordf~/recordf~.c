@@ -30,8 +30,8 @@ void recordf_set(t_recordf *x, t_symbol *s);
 void *recordf_new(t_symbol *s, long chan);
 void recordf_free(t_recordf *x);
 t_max_err recordf_notify(t_recordf *x, t_symbol *s, t_symbol *msg, void *sender, void *data);
-void recordf_in1(t_recordf *x, long n);
 void recordf_in2(t_recordf *x, long n);
+void recordf_in3(t_recordf *x, long n);
 void recordf_in0(t_recordf *x, long n);
 void record_loop(t_recordf *x, t_symbol *s, long argc, t_atom *argv);
 void record_goto(t_recordf *x, t_symbol *s, long argc, t_atom *argv);
@@ -54,8 +54,8 @@ void ext_main(void* p)
     class_addmethod(c, (method)recordf_dsp64, "dsp64", A_CANT, 0);
 	class_addmethod(c, (method)recordf_notify, "notify", A_CANT, 0);
 	
-    class_addmethod(c, (method)recordf_in1, "in1", A_LONG, 0);
     class_addmethod(c, (method)recordf_in2, "in2", A_LONG, 0);
+    class_addmethod(c, (method)recordf_in3, "in3", A_LONG, 0);
     class_addmethod(c, (method)recordf_in0, "int", A_LONG, 0);
     
     class_addmethod(c, (method)recordf_set, "set", A_SYM, 0);
@@ -116,9 +116,12 @@ void recordf_assist(t_recordf *x, void *b, long m, long a, char *s)
                 sprintf(s,"record on/off");
                 break;
             case 1:
-                sprintf(s,"loop start");
+                sprintf(s,"feedback amount");
                 break;
             case 2:
+                sprintf(s,"loop start");
+                break;
+            case 3:
                 sprintf(s,"loop end");
                 break;
         }
@@ -155,13 +158,13 @@ void recordf_set(t_recordf *x, t_symbol *s)
 	}
 }
 
-void recordf_in1(t_recordf *x, long n)
+void recordf_in2(t_recordf *x, long n)
 {
 	x->loop_start = n;
 	//post("recordf: loopstart = %d ", n);
 }
 
-void recordf_in2(t_recordf *x, long n)
+void recordf_in3(t_recordf *x, long n)
 {
 	x->loop_end = n;
 	//post("recordf: loopend = %d ", n);
