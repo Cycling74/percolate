@@ -101,93 +101,76 @@ void WvIn :: closeFile( void )
 
 void WvIn :: openFile( std::string fileName, bool raw, bool doNormalize )
 {
-
 //maxmsp, for rawwaves only
-  t_filehandle fh;
-  short path, err;
-  t_fourcc outtype;
-  t_fourcc type = 0;
-  char filename[256];
-//  char pathfilename[256];
-//  bool test;
-  
-  t_ptr_size filesize;
-  long i;
+	t_filehandle	fh;
+	short			path, err;
+	t_fourcc		outtype;
+	t_fourcc		type = 0;
+	char			filename[MAX_PATH_CHARS];
+	t_ptr_size		filesize;
+	long			i;
 
-  strcpy(filename, fileName.c_str());
-  err = locatefile_extended(filename, &path, &outtype, &type, 0);
-  if(err) post("STK: busted at locate %s, path %d, error %d!", filename, path, err);
-  //else post("STK: located %s", filename);
-  err = path_opensysfile(filename, path, &fh, READ_PERM);
-  if(err) post("STK: busted at opening %s, error %d!", filename, err);
-  //else post("STK: opened %s", filename);
-
-  err = sysfile_geteof(fh, &filesize); 
-  if(err) post("STK: busted at geteof %s, error %d!", filename, err);
-  //else post("STK: filesize %d", filesize);
-    
-  channels_ = 1;
-  dataOffset_ = 0;
-  rate_ = (StkFloat) 22050.0 / Stk::sampleRate();
-  fileRate_ = 22050.0;
-  interpolate_ = false;
-  dataType_ = STK_SINT16;
-  byteswap_ = false;
+	strncpy_zero(filename, fileName.c_str(), MAX_PATH_CHARS);
+	err = locatefile_extended(filename, &path, &outtype, &type, 0);
+	if (err) {
+		post("STK: busted at locate %s, path %d, error %d!", filename, path, err);
+		return;
+	}
+	
+	err = path_opensysfile(filename, path, &fh, READ_PERM);
+	if (err) {
+		post("STK: busted at opening %s, error %d!", filename, err);
+		return;
+	}
+	
+	err = sysfile_geteof(fh, &filesize);
+	if (err) {
+		post("STK: busted at geteof %s, error %d!", filename, err);
+		return;
+	}
+	channels_ = 1;
+	dataOffset_ = 0;
+	rate_ = (StkFloat) 22050.0 / Stk::sampleRate();
+	fileRate_ = 22050.0;
+	interpolate_ = false;
+	dataType_ = STK_SINT16;
+	byteswap_ = false;
 #ifdef __LITTLE_ENDIAN__
-  byteswap_ = true;
+	byteswap_ = true;
 #endif
-  
-  lastOutputs_ = (StkFloat *) new StkFloat[channels_];
-  
-  filesize *= 0.5; //2-byte samples
-  fileSize_ = filesize;
-  bufferSize_ = fileSize_;
-  if(data_) delete [] data_;
-  data_ = (StkFloat *) new StkFloat[bufferSize_+1];
-  
-  SINT16 *buf = (SINT16 *)data_;
-  for (i=fileSize_ - 1; i>=0; i--) {
-      data_[i] = buf[i] = 0.;
-  }
-  err = sysfile_read(fh, &filesize, data_);
-  if ( byteswap_ ) {
-      SINT16 *ptr = buf;
-      for (i=fileSize_; i>=0; i--)
-        swap16((unsigned char *)(ptr++));
-  }
-  for (i=fileSize_ - 1; i>=0; i--) {
-      data_[i] = buf[i];
-  }
-      
-  if(err) post("STK: busted at sysfile_read %s, error %d!", filename, err);
-  //else post("STK: successfully read %s!!", filename);
-  
-  if ( doNormalize ) normalize();
-  finished_ = false;
-  /*
-  for(i=0;i<fileSize_;i++) {
-  	post("WvIn: data:\n");
-  	post("%s %d: %f\n", filename, i, data_[i]);
-  	post("\n");
-  }
-  */
-  sysfile_close(fh);
 
-/*  if ( dataType_ == STK_SINT16 ) {
-    SINT16 *buf = (SINT16 *)data_;
-    if (fseek(fd_, dataOffset_+(long)(chunkPointer_*channels_*2), SEEK_SET) == -1) goto error;
-    if (fread(buf, length*channels_, 2, fd_) != 2 ) goto error;
-    if ( byteswap_ ) {
-      SINT16 *ptr = buf;
-      for (i=length*channels_-1; i>=0; i--)
-        swap16((unsigned char *)(ptr++));
-    }
-    for (i=length*channels_-1; i>=0; i--)
-      data_[i] = buf[i];
-  }
-*/
-  return;
+	lastOutputs_ = (StkFloat *) new StkFloat[channels_];
 
+	filesize *= 0.5; //2-byte samples
+	fileSize_ = filesize;
+	bufferSize_ = fileSize_;
+	if(data_) delete [] data_;
+	data_ = (StkFloat *) new StkFloat[bufferSize_+1];
+
+	SINT16 *buf = (SINT16 *)data_;
+	for (i=fileSize_ - 1; i>=0; i--) {
+	  data_[i] = buf[i] = 0.;
+	}
+	err = sysfile_read(fh, &filesize, data_);
+	if ( byteswap_ ) {
+	  SINT16 *ptr = buf;
+	  for (i=fileSize_; i>=0; i--)
+		swap16((unsigned char *)(ptr++));
+	}
+	for (i=fileSize_ - 1; i>=0; i--) {
+	  data_[i] = buf[i];
+	}
+	  
+	if (err)
+		post("STK: busted at sysfile_read %s, error %d!", filename, err);
+	//else post("STK: successfully read %s!!", filename);
+
+	if (doNormalize)
+		normalize();
+	finished_ = false;
+
+	sysfile_close(fh);
+	return;
 //end maxmsp
 /*
   closeFile();
