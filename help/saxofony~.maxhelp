@@ -9,7 +9,7 @@
 			"modernui" : 1
 		}
 ,
-		"rect" : [ 100.0, 100.0, 608.0, 767.0 ],
+		"rect" : [ 225.0, 146.0, 608.0, 767.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 13.0,
@@ -148,9 +148,9 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 26.0, 626.0, 82.0, 23.0 ],
+					"patching_rect" : [ 26.0, 626.0, 70.0, 23.0 ],
 					"style" : "",
-					"text" : "voice_form~"
+					"text" : "saxofony~"
 				}
 
 			}
@@ -777,7 +777,7 @@
 				"implicit" : 1
 			}
 , 			{
-				"name" : "voice_form~.mxo",
+				"name" : "saxofony~.mxo",
 				"type" : "iLaX"
 			}
  ],
