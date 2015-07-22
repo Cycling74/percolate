@@ -28,6 +28,11 @@
 #include "ext_strings.h"
 #include "z_dsp.h"
 
+#ifdef WIN_VERSION
+#include <limits.h>
+#include <float.h>
+#endif
+
 #define MAX_INPUTS 10 	//arbitrary
 #define MAX_OUTPUTS 10	//also arbitrary
 
