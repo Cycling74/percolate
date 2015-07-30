@@ -1,0 +1,13 @@
+{
+  "name": "PeRColate",
+	"type": "package",
+	"author": "Luke DuBois and Dan Trueman",
+	"description": "Instrument Modeling",
+	"version": "1.0",
+	"major_version": "1",
+	"minor_version": "0",
+	"min_max_version": "608",
+	"min_osx_version": "60",
+	"min_win_version": "None",
+	"website": "https://github.com/Cycling74/percolate",
+}
