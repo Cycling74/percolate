@@ -672,7 +672,6 @@ void ext_main(void *f)
 	class_addmethod(c, (method)munger_notify, "notify", A_CANT, 0);
 	
     class_addmethod(c, (method)munger_float, "float", A_FLOAT, 0);
-    class_addmethod(c, (method)munger_assist,"assist",A_CANT,0);
     class_addmethod(c, (method)munger_setramp, "ramptime", A_GIMME, 0);
     class_addmethod(c, (method)munger_sethanning, "hanning", A_GIMME, 0);
     class_addmethod(c, (method)munger_tempered, "tempered", A_GIMME, 0);
@@ -1244,25 +1243,28 @@ void munger_assist(t_munger *x, void *b, long m, long a, char *s)
 {
 	if (m == ASSIST_INLET) {
 		switch (a) {
-            case 0:
+			case 0:
+				sprintf(s,"(signal) input");
+				break;
+            case 1:
                 sprintf(s,"(signal/float) grain rate");
                 break;
-            case 1:
+            case 2:
                 sprintf(s,"(signal/float) grain rate variation");
                 break;
-            case 2:
+            case 3:
                 sprintf(s,"(signal/float) grain length");
                 break;
-            case 3:
+            case 4:
                 sprintf(s,"(signal/float) grain length variation");
                 break;
-            case 4:
+            case 5:
                 sprintf(s,"(signal/float) grain pitch");
                 break;
-            case 5:
+            case 6:
                 sprintf(s,"(signal/float) grain pitch variation");
                 break;
-            case 6:
+            case 7:
                 sprintf(s,"(signal/float) grain pan spread");
                 break;
         }
