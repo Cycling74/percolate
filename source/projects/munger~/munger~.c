@@ -12,6 +12,11 @@
 //
 // updated for Max 7 by Darwin Grosse and Tim Place
 // -------------------------------------------------
+//
+// 07/04/2019
+// munger1~ 1.3.1 additions and bugfixes by Ivica Ico Bukvic
+// ico.bukvic.net
+// -------------------------------------------------
 
 #include "stk_c.h"
 #include "buffer.h"
@@ -19,6 +24,12 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+//version
+#define MUNGER_MAJOR 1
+#define MUNGER_MINOR 3
+#define MUNGER_REV 2
+static int munger_announced = 0;
 
 #define ONE_OVER_MAXRAND 1./RAND_MAX
 #define ONE_OVER_HALFRAND 2./RAND_MAX
@@ -35,7 +46,7 @@
 #define PITCHTABLESIZE 1000 					//max number of transpositions for the "scale" message
 #define RECORDRAMP 1000
 #define RECORDRAMP_INV 0.001
-#define MAXCHANNELS 16
+#define MAXCHANNELS 128
 
 
 
@@ -72,6 +83,8 @@ typedef struct _munger
 	float initbuflen;
 	long maxvoices;
 
+	int	verbose;
+
     //signals connected? or controls...
     short grate_connected;
     short grate_var_connected;
@@ -106,6 +119,7 @@ typedef struct _munger
     float gimme;
     float channelGain[MAXCHANNELS];
     float channelGainSpread[MAXCHANNELS];
+	int discretePan;
     
     //sample buffer
     float *recordBuf;
@@ -135,6 +149,7 @@ typedef struct _munger
 
     float srate, one_over_srate;
     float srate_ms, one_over_srate_ms;
+
 } t_munger;
 
  t_symbol *ps_buffer;
@@ -143,8 +158,7 @@ typedef struct _munger
 /****PROTOTYPES****/
 
 //setup funcs
-//void *munger_new(double val);
-void *munger_new(double maxdelay, long channels);
+void *munger_new(double maxdelay, long channels, long numvoices);
 void munger_free(t_munger *x);
 t_max_err munger_notify(t_munger *x, t_symbol *s, t_symbol *msg, void *sender, void *data);
 void munger_assist(t_munger *x, void *b, long m, long a, char *s);
@@ -228,6 +242,10 @@ void munger_poststate(t_munger *x, t_symbol *s, long argc, t_atom *argv);
 void munger_setbuffer(t_munger *x, t_symbol *s);
 float getExternalSamp(t_munger *x, double where, t_float *tab, double frames, double nc);
 
+//munger1~ additions
+void munger_discretepan(t_munger *x, t_symbol *s, long argc, t_atom *argv);
+void munger_setverbose(t_munger *x, t_symbol *s, long argc, t_atom *argv);
+
 
 /****FUNCTIONS****/
 
@@ -267,6 +285,29 @@ void munger_setbuffer(t_munger *x, t_symbol *s)
 	}
 }
 
+void munger_setverbose(t_munger *x, t_symbol *s, long argc, t_atom *argv)
+{
+	int temp;
+
+	if (argc)
+	{
+		switch (argv[0].a_type) {
+			case A_LONG:
+				temp = (int)argv[0].a_w.w_long;
+				break;
+			case A_FLOAT:
+				temp = (int)argv[0].a_w.w_float;
+				break;
+		}
+		if (temp < 0 || temp > 1) {
+			object_error((t_object *)x, "setverbose can be only 0 or 1.");
+		}
+		else {
+			x->verbose = temp;
+			object_post((t_object *)x, "setting verbose to %d.", temp);
+		}
+	}
+}
 
 //grain funcs
 float envelope(t_munger *x, int whichone, float sample)
@@ -304,7 +345,7 @@ int findVoice(t_munger *x)
 float newSetup(t_munger *x, int whichVoice, double frames)
 {
 	float newPosition;
-	int i;
+	int i, tmpDiscretePan;
 	
 	x->gvoiceSize[whichVoice] 		= newSize(x, whichVoice);
 	x->gvoiceDirection[whichVoice] 	= newDirection(x);
@@ -315,6 +356,13 @@ float newSetup(t_munger *x, int whichVoice, double frames)
 		//make equal power panning....
 		//x->gvoiceLPan[whichVoice] 		= powf(x->gvoiceLPan[whichVoice], 0.5);
 		//x->gvoiceRPan[whichVoice] 		= powf(x->gvoiceRPan[whichVoice], 0.5);
+	}
+	else if(x->discretePan) {
+		tmpDiscretePan = (int)((float)(rand()) * ONE_OVER_MAXRAND * ((float)x->num_channels + 0.99));
+		for (i = 0; i < x->num_channels; i++) {
+			if (i == tmpDiscretePan) x->gvoiceSpat[whichVoice][i] = x->channelGain[i] + ((float)rand() - 16384.) * ONE_OVER_HALFRAND * x->channelGainSpread[i];
+			else x->gvoiceSpat[whichVoice][i] = 0.;
+		}
 	}
 	else {
 		for(i=0;i<x->num_channels;i++) {
@@ -665,7 +713,7 @@ float getExternalSamp(t_munger *x, double where, t_float *tab, double frames, do
 //primary MSP funcs
 void ext_main(void *f)
 {
-    t_class *c = class_new("munger~", (method)munger_new, (method)munger_free, (long)sizeof(t_munger), 0L, A_DEFFLOAT, A_DEFLONG, 0);
+    t_class *c = class_new("munger~", (method)munger_new, (method)munger_free, (long)sizeof(t_munger), 0L, A_DEFFLOAT, A_DEFLONG, A_DEFLONG, 0);
     
     class_addmethod(c, (method)munger_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)munger_dsp64, "dsp64", A_CANT, 0);
@@ -694,6 +742,8 @@ void ext_main(void *f)
     class_addmethod(c, (method)munger_poststate, "state", A_GIMME, 0);
     class_addmethod(c, (method)munger_clear, "clear", A_GIMME, 0);
     class_addmethod(c, (method)munger_setbuffer, "buffer", A_SYM, 0);
+	class_addmethod(c, (method)munger_discretepan, "discretepan", A_GIMME, 0);
+	class_addmethod(c, (method)munger_setverbose, "verbose", A_GIMME, 0);
     class_dspinit(c);
     
     class_register(CLASS_BOX, c);
@@ -708,12 +758,12 @@ void munger_setramp(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
-				//post("munger: setting ramp to: %ld ms", argv[i].a_w.w_long);
+				if (x->verbose > 0) object_post((t_object *)x, "setting ramp to: %ld ms", argv[i].a_w.w_long);
 				x->rampLength = x->srate_ms * (float)argv[i].a_w.w_long; 
 				if(x->rampLength <= 0.) x->rampLength = 1.;
 				break;
 			case A_FLOAT:
-				//post("munger: setting ramp to: %lf ms", argv[i].a_w.w_float);
+				if (x->verbose > 0) object_post((t_object *)x, "setting ramp to: %lf ms", argv[i].a_w.w_float);
 				x->rampLength = x->srate_ms * argv[i].a_w.w_float;
 				if(x->rampLength <= 0.) x->rampLength = 1.; 
 				break;
@@ -725,7 +775,7 @@ void munger_scale(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	int i,j;
 	
-	//post("munger: loading scale from input list");
+	if (x->verbose > 0) object_post((t_object *)x, "loading scale from input list");
 	x->smoothPitch = 0;
 	
 	for(i=0;i<PITCHTABLESIZE;i++) x->pitchTable[i] = 0.;
@@ -773,7 +823,7 @@ void munger_spat(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 				x->channelGainSpread[j] = argv[i+1].a_w.w_float;
 				break;
 		}
-		//post("munger: channel gain %d = %f, spread = %f", j, x->channelGain[j], x->channelGainSpread[j]);
+		if (x->verbose > 0) object_post((t_object *)x, "channel gain %d = %f, spread = %f", j, x->channelGain[j], x->channelGainSpread[j]);
 		j++;
 	}
 }
@@ -781,14 +831,14 @@ void munger_spat(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 void munger_note(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	if(argc < 8) {
-		post("munger: need 8 args -- transposition, gain, pan, attkT, decayT, susLevel, relT, direction [-1/1]");
+		object_error((t_object *)x, "munger: oneshot note needs 8 args -- transposition, gain, pan, attkT, decayT, susLevel, relT, direction [-1 or 0-1].");
 		return;
 	}
 	
 	x->newnote++;
 	
 	if(x->newnote >= NUMVOICES) {
-		post("munger: too many notes amadeus.");
+		object_error((t_object *)x, "too many notes amadeus.");
 		return;
 	}
 	
@@ -881,12 +931,12 @@ void munger_oneshot(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp = (int)argv[i].a_w.w_long;
 				x->oneshot = temp;
-    			post("munger: setting oneshot: %d", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting oneshot: %d", temp);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_long;
 				x->oneshot = temp;
-    			post("munger: setting oneshot: %d", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting oneshot: %d", temp);
 				break;
 		}
 	}
@@ -908,7 +958,7 @@ void munger_bufsize(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 				x->maxsize = temp / 3.;
     			x->twothirdBufsize = x->maxsize * 2.;
     			x->onethirdBufsize = x->maxsize; 
-    			//post("munger: setting delaylength to: %f seconds", (x->buflen/x->srate));
+				if (x->verbose > 0) object_post((t_object *)x, "setting delaylength to: %f seconds", (x->buflen/x->srate));
 				break;
 			case A_FLOAT:
 				temp = x->srate * argv[i].a_w.w_float;
@@ -920,7 +970,7 @@ void munger_bufsize(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 				x->maxsize = temp / 3.;
     			x->twothirdBufsize = x->maxsize * 2.;
     			x->onethirdBufsize = x->maxsize; 
-    			//post("munger: setting delaylength to: %f seconds", x->buflen/x->srate);
+				if (x->verbose > 0) object_post((t_object *)x, "setting delaylength to: %f seconds", x->buflen/x->srate);
 				break;
 		}
 	}
@@ -942,7 +992,7 @@ void munger_bufsize_ms(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 				x->maxsize = temp / 3.;
     			x->twothirdBufsize = x->maxsize * 2.;
     			x->onethirdBufsize = x->maxsize; 
-    			//post("munger: setting delaylength to: %f seconds", (x->buflen/x->srate));
+				if (x->verbose > 0) object_post((t_object *)x, "setting delaylength to: %f seconds", (x->buflen/x->srate));
 				break;
 			case A_FLOAT:
 				temp = x->srate_ms * argv[i].a_w.w_float;
@@ -954,7 +1004,7 @@ void munger_bufsize_ms(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 				x->maxsize = temp / 3.;
     			x->twothirdBufsize = x->maxsize * 2.;
     			x->onethirdBufsize = x->maxsize; 
-    			//post("munger: setting delaylength to: %f seconds", x->buflen/x->srate);
+				if (x->verbose > 0) object_post((t_object *)x, "setting delaylength to: %f seconds.", x->buflen/x->srate);
 				break;
 		}
 	}
@@ -971,25 +1021,49 @@ void munger_setminsize(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 				if(temp < (float)MINSIZE) temp = (float)MINSIZE;
 				if(temp >= x->initbuflen) {
 					temp = (float)MINSIZE;
-					post("munger error: minsize too large!");
+					object_error((t_object *)x, "minsize too large.");
 				}
 				x->minsize = temp;
-    			//post("munger: setting min grain size to: %f ms", (x->minsize/x->srate_ms));
+				if (x->verbose > 0) object_post((t_object *)x, "setting min grain size to: %f ms.", (x->minsize/x->srate_ms));
 				break;
 			case A_FLOAT:
 				temp = x->srate_ms * argv[i].a_w.w_float;
 				if(temp < (float)MINSIZE) temp = (float)MINSIZE;
 				if(temp >= x->initbuflen) {
 					temp = (float)MINSIZE;
-					post("munger error: minsize too large!");
+					object_error((t_object *)x, "minsize too large.");
 				}
 				x->minsize = temp;
-    			//post("munger: setting min grain size to: %f ms", (x->minsize/x->srate_ms));
+				if (x->verbose > 0) object_post((t_object *)x, "setting min grain size to: %f ms.", (x->minsize/x->srate_ms));
 				break;
 		}
 	}
 }
 
+void munger_discretepan(t_munger *x, t_symbol *s, long argc, t_atom *argv)
+{
+	int temp = 0;
+
+	if (argc)
+	{
+		switch (argv[0].a_type) {
+			case A_LONG:
+				temp = (int)argv[0].a_w.w_long;
+				break;
+			case A_FLOAT:
+				temp = (int)argv[0].a_w.w_float;
+				break;
+		}
+		if (temp < 0 || temp > 1)
+		{
+			object_error((t_object *)x, "discretepan can be only 0 or 1.");
+		}
+		else {
+			x->discretePan = temp;
+			if (x->verbose > 0) object_post((t_object *)x, "setting discretepan to %d.", temp);
+		}
+	}
+}
 
 void munger_setvoices(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
@@ -1002,14 +1076,14 @@ void munger_setvoices(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 				if(temp < 0) temp = 0;
 				if(temp > x->maxvoices) temp = x->maxvoices;
 				x->voices = temp;
-    			//post("munger: setting max voices to: %d ", x->voices);
+				if (x->verbose > 0) object_post((t_object *)x, "munger: setting current number of voices to: %d.", x->voices);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_float;
 				if(temp < 0) temp = 0;
 				if(temp > x->maxvoices) temp = x->maxvoices;
 				x->voices = temp;
-    			//post("munger: setting max voices to: %d ", x->voices);
+				if (x->verbose > 0) object_post((t_object *)x, "munger: setting current number of voices to: %d.", x->voices);
 				break;
 		}
 	}
@@ -1023,17 +1097,25 @@ void munger_maxvoices(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = argv[i].a_w.w_long;
-				if(temp < 0) temp = 0;
+				if(temp < 1) temp = 1;
 				if(temp > NUMVOICES) temp = NUMVOICES;
 				x->maxvoices = temp;
-    			//post("munger: setting max voices to: %d ", x->voices);
+				if (x->verbose > 0) object_post((t_object *)x, "munger: setting max voices to: %d.", x->maxvoices);
+				if (x->maxvoices < x->voices) {
+					x->voices = x->maxvoices;
+					if (x->verbose > 0) object_post((t_object *)x, "munger: setting current number of voices to: %d.", x->voices);
+				}
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_float;
-				if(temp < 0) temp = 0;
+				if(temp < 1) temp = 1;
 				if(temp > NUMVOICES) temp = NUMVOICES;
 				x->maxvoices = temp;
-    			//post("munger: setting max voices to: %d ", x->voices);
+				if (x->verbose > 0) object_post((t_object *)x, "munger: setting max voices to: %d.", x->maxvoices);
+				if (x->maxvoices < x->voices) {
+					x->voices = x->maxvoices;
+					if (x->verbose > 0) object_post((t_object *)x, "munger: setting current number of voices to: %d.", x->voices);
+				}
 				break;
 		}
 	}
@@ -1049,12 +1131,12 @@ void setpower(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp = (int)argv[i].a_w.w_long;
 				x->power = temp;
-    			post("munger: setting power: %d", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting power: %d.", temp);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_long;
 				x->power = temp;
-    			post("munger: setting power: %d", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting power: %d.", temp);
 				break;
 		}
 	}
@@ -1077,7 +1159,7 @@ void munger_record(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 					x->recordRampVal = 0;
 					x->rec_ramping = 1;
 				}
-    			//post("munger: setting record: %d", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting record: %d.", temp);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_float;
@@ -1090,7 +1172,7 @@ void munger_record(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 					x->recordRampVal = 0;
 					x->rec_ramping = 1;
 				}
-	 			//post("munger: setting record: %d", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting record: %d.", temp);
 				break;
 		}
 	}
@@ -1105,12 +1187,12 @@ void munger_ambidirectional(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp = (int)argv[i].a_w.w_long;
 				x->ambi = temp;
-    			//post("munger: setting ambidirectional: %d", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting ambidirectional: %d.", temp);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_float;
 				x->ambi = temp;
-    			//post("munger: setting ambidirectional: %d", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting ambidirectional: %d.", temp);
 				break;
 		}
 	}
@@ -1124,12 +1206,12 @@ void munger_gain(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
-    			//post("munger: setting gain to: %f ", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting gain to: %f.", temp);
     			x->gain = temp;
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-				//post("munger: setting gain to: %f ", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting gain to: %f.", temp);
 				x->gain = temp;
 				break;
 		}
@@ -1146,14 +1228,14 @@ void munger_setposition(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 				temp = (float)argv[i].a_w.w_long;
 				if (temp > 1.) temp = 1.;
     			if (temp < 0.) temp = -1.;
-    			//post("munger: setting position to: %f ", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting position to: %f.", temp);
     			x->position = temp;
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
 				if (temp > 1.) temp = 1.;
     			else if (temp < 0.) temp = -1.;
-    			//post("munger: setting position to: %f ", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting position to: %f.", temp);
     			x->position = temp;
 				break;
 		}
@@ -1168,12 +1250,12 @@ void munger_randgain(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
-    			//post("munger: setting rand_gain to: %f ", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting rand_gain to: %f.", temp);
     			x->randgain = temp;
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-				//post("munger: setting rand_gain to: %f ", temp);
+				if (x->verbose > 0) object_post((t_object *)x, "setting rand_gain to: %f.", temp);
 				x->randgain = temp;
 				break;
 		}
@@ -1182,14 +1264,14 @@ void munger_randgain(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 
 void munger_sethanning(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
-	post("munger: hanning window is busted");
+	object_post((t_object *)x, "hanning window is busted.");
 	x->doHanning = 1;
 }
 
 void munger_tempered(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
 	int i;
-	//post("munger: doing tempered scale");
+	if (x->verbose > 0) object_post((t_object *)x, "doing tempered scale.");
 	x->smoothPitch = 0;
 	x->scale_len = 100;
 	for(i=0; i<x->scale_len-1; i += 2) {
@@ -1200,7 +1282,7 @@ void munger_tempered(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 }
 void munger_smooth(t_munger *x, t_symbol *s, long argc, t_atom *argv)
 {
-	//post("munger: doing smooth scale");
+	if (x->verbose > 0) object_post((t_object *)x, "doing smooth scale.");
 	x->smoothPitch = 1;
 }
 
@@ -1210,7 +1292,7 @@ void munger_alloc(t_munger *x)
 	//x->recordBuf = t_getbytes(x->buflen * sizeof(float));
 	x->recordBuf = (float *)sysmem_newptr(x->buflen * sizeof(float));
 	if (!x->recordBuf) {
-		error("munger: out of memory");
+		object_error((t_object *)x, "out of memory.");
 		return;
 	}
 }
@@ -1294,25 +1376,31 @@ void munger_float(t_munger *x, double f)
 
 //hanning y = 0.5 + 0.5*cos(TWOPI * n/N + PI)
 
-void *munger_new(double maxdelay, long channels)
+void *munger_new(double maxdelay, long channels, long numvoices)
 {
 	int i, j;
+
+	if (!munger_announced) {
+		post("munger~ version %d.%d.%d", (int)MUNGER_MAJOR, (int)MUNGER_MINOR, (int)MUNGER_REV);
+		munger_announced = 1;
+	}
     
     t_munger *x = (t_munger *)object_alloc(munger_class);
-    //zero out the struct, to be careful (takk to jkclayton)
+    //zero out the struct, to be careful (talk to jkclayton)
     if (x) { 
         for(i=sizeof(t_pxobject);i<sizeof(t_munger);i++)  
                 ((char *)x)[i]=0; 
 	} 
 	
 	if (maxdelay < 100.) maxdelay = 3000.; //set maxdelay to 3000ms by default
-	post("munger: maxdelay = %f milliseconds", maxdelay);
+	object_post((t_object *)x, "maxdelay = %f milliseconds.", maxdelay);
 	
 	if (channels < 2) x->num_channels = 2;
 	else x->num_channels = channels;
 	if (x->num_channels > MAXCHANNELS) x->num_channels = MAXCHANNELS;
-	post ("munger: number channels = %d", x->num_channels);
-	
+	object_post((t_object *)x, "number channels = %d.", x->num_channels);
+	if (x->num_channels > 2) object_post((t_object *)x, "WARNING: more than 2 channels requested -- no sound will be outputted until you set the gains for each of the channels using the spatialize command.");
+
     dsp_setup((t_pxobject *)x,8);
     for (i=0;i<x->num_channels;i++) {
     	outlet_new((t_object *)x, "signal");
@@ -1351,17 +1439,23 @@ void *munger_new(double maxdelay, long channels)
     x->gpitch = 1.; 		 
     x->gpitch_var = 0.;
     x->gpan_spread = 0.;
-    x->time = 0;	
+    x->time = 0;
     x->position = -1.; //-1 default == random positioning
     
     x->gimme = 0.;	
     
     x->power = 1;
     x->ambi = 0;
-    x->maxvoices = 20;
+
+	if (numvoices > NUMVOICES) numvoices = NUMVOICES;
+	if (numvoices > 0)
+		x->maxvoices = numvoices;
+    else x->maxvoices = 20;
+	x->verbose = 1;
     
 	x->oneshot = 0;
     x->newnote = 0;
+	x->discretePan = 0;
       
     for(i=0; i<NUMVOICES; i++) {
     	x->gvoiceSize[i] = 1000;			
@@ -1417,7 +1511,6 @@ void *munger_new(double maxdelay, long channels)
 	x->externalBuffer = 0; //use internal buffer by default
 
     srand(0.54);
-    //post("mungery away");
     
     return (x);
 }
@@ -1575,6 +1668,7 @@ void munger_perform64(t_munger *x, t_object *dsp64, double **ins, long numins, d
 void munger_poststate(t_munger *x, t_symbol *s, long argc, t_atom *argv) {
 
 	post (">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+	object_post((t_object *)x, "version: %d.%d.%d", (int)MUNGER_MAJOR, (int)MUNGER_MINOR, (int)MUNGER_REV);
 	post ("***CURRENT MUNGER PARAMETER VALUES***:");
 	post ("all times in milliseconds");
 	post ("grain spacing = %f", x->grate);	
