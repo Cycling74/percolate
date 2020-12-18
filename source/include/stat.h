@@ -123,16 +123,17 @@ typedef	__darwin_time_t		time_t;
 #endif
 
 
-/* [XSI] The timespec structure may be defined as described in <time.h> */
-#ifndef _TIMESPEC
-#define _TIMESPEC
-struct timespec {
-	time_t	tv_sec;		/* seconds */
-	long	tv_nsec;	/* and nanoseconds */
-};
+// Avoid redefinition of timespec (conflicts with MacOS 10.15 -- test on more platforms!)
+// /* [XSI] The timespec structure may be defined as described in <time.h> */
+// #ifndef _TIMESPEC
+// #define _TIMESPEC
+// struct timespec {
+// 	time_t	tv_sec;		/* seconds */
+// 	long	tv_nsec;	/* and nanoseconds */
+// };
 
-// LP64todo - should this move?
-#endif	/* _TIMESPEC */
+// // LP64todo - should this move?
+// #endif	/* _TIMESPEC */
 
 
 #ifndef _POSIX_C_SOURCE
