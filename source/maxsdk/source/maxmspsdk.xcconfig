@@ -40,7 +40,7 @@ ARCHS = x86_64
 //
 // SDKROOT = macosx10.6
 
-MACOSX_DEPLOYMENT_TARGET = 10.7
+MACOSX_DEPLOYMENT_TARGET = 10.9
 
 
 // Compiler Version -- leave them all commented out to get the default version provided by Xcode
