@@ -155,6 +155,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 089C166AFE841209C02AAC07 /* iterator */;
@@ -247,6 +248,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = "$(C74SUPPORT)/../Info.plist";
 				OTHER_LDFLAGS = "$(C74_SYM_LINKER_FLAGS)";
+				USE_HEADERMAP = NO;
 			};
 			name = Development;
 		};
@@ -265,6 +267,7 @@
 				);
 				INFOPLIST_FILE = "$(C74SUPPORT)/../Info.plist";
 				OTHER_LDFLAGS = "$(C74_SYM_LINKER_FLAGS)";
+				USE_HEADERMAP = NO;
 			};
 			name = Deployment;
 		};
