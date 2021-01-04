@@ -7,8 +7,6 @@
 // updated for Max 7 by Darwin Grosse and Tim Place
 // ------------------------------------------------
 
-//here are the notes from the original STK instrument
-
 #define __cplusplus
 
 extern "C" {
@@ -75,6 +73,7 @@ void shakers_setdecay(t_shakers *x, t_symbol *s, long argc, t_atom *argv);
 void shakers_setnumobjects(t_shakers *x, t_symbol *s, long argc, t_atom *argv);
 void shakers_setresfreq(t_shakers *x, t_symbol *s, long argc, t_atom *argv);
 void shakers_noteOn(t_shakers *x, t_symbol *s, long argc, t_atom *argv);
+void shakers_play(t_shakers *x, t_symbol *s, long argc, t_atom *argv);
 
 /****FUNCTIONS****/
 
@@ -94,6 +93,7 @@ void ext_main(void* p)
     class_addmethod(c, (method)shakers_setnumobjects, "numobjects", A_GIMME, 0);
     class_addmethod(c, (method)shakers_setresfreq, "resfreq", A_GIMME, 0);
     class_addmethod(c, (method)shakers_noteOn, "noteon", A_GIMME, 0);
+    class_addmethod(c, (method)shakers_play, "play", A_GIMME, 0);
     class_dspinit(c);
     
     class_register(CLASS_BOX, c);
@@ -318,9 +318,23 @@ void shakers_noteOn(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 	x->myshakers->noteOn(temp[0], temp[1]);
 }
 
+void shakers_play(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
+{
+	int instrument;
+	float amp;
+
+	if (argc < 2) {
+		post("shakers~ error: play requires two arguments, instrument and amp");
+		return;
+	}
+
+	instrument = (int)argv[0].a_w.w_long;
+	amp = (float)argv[1].a_w.w_float;
+
+	x->myshakers->play(instrument, amp);
+}
 
 
-//what to do when we get the message "mymessage" and a value (or list of values)
 void shakers_setpower(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;

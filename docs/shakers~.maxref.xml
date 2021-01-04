@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="shakers~" module="" category="">
+	<digest>
+		Simulate various shaker instruments
+	</digest>
+	<description>
+		Simulate various shaker instruments from the STK library by Perry Cook.
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+		<metadata name="tag">
+			TEXT_HERE
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="INLET_TYPE">
+			<digest>
+				control messages
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="OUTLET_TYPE">
+			<digest>
+				(signal) output
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="decay">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Decay time
+			</digest>
+			<description>
+				Adjust the decay time of the amplitude envelope. Values should be in the range (0. - 128.).
+			</description>
+		</method>
+		<method name="energy">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+            <digest>
+                Shaking energy
+            </digest>
+            <description>
+                Adjust the energy of the shaker. Values should be in the range (0. - 128.).
+            </description>
+		</method>
+		<method name="noteon">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+            <digest>
+                Play a note
+            </digest>
+            <description>
+                Begin a note with <m>noteon</m>. The optional argument for amplitude should be in the range (0. - 1.) and defaults to 1.
+            </description>
+		</method>
+		<method name="numobjects">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+            <digest>
+                Number of objects
+            </digest>
+            <description>
+                Adjust the number of objects. Values should be in the range (0 - 128).
+            </description>
+		</method>
+		<method name="play">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+            <digest>
+                Play a note
+            </digest>
+            <description>
+                Play a note with <m>play</m> followed by the instrument number and amplitude (0. - 1.).
+            </description>
+		</method>
+		<method name="resfreq">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Resonant frequency
+			</digest>
+			<description>
+				Adjust the resonant frequency. Values should be in the range (0. - 128.).
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+        <seealso name="bamboo~" />
+        <seealso name="cabasa~" />
+        <seealso name="guiro~" />
+        <seealso name="sekere~" />
+        <seealso name="shaker~" />
+        <seealso name="sleigh~" />
+        <seealso name="tamb~" />
+        <seealso name="wuter~" />
+        <seealso name="metashaker~" />
+	</seealsolist>
+</c74object>

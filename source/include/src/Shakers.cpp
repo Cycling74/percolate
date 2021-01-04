@@ -810,6 +810,15 @@ void Shakers :: noteOn(StkFloat frequency, StkFloat amplitude)
 #endif
 }
 
+void Shakers :: play(int instrument, StkFloat amplitude)
+{
+  instType_ = this->setupNum(instrument);
+  shakeEnergy_ += amplitude * MAX_SHAKE * 0.1;
+  if (shakeEnergy_ > MAX_SHAKE) shakeEnergy_ = MAX_SHAKE;
+  if (instType_==10 || instType_==3) ratchetPos_ += 1;
+}
+
+
 void Shakers :: noteOff(StkFloat amplitude)
 {
   shakeEnergy_ = 0.0;
