@@ -143,12 +143,11 @@ float bamboo_tick(t_bamboo *x) {
     return data;
 }
 
-int my_random(int max)  {   //  Return Random Int Between 0 and max
-	unsigned long temp;
-  	temp = (unsigned long) rand();
-	temp *= (unsigned long) max;
-	temp >>= 15;
-	return (int) temp;
+// Return a random int [0 - max]
+int my_random(int max)
+{
+    // https://stackoverflow.com/a/18386648
+    return rand() / (RAND_MAX / (max + 1) + 1);
 }
 
 //noise maker
