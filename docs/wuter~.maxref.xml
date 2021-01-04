@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="wuter~" module="" category="">
+	<digest>
+		Model water droplets
+	</digest>
+	<description>
+		TEXT_HERE
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+		<metadata name="tag">
+			TEXT_HERE
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal/float">
+			<digest>
+				number of items
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="1" type="signal/float">
+			<digest>
+				resonant frequency
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="2" type="signal/float">
+			<digest>
+				damping
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="3" type="signal/float">
+			<digest>
+				maximum shake
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>
+				output
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>
+				output
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="int">
+			<arglist>
+				<arg name="ARG_NAME_0" type="int" optional="0" />
+			</arglist>
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: Number of droplets
+				<br/>
+				2nd inlet: Resonant frequency (Hz)
+				<br/>
+				3rd inlet: Damping (0. - 1.)
+				<br/>
+				4th inlet: Random resonance
+			</description>
+		</method>
+		<method name="float">
+			<arglist>
+				<arg name="ARG_NAME_0" type="float" optional="0" />
+			</arglist>
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: Number of droplets
+				<br/>
+				2nd inlet: Resonant frequency (Hz)
+				<br/>
+				3rd inlet: Damping (0. - 1.)
+				<br/>
+				4th inlet: Random resonance
+			</description>
+		</method>
+		<method name="signal">
+			<arglist />
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: Number of droplets
+				<br/>
+				2nd inlet: Resonant frequency (Hz)
+				<br/>
+				3rd inlet: Damping (0. - 1.)
+				<br/>
+				4th inlet: Random resonance
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="bamboo~"/>
+		<seealso name="cabasa~"/>
+		<seealso name="guiro~"/>
+		<seealso name="sekere~"/>
+		<seealso name="shaker~"/>
+		<seealso name="sleigh~"/>
+		<seealso name="tamb~"/>
+		<seealso name="metashaker~"/>
+		<seealso name="shakers~"/>
+	</seealsolist>
+</c74object>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="agogo~" module="" category="">
+	<digest>
+		Model an agogo
+	</digest>
+	<description>
+		A modal synthesis implementation of an agogo
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+		<metadata name="tag">
+			TEXT_HERE
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="float">
+			<digest>
+				stick hardness
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="1" type="float">
+			<digest>
+				stick position
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="2" type="float">
+			<digest>
+				amplitude
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="3" type="float">
+			<digest>
+				vib frequency
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="4" type="float">
+			<digest>
+				vib amplitude
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="5" type="float">
+			<digest>
+				frequency
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>
+				output
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg id="0" name="OBJARG_NAME" type="OBJARG_TYPE" optional="0">
+			<digest>
+				TEXT_HERE
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</objarg>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="ARG_NAME_0" type="float" optional="0" />
+			</arglist>
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				In left inlet: Controls stick hardness
+				<br/>
+				In 2nd inlet: Controls stick position
+				<br/>
+				In 3rd inlet: Controls amplitude
+				<br/>
+				In 4th inlet: Controls vibrato frequency
+				<br/>
+				In 5th inlet: Controls vibrato amplitude
+				<br/>
+				In 6th inlet: Controls frequency
+			</description>
+		</method>
+		<method name="noteoff">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Note off
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="noteon">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Note on
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="signal">
+			<arglist />
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				In left inlet: Controls stick hardness
+				<br/>
+				In 2nd inlet: Controls stick position
+				<br/>
+				In 3rd inlet: Controls amplitude
+				<br/>
+				In 4th inlet: Controls vibrato frequency
+				<br/>
+				In 5th inlet: Controls vibrato amplitude
+				<br/>
+				In 6th inlet: Controls frequency
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="marimba~"/>
+		<seealso name="vibraphone~"/>
+	</seealsolist>
+</c74object>
