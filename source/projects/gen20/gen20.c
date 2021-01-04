@@ -206,8 +206,8 @@ void DoTheDo(t_gen20 *x)
 
 	// output the random series in index/amplitude pairs...
 	for(i=0;i<x->g_buffsize;i++) {
-		SETLONG(thestuff,i+(x->g_offset*x->g_buffsize));
-		SETFLOAT(thestuff+1,x->g_table[i]);
+		A_SETLONG(thestuff,i+(x->g_offset*x->g_buffsize));
+		A_SETFLOAT(thestuff+1,x->g_table[i]);
 		outlet_list(x->g_out,0L,2,thestuff);
 	}
 }
