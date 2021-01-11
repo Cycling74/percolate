@@ -3,12 +3,12 @@
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
-<c74object name="weave~" module="" category="">
+<c74object name="random~" module="" category="">
 	<digest>
-		Zero-crossings tracker
+		Audio rate random number generator
 	</digest>
 	<description>
-		An input signal is tracked for zerocrossings. The zerocrossings are counted and used to synthesize a -1. or 1. Based on the length of the positive and negative sides of the duty cycle you get different subharmonics of the original signal. 
+		TEXT_HERE
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -21,25 +21,16 @@
 	</metadatalist>
 	<!--INLETS-->
 	<inletlist>
-		<inlet id="0" type="signal">
+		<inlet id="0" type="INLET_TYPE">
 			<digest>
-				Input
+				Messages
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</inlet>
-		<inlet id="1" type="int">
+		<inlet id="1" type="INLET_TYPE">
 			<digest>
-				Lower Crossing Threshhold
-			</digest>
-			<description>
-				TEXT_HERE
-			</description>
-		</inlet>
-		<inlet id="2" type="int">
-			<digest>
-				Upper Crossing Threshhold
 			</digest>
 			<description>
 				TEXT_HERE
@@ -59,31 +50,26 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
+		<objarg id="0" name="upper-limit" type="OBJARG_TYPE" optional="1">
+			<digest>
+				Set random number upper limit
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</objarg>
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>
-		<method name="int">
+		<method name="range">
 			<arglist>
-				<arg name="ARG_NAME_0" type="int" optional="0" />
+				<arg name="upper-limit" type="int" optional="1" />
 			</arglist>
 			<digest>
-				Choose input signal 
+				Set random number upper limit
 			</digest>
 			<description>
-				Select the 2nd inlet (1) or 3rd inlet (2)
-			</description>
-		</method>
-		<method name="signal">
-			<arglist />
-			<digest>
-				Function depends on inlet
-			</digest>
-			<description>
-				Left inlet: Nothing
-				<br/>
-				2nd inlet: Input 1
-				<br/>
-				3rd inlet: Input 2
+				TEXT_HERE
 			</description>
 		</method>
 	</methodlist>

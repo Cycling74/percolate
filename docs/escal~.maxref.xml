@@ -3,12 +3,12 @@
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
-<c74object name="weave~" module="" category="">
+<c74object name="escal~" module="" category="">
 	<digest>
-		Zero-crossings tracker
+		Signal rounder
 	</digest>
 	<description>
-		An input signal is tracked for zerocrossings. The zerocrossings are counted and used to synthesize a -1. or 1. Based on the length of the positive and negative sides of the duty cycle you get different subharmonics of the original signal. 
+		Round an incoming signal to the nearest integer. Multiple rounding algorithms are available.
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -31,15 +31,7 @@
 		</inlet>
 		<inlet id="1" type="int">
 			<digest>
-				Lower Crossing Threshhold
-			</digest>
-			<description>
-				TEXT_HERE
-			</description>
-		</inlet>
-		<inlet id="2" type="int">
-			<digest>
-				Upper Crossing Threshhold
+				Round Type (-1, 0, 1)
 			</digest>
 			<description>
 				TEXT_HERE
@@ -59,6 +51,18 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
+		<objarg id="0" name="rounding-algorithm" type="OBJARG_TYPE" optional="1">
+			<digest>
+				Rounding algorithm
+			</digest>
+			<description>
+				-1 = always round down
+				<br/>
+				0 = round normally (>= 0.5 round up, otherwise down)
+				<br/>
+				1 always round up
+			</description>
+		</objarg>
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>
@@ -67,23 +71,19 @@
 				<arg name="ARG_NAME_0" type="int" optional="0" />
 			</arglist>
 			<digest>
-				Choose input signal 
+				Rounding algorithm
 			</digest>
 			<description>
-				Select the 2nd inlet (1) or 3rd inlet (2)
+				TEXT_HERE
 			</description>
 		</method>
 		<method name="signal">
 			<arglist />
 			<digest>
-				Function depends on inlet
+				Input signal
 			</digest>
 			<description>
-				Left inlet: Nothing
-				<br/>
-				2nd inlet: Input 1
-				<br/>
-				3rd inlet: Input 2
+				TEXT_HERE
 			</description>
 		</method>
 	</methodlist>
@@ -94,5 +94,6 @@
 	</examplelist>
 	<!--SEEALSO-->
 	<seealsolist>
+		<seealso name="round~"/>
 	</seealsolist>
 </c74object>

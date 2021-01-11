@@ -3,43 +3,31 @@
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
-<c74object name="weave~" module="" category="">
+<c74object name="JC_rev~" module="" category="">
 	<digest>
-		Zero-crossings tracker
+		Chowning reverb
 	</digest>
 	<description>
-		An input signal is tracked for zerocrossings. The zerocrossings are counted and used to synthesize a -1. or 1. Based on the length of the positive and negative sides of the duty cycle you get different subharmonics of the original signal. 
+		John Chowning's reverberator. <o>JC_rev~</o> is derived from the CLM JCRev function which is based on the use of networks of simple allpass and comb delay filters. This object implements three series allpass units followed by four parallel comb filters and two decorrelation delay lines in parallel at the output.
 	</description>
 	<!--METADATA-->
 	<metadatalist>
 		<metadata name="author">
 			Dan Trueman and R. Luke DuBois
 		</metadata>
-		<metadata name="tag">
-			TEXT_HERE
-		</metadata>
 	</metadatalist>
 	<!--INLETS-->
 	<inletlist>
-		<inlet id="0" type="signal">
+		<inlet id="0" type="INLET_TYPE">
 			<digest>
-				Input
+				input (signal)
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</inlet>
-		<inlet id="1" type="int">
+		<inlet id="1" type="INLET_TYPE">
 			<digest>
-				Lower Crossing Threshhold
-			</digest>
-			<description>
-				TEXT_HERE
-			</description>
-		</inlet>
-		<inlet id="2" type="int">
-			<digest>
-				Upper Crossing Threshhold
 			</digest>
 			<description>
 				TEXT_HERE
@@ -48,9 +36,9 @@
 	</inletlist>
 	<!--OUTLETS-->
 	<outletlist>
-		<outlet id="0" type="signal">
+		<outlet id="0" type="OUTLET_TYPE">
 			<digest>
-				Output
+				output (signal)
 			</digest>
 			<description>
 				TEXT_HERE
@@ -62,28 +50,46 @@
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>
-		<method name="int">
+		<method name="float">
 			<arglist>
-				<arg name="ARG_NAME_0" type="int" optional="0" />
+				<arg name="ARG_NAME_0" type="float" optional="0" />
 			</arglist>
 			<digest>
-				Choose input signal 
+				Input
 			</digest>
 			<description>
-				Select the 2nd inlet (1) or 3rd inlet (2)
+				TEXT_HERE
 			</description>
 		</method>
 		<method name="signal">
 			<arglist />
 			<digest>
-				Function depends on inlet
+				Input
 			</digest>
 			<description>
-				Left inlet: Nothing
-				<br/>
-				2nd inlet: Input 1
-				<br/>
-				3rd inlet: Input 2
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="T60">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				RT60
+			</digest>
+			<description>
+				Time required for impulse to decay by 60dBs (seconds)
+			</description>
+		</method>
+		<method name="mix">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Dry/wet mix
+			</digest>
+			<description>
+				Dry/wet mix (0.0 - 1.0)
 			</description>
 		</method>
 	</methodlist>
@@ -94,5 +100,7 @@
 	</examplelist>
 	<!--SEEALSO-->
 	<seealsolist>
+		<seealso name="N_rev~"/>
+		<seealso name="PRC_rev~"/>
 	</seealsolist>
 </c74object>

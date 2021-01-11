@@ -3,12 +3,12 @@
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
-<c74object name="weave~" module="" category="">
+<c74object name="flip~" module="" category="">
 	<digest>
-		Zero-crossings tracker
+		Signal inverter
 	</digest>
 	<description>
-		An input signal is tracked for zerocrossings. The zerocrossings are counted and used to synthesize a -1. or 1. Based on the length of the positive and negative sides of the duty cycle you get different subharmonics of the original signal. 
+		Flip a carrier signal around a threshhold signal if the absolute value of the carrier input is greater than the absolute value of the threshhold.
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -21,7 +21,7 @@
 	</metadatalist>
 	<!--INLETS-->
 	<inletlist>
-		<inlet id="0" type="signal">
+		<inlet id="0" type="Signal">
 			<digest>
 				Input
 			</digest>
@@ -29,17 +29,9 @@
 				TEXT_HERE
 			</description>
 		</inlet>
-		<inlet id="1" type="int">
+		<inlet id="1" type="Signal">
 			<digest>
-				Lower Crossing Threshhold
-			</digest>
-			<description>
-				TEXT_HERE
-			</description>
-		</inlet>
-		<inlet id="2" type="int">
-			<digest>
-				Upper Crossing Threshhold
+				Wraparound Threshhold
 			</digest>
 			<description>
 				TEXT_HERE
@@ -48,7 +40,7 @@
 	</inletlist>
 	<!--OUTLETS-->
 	<outletlist>
-		<outlet id="0" type="signal">
+		<outlet id="0" type="Signal">
 			<digest>
 				Output
 			</digest>
@@ -59,31 +51,19 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
+		<objarg id="0" name="OBJARG_NAME" type="OBJARG_TYPE" optional="0">
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>
-		<method name="int">
-			<arglist>
-				<arg name="ARG_NAME_0" type="int" optional="0" />
-			</arglist>
-			<digest>
-				Choose input signal 
-			</digest>
-			<description>
-				Select the 2nd inlet (1) or 3rd inlet (2)
-			</description>
-		</method>
 		<method name="signal">
 			<arglist />
 			<digest>
 				Function depends on inlet
 			</digest>
 			<description>
-				Left inlet: Nothing
+				Left inlet: Carrier signal
 				<br/>
-				2nd inlet: Input 1
-				<br/>
-				3rd inlet: Input 2
+				2nd inlet: Threshold signal
 			</description>
 		</method>
 	</methodlist>
@@ -94,5 +74,6 @@
 	</examplelist>
 	<!--SEEALSO-->
 	<seealsolist>
+		<seealso name="pong~"/>
 	</seealsolist>
 </c74object>

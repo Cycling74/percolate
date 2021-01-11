@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="curvesmooth~" module="" category="">
+	<digest>
+		Smooth control signals
+	</digest>
+	<description>
+		Smooth an incoming signal with control over curvature of smoothing function.
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+		<metadata name="tag">
+			TEXT_HERE
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="INLET_TYPE">
+			<digest>
+				target (signal)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="1" type="INLET_TYPE">
+			<digest>
+				upsmooth time (signal/float)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="2" type="INLET_TYPE">
+			<digest>
+				downsmooth time (signal/float)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="3" type="INLET_TYPE">
+			<digest>
+				upsmooth coeff (signal/float)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="4" type="INLET_TYPE">
+			<digest>
+				downsmooth coeff (signal/float)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="OUTLET_TYPE">
+			<digest>
+				output (signal)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="ARG_NAME_0" type="float" optional="0" />
+			</arglist>
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: input source
+				<br/>
+				2nd inlet: upcurve time (ms)
+				<br/>
+				3rd inlet: downcurve time (ms)
+				<br/>
+				4th inlet: upcurve coefficient
+				<br/>
+				5th inlet: downcurve coefficient
+			</description>
+		</method>
+		<method name="signal">
+			<arglist />
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: input source
+				<br/>
+				2nd inlet: upcurve time (ms)
+				<br/>
+				3rd inlet: downcurve time (ms)
+				<br/>
+				4th inlet: upcurve coefficient
+				<br/>
+				5th inlet: downcurve coefficient
+			</description>
+		</method>
+		<method name="mode">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Follow mode
+			</digest>
+			<description>
+				Use follow mode to work outside [-1, 1] or to vary curvature according to how far the target moves.
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="rampsmooth~"/>
+	</seealsolist>
+</c74object>

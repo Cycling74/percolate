@@ -3,12 +3,12 @@
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
-<c74object name="weave~" module="" category="">
+<c74object name="casey~" module="" category="">
 	<digest>
-		Zero-crossings tracker
+		Output N greatest samples in a vector
 	</digest>
 	<description>
-		An input signal is tracked for zerocrossings. The zerocrossings are counted and used to synthesize a -1. or 1. Based on the length of the positive and negative sides of the duty cycle you get different subharmonics of the original signal. 
+		A input signal is analyzed on a per-vector basis with the top <i>n</i> samples maintained and the rest zeroed. Useful for eliminating all but the top harmonics in an FFT frame, among other things.
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -21,7 +21,7 @@
 	</metadatalist>
 	<!--INLETS-->
 	<inletlist>
-		<inlet id="0" type="signal">
+		<inlet id="0" type="Signal">
 			<digest>
 				Input
 			</digest>
@@ -29,17 +29,9 @@
 				TEXT_HERE
 			</description>
 		</inlet>
-		<inlet id="1" type="int">
+		<inlet id="1" type="Signal">
 			<digest>
-				Lower Crossing Threshhold
-			</digest>
-			<description>
-				TEXT_HERE
-			</description>
-		</inlet>
-		<inlet id="2" type="int">
-			<digest>
-				Upper Crossing Threshhold
+				Top N in Vector
 			</digest>
 			<description>
 				TEXT_HERE
@@ -48,7 +40,7 @@
 	</inletlist>
 	<!--OUTLETS-->
 	<outletlist>
-		<outlet id="0" type="signal">
+		<outlet id="0" type="Signal">
 			<digest>
 				Output
 			</digest>
@@ -59,6 +51,14 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
+		<objarg id="0" name="number-of-peaks" type="OBJARG_TYPE" optional="0">
+			<digest>
+				Number of peaks to keep per vector
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</objarg>
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>
@@ -67,23 +67,19 @@
 				<arg name="ARG_NAME_0" type="int" optional="0" />
 			</arglist>
 			<digest>
-				Choose input signal 
+				Number of peaks to keep
 			</digest>
 			<description>
-				Select the 2nd inlet (1) or 3rd inlet (2)
+				2nd inlet: Number of peaks to keep
 			</description>
 		</method>
 		<method name="signal">
 			<arglist />
 			<digest>
-				Function depends on inlet
+				Input signal
 			</digest>
 			<description>
-				Left inlet: Nothing
-				<br/>
-				2nd inlet: Input 1
-				<br/>
-				3rd inlet: Input 2
+				TEXT_HERE
 			</description>
 		</method>
 	</methodlist>

@@ -5,10 +5,10 @@
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
 <c74object name="waffle~" module="" category="">
 	<digest>
-		Crossover signals based on sync signal
+		Signal crossover
 	</digest>
 	<description>
-		<o>waffle~</o> takes an input signal in its left inlet, a crossover signal in its middle inlet, and a sync signal in its right inlet. If the sync signal is below the crossover signal, the input is put out the left outlet. Otherwise, the signal is put out the right outlet.
+		If a sync signal is below a crossover signal, the input is output the left outlet, otherwise it is put out the right outlet.
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -91,6 +91,8 @@
 	</examplelist>
 	<!--SEEALSO-->
 	<seealsolist>
-		<seealso name="weave~"/>
+		<!-- <seealso name="bogus">
+			TEXT_HERE
+		</seealso> -->
 	</seealsolist>
 </c74object>
