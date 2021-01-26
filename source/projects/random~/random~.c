@@ -107,20 +107,14 @@ void random_dsp64(t_random *x, t_object *dsp64, short *count, double samplerate,
 
 void random_perform64(t_random *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_double *out; // variables for input and output buffer
-	int n; // counter for vector size
-    
 	// more efficient -- make local copies of class variables so i'm not constantly checking the globals...
-	int range = x->range;
+	double range = x->range;
     
-	out = (t_double *)(outs[0]); // my output vector
+	t_double *out = outs[0];
+	int n = sampleframes;
     
-	n = sampleframes; // my vector size
-    
-	while (--n) { // loop executes a single vector
-		*++out = ((float)rand()/(float)RAND_MAX)*(float)range;
-        
+	while (n--) {
+		double r = rand() / ((double) RAND_MAX) * range;
+		*out++ = r;
 	}
-    
-
 }
