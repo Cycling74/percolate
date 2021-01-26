@@ -8,7 +8,7 @@
 		Model a bowed string instrument
 	</digest>
 	<description>
-		Physically models a bowed string instrument
+		Physically model a bowed string instrument using algorithms from the STK.
 	</description>
 	<!--METADATA-->
 	<metadatalist>

@@ -8,7 +8,7 @@
 		Stereo filter
 	</digest>
 	<description>
-		gQ~ is the MSP implementation of Dan Truemans's gQ equalizer for silicon graphics workstations, one of the first digital EQ filters to work in realtime. One of the nice features of the filter is that it completely decouples the three primary parameters, so adjusting one won't affect the others (this is actually quite tricky, and most filters of this type have coupled parameters)
+		gQ~ is the MSP implementation of Dan Trueman's gQ, a real-time 12 band equalizer for silicon graphics workstations. It was one of the first digital EQ filters to work in realtime. A notable feature of the filter is the decoupling of the three primary parameters which means adjusting one parameter won't affect the others (unlike many other filters).
 	</description>
 	<!--METADATA-->
 	<metadatalist>

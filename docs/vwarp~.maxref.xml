@@ -3,12 +3,12 @@
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
-<c74object name="sitar~" module="" category="">
+<c74object name="vwarp~" module="" category="">
 	<digest>
-		Model a sitar
+		Stretch/compress FFT bins
 	</digest>
 	<description>
-		Model a sitar based on the Karplus-Strong algorithm.
+		Move FFT bin values up and down like <o>vstretch~</o> on a per-bin basis.
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -21,16 +21,17 @@
 	</metadatalist>
 	<!--INLETS-->
 	<inletlist>
-		<inlet id="0" type="INLET_TYPE">
+		<inlet id="0" type="signal/float">
 			<digest>
-				control messages
+				input
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</inlet>
-		<inlet id="1" type="INLET_TYPE">
+		<inlet id="1" type="signal/float">
 			<digest>
+				input
 			</digest>
 			<description>
 				TEXT_HERE
@@ -39,9 +40,9 @@
 	</inletlist>
 	<!--OUTLETS-->
 	<outletlist>
-		<outlet id="0" type="OUTLET_TYPE">
+		<outlet id="0" type="signal">
 			<digest>
-				output (signal)
+				output
 			</digest>
 			<description>
 				TEXT_HERE
@@ -50,29 +51,68 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
+		<objarg id="0" name="buffer-name" type="symbol" optional="0">
+			<digest>
+				
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</objarg>
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>
-		<method name="noteoff">
-			<arglist>
-				<arg name="ARG_NAME_0" type="list" optional="0" />
-			</arglist>
+		<method name="signal">
+			<arglist />
 			<digest>
-				Note off
+				Input source
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</method>
-		<method name="noteon">
+		<method name="linear">
 			<arglist>
 				<arg name="ARG_NAME_0" type="list" optional="0" />
 			</arglist>
 			<digest>
-				Play a note
+				Use linear interpolation
 			</digest>
 			<description>
-				The message <m>noteon</m> followed by a pitch (Hz) and amplitude (0-1) will play a note.
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="poly">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Use third-order polynomial interpolation
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="poly2">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Use fourth-order polynomial interpolation
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="stretch">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Global stretch/compress factor
+			</digest>
+			<description>
+				Set how much to stretch/compress the frequency axis
 			</description>
 		</method>
 	</methodlist>
@@ -83,22 +123,8 @@
 	</examplelist>
 	<!--SEEALSO-->
 	<seealsolist>
-		<seealso name="blotar~"/>
-		<seealso name="bowed~"/>
-		<seealso name="bowedbar~"/>
-		<seealso name="brass~"/>
-		<seealso name="clar~"/>
-		<seealso name="flute~"/>
-		<seealso name="mandolin~"/>
-		<seealso name="plucked~"/>
-		<seealso name="ublotar~"/>
-		<seealso name="bandedWG~"/>
-		<seealso name="blow_botl~"/>
-		<seealso name="blow_hole~"/>
-		<seealso name="mesh2D~"/>
-		<seealso name="saxofony~"/>
-		<seealso name="simple~"/>
-		<seealso name="stif_karp~"/>
-		<seealso name="whistle~"/>
+		<seealso name="bogus">
+			TEXT_HERE
+		</seealso>
 	</seealsolist>
 </c74object>

@@ -83,17 +83,25 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
-		<objarg id="0" name="OBJARG_NAME" type="OBJARG_TYPE" optional="0">
+		<!-- <objarg id="0" name="OBJARG_NAME" type="OBJARG_TYPE" optional="0">
 			<digest>
 				TEXT_HERE
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
-		</objarg>
+		</objarg> -->
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>
+		<method name="bang">
+			<arglist>
+				<arg name="ARG_NAME_0" type="bang" optional="0" />
+			</arglist>
+			<digest>
+				Pluck the mandolin
+			</digest>
+		</method>
 		<method name="float">
 			<arglist>
 				<arg name="ARG_NAME_0" type="float" optional="0" />

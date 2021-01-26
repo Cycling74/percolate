@@ -51,7 +51,7 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
-		<objarg id="0" name="OBJARG_NAME" type="OBJARG_TYPE" optional="0">
+
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>

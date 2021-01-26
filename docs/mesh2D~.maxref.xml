@@ -8,7 +8,7 @@
 		Two-dimensional rectilinear waveguide mesh
 	</digest>
 	<description>
-		TEXT_HERE
+		A two-dimensional rectilinear waveguide mesh. For details, see Van Duyne and Smith, "Physical Modeling with the 2-D Digital Waveguide Mesh", Proceedings of the 1993 International Computer Music Conference.
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -43,6 +43,22 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
+		<objarg id="0" name="x-dimension" type="int" optional="0">
+			<digest>
+				x-dimension size
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</objarg>
+		<objarg id="0" name="y-dimension" type="int" optional="0">
+			<digest>
+				y-dimension size
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</objarg>
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>

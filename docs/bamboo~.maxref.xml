@@ -8,7 +8,7 @@
 		Model a bamboo wind chime
 	</digest>
 	<description>
-		TEXT_HERE
+		Model a bamboo wind chime and control the number and resonant frequency of the chimes as well as other resonance parameters. The wind energy controls the amount of collision among the chimes.
 	</description>
 	<!--METADATA-->
 	<metadatalist>

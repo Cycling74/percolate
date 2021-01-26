@@ -8,7 +8,7 @@
 		Model an evil mutant flute-guitar
 	</digest>
 	<description>
-		Physically model an evil mutant flute-guitar
+		A flute-guitar hybrid model, <o>blotar~</o> morphs between the electric guitar and flute models provided by the Synthesis Toolkit. 
 	</description>
 	<!--METADATA-->
 	<metadatalist>

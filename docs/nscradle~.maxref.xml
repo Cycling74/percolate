@@ -3,12 +3,12 @@
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
-<c74object name="prc_chorus~" module="" category="">
+<c74object name="nscradle~" module="" category="">
 	<digest>
-		Chorus effect
+		Newton's Cradle model
 	</digest>
 	<description>
-		Chorus effect from Perry R. Cook.
+		A model of Newton's Cradle with control over number of physical parameters like ball mass and string length. For each collision, an impulse is sent out a corresponding outlet. 
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -23,7 +23,7 @@
 	<inletlist>
 		<inlet id="0" type="INLET_TYPE">
 			<digest>
-				input (signal)
+				input 0
 			</digest>
 			<description>
 				TEXT_HERE
@@ -31,7 +31,6 @@
 		</inlet>
 		<inlet id="1" type="INLET_TYPE">
 			<digest>
-				input (signal)
 			</digest>
 			<description>
 				TEXT_HERE
@@ -42,7 +41,7 @@
 	<outletlist>
 		<outlet id="0" type="OUTLET_TYPE">
 			<digest>
-				output (signal)
+				output 0
 			</digest>
 			<description>
 				TEXT_HERE
@@ -51,54 +50,109 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
-		<objarg id="0" name="base-delay" type="int" optional="1">
+		<objarg id="0" name="num-balls" type="int" optional="1">
 			<digest>
-				Base delay
+				Number of balls
 			</digest>
 			<description>
-				Base delay time (default = 1)
+				TEXT_HERE
 			</description>
 		</objarg>
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>
-		<method name="signal">
+		<!-- <method name="signal">
 			<arglist />
 			<digest>
-				Input signal
+				TEXT_HERE
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method> -->
+		<method name="damping">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Set damping
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</method>
-		<method name="depth">
+		<method name="length">
 			<arglist>
 				<arg name="ARG_NAME_0" type="list" optional="0" />
 			</arglist>
 			<digest>
-				Modulation depth
+				Set the string length (m)
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</method>
-		<method name="frequency">
+		<method name="mass">
 			<arglist>
 				<arg name="ARG_NAME_0" type="list" optional="0" />
 			</arglist>
 			<digest>
-				Modulation frequency
+				Set a ball's mass (kg)
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</method>
-		<method name="mix">
+		<method name="push">
 			<arglist>
 				<arg name="ARG_NAME_0" type="list" optional="0" />
 			</arglist>
 			<digest>
-				Dry/wet
+				Push a ball
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="put">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Put a ball at angle (radians)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="radius">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Set ball radius (m)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="which">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Set current ball
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="zero">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Stop/reset all motion
 			</digest>
 			<description>
 				TEXT_HERE
@@ -112,8 +166,8 @@
 	</examplelist>
 	<!--SEEALSO-->
 	<seealsolist>
-		<seealso name="bogus">
+		<!-- <seealso name="bogus">
 			TEXT_HERE
-		</seealso>
+		</seealso> -->
 	</seealsolist>
 </c74object>

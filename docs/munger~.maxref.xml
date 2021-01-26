@@ -103,6 +103,14 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
+		<objarg id="0" name="max-delay-time" type="int" optional="1">
+			<digest>
+				Max delay time (ms)
+			</digest>
+			<description>
+				Maximum delay time (ms) and a constraint on the maximum grain size (max grain size = 1/3 max delay time).
+			</description>
+		</objarg>
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>

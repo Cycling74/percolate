@@ -3,12 +3,12 @@
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
-<c74object name="simple~" module="" category="">
+<c74object name="vcompand~" module="" category="">
 	<digest>
-		Wavetable/noise instrument
+		Vector-based compander
 	</digest>
 	<description>
-		A wavetable/noise instrument which combines a looped wave, a noise source, a biquad resonance filter, a one-pole filter, and an ADSR envelope. Ported from Perry Cook and Gary Scavone's STK.
+		A simple vector-based compander intended for use with FFT bins. Set a compression threshold above which the amplitude in each bin will be attenuated by the compression ratio, or specify an expansion threshold below which the amplitude in each bin will be decreased by the expansion ratio. Useful for noise reduction, or highlighting noise, or frequency sensitive compression
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -21,16 +21,17 @@
 	</metadatalist>
 	<!--INLETS-->
 	<inletlist>
-		<inlet id="0" type="INLET_TYPE">
+		<inlet id="0" type="signal">
 			<digest>
-				control messages
+				input
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</inlet>
-		<inlet id="1" type="INLET_TYPE">
+		<inlet id="1" type="signal">
 			<digest>
+				input
 			</digest>
 			<description>
 				TEXT_HERE
@@ -39,9 +40,9 @@
 	</inletlist>
 	<!--OUTLETS-->
 	<outletlist>
-		<outlet id="0" type="OUTLET_TYPE">
+		<outlet id="0" type="signal">
 			<digest>
-				output (signal)
+				output
 			</digest>
 			<description>
 				TEXT_HERE
@@ -50,59 +51,68 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
-		<objarg id="0" name="OBJARG_NAME" type="OBJARG_TYPE" optional="0">
+		<!-- <objarg id="0" name="OBJARG_NAME" type="OBJARG_TYPE" optional="0">
 			<digest>
 				TEXT_HERE
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
-		</objarg>
+		</objarg> -->
 	</objarglist>
 	<!--MESSAGES-->
 	<methodlist>
-		<method name="control">
-			<arglist>
-				<arg name="ARG_NAME_0" type="list" optional="0" />
-			</arglist>
+		<method name="signal">
+			<arglist />
 			<digest>
-				Send control messages
-			</digest>
-			<description>
-				Control messages must have two arguments, control number and control value (0-128).
-				<br/>
-				<br/>
-				Control numbers:
-				<br/>
-				1 = gain
-				<br/>
-				2 = filter pole position
-				<br/>
-				4 = noise/pitch crossfade
-				<br/>
-				11 = envelope rate
-			</description>
-		</method>
-		<method name="noteoff">
-			<arglist>
-				<arg name="ARG_NAME_0" type="list" optional="0" />
-			</arglist>
-			<digest>
-				Note off
+				Input signal
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</method>
-		<method name="noteon">
+		<method name="compratio">
 			<arglist>
 				<arg name="ARG_NAME_0" type="list" optional="0" />
 			</arglist>
 			<digest>
-				Note on
+				Compression ratio
 			</digest>
 			<description>
-				The message <m>noteon</m> followed by a pitch (Hz) and amplitude (0-1) will play a note.
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="compthresh">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Compression threshold
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="expratio">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Expansion ratio
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="expthresh">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Expansion threshold
+			</digest>
+			<description>
+				TEXT_HERE
 			</description>
 		</method>
 	</methodlist>
@@ -113,22 +123,7 @@
 	</examplelist>
 	<!--SEEALSO-->
 	<seealsolist>
-		<seealso name="blotar~"/>
-		<seealso name="bowed~"/>
-		<seealso name="bowedbar~"/>
-		<seealso name="brass~"/>
-		<seealso name="clar~"/>
-		<seealso name="flute~"/>
-		<seealso name="mandolin~"/>
-		<seealso name="plucked~"/>
-		<seealso name="ublotar~"/>
-		<seealso name="bandedWG~"/>
-		<seealso name="blow_botl~"/>
-		<seealso name="blow_hole~"/>
-		<seealso name="mesh2D~"/>
-		<seealso name="saxofony~"/>
-		<seealso name="stif_karp~"/>
-		<seealso name="whistle~"/>
-		<seealso name="sitar~"/>
+		<seealso name="vcompand2~"/>
+		<seealso name="vstretch~"/>
 	</seealsolist>
 </c74object>

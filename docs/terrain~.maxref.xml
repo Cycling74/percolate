@@ -3,12 +3,12 @@
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
-<c74object name="prc_chorus~" module="" category="">
+<c74object name="terrain~" module="" category="">
 	<digest>
-		Chorus effect
+		Buffer-based interpolating wavetable
 	</digest>
 	<description>
-		Chorus effect from Perry R. Cook.
+		A wavetable oscillator that takes multiple frames of a fixed sample length from a <o>buffer~</o> and treats them as wavetables to interpolate between.
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -21,17 +21,17 @@
 	</metadatalist>
 	<!--INLETS-->
 	<inletlist>
-		<inlet id="0" type="INLET_TYPE">
+		<inlet id="0" type="signal">
 			<digest>
-				input (signal)
+				X Index
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</inlet>
-		<inlet id="1" type="INLET_TYPE">
+		<inlet id="1" type="signal">
 			<digest>
-				input (signal)
+				Y Index
 			</digest>
 			<description>
 				TEXT_HERE
@@ -40,9 +40,9 @@
 	</inletlist>
 	<!--OUTLETS-->
 	<outletlist>
-		<outlet id="0" type="OUTLET_TYPE">
+		<outlet id="0" type="signal">
 			<digest>
-				output (signal)
+				Z Output
 			</digest>
 			<description>
 				TEXT_HERE
@@ -51,12 +51,28 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
-		<objarg id="0" name="base-delay" type="int" optional="1">
+		<objarg id="0" name="buffer-name" type="symbol" optional="0">
 			<digest>
-				Base delay
+				Buffer name
 			</digest>
 			<description>
-				Base delay time (default = 1)
+				Name of the buffer to use as the wavetable
+			</description>
+		</objarg>
+		<objarg id="0" name="table-size" type="int" optional="0">
+			<digest>
+				Table size
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</objarg>
+		<objarg id="0" name="num-frames" type="int" optional="0">
+			<digest>
+				Number of frames
+			</digest>
+			<description>
+				TEXT_HERE
 			</description>
 		</objarg>
 	</objarglist>
@@ -65,40 +81,40 @@
 		<method name="signal">
 			<arglist />
 			<digest>
-				Input signal
+				Wavetable scanning frequency
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</method>
-		<method name="depth">
+		<method name="frames">
 			<arglist>
-				<arg name="ARG_NAME_0" type="list" optional="0" />
+				<arg name="ARG_NAME_0" type="int" optional="0" />
 			</arglist>
 			<digest>
-				Modulation depth
+				Number of frames
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</method>
-		<method name="frequency">
+		<method name="set">
 			<arglist>
-				<arg name="ARG_NAME_0" type="list" optional="0" />
+				<arg name="ARG_NAME_0" type="symbol" optional="0" />
 			</arglist>
 			<digest>
-				Modulation frequency
+				Set wavetable buffer
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</method>
-		<method name="mix">
+		<method name="size">
 			<arglist>
-				<arg name="ARG_NAME_0" type="list" optional="0" />
+				<arg name="ARG_NAME_0" type="int" optional="0" />
 			</arglist>
 			<digest>
-				Dry/wet
+				Table size (samples)
 			</digest>
 			<description>
 				TEXT_HERE
@@ -112,8 +128,6 @@
 	</examplelist>
 	<!--SEEALSO-->
 	<seealsolist>
-		<seealso name="bogus">
-			TEXT_HERE
-		</seealso>
+		<seealso name="wave~"/>
 	</seealsolist>
 </c74object>

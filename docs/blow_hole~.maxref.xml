@@ -8,7 +8,7 @@
 		Model a one-tonehole clarinet
 	</digest>
 	<description>
-		STK clarinet physical model with one register hole and one tonehole.
+		The <o>blow_hole~</o> object is based on the STK clarinet model with the addition of a two-port register hole and a three-port dynamic tonehole implementation, as discussed by Scavone and Cook (1998). In this implementation, the distances between the reed/register hole and tonehole/bell are fixed. As a result, both the tonehole and register hole have variable influence on the playing frequency which is dependent on the length of the air column. In addition, the highest playing freqeuency is limited by these fixed lengths.
 	</description>
 	<!--METADATA-->
 	<metadatalist>

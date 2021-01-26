@@ -3,12 +3,12 @@
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
 
 <!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
-<c74object name="prc_chorus~" module="" category="">
+<c74object name="pokef~" module="" category="">
 	<digest>
-		Chorus effect
+		Write sample values to buffers by index with interpolation
 	</digest>
 	<description>
-		Chorus effect from Perry R. Cook.
+		Write samples into a <o>buffer~</o> at a sample location using interpolation and a coefficient value.
 	</description>
 	<!--METADATA-->
 	<metadatalist>
@@ -21,17 +21,33 @@
 	</metadatalist>
 	<!--INLETS-->
 	<inletlist>
-		<inlet id="0" type="INLET_TYPE">
+		<inlet id="0" type="signal">
 			<digest>
-				input (signal)
+				value
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</inlet>
-		<inlet id="1" type="INLET_TYPE">
+		<inlet id="1" type="signal">
 			<digest>
-				input (signal)
+				index
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="2" type="signal">
+			<digest>
+				coefficient
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="3" type="int">
+			<digest>
+				channel
 			</digest>
 			<description>
 				TEXT_HERE
@@ -40,9 +56,9 @@
 	</inletlist>
 	<!--OUTLETS-->
 	<outletlist>
-		<outlet id="0" type="OUTLET_TYPE">
+		<outlet id="0" type="signal">
 			<digest>
-				output (signal)
+				output
 			</digest>
 			<description>
 				TEXT_HERE
@@ -51,12 +67,12 @@
 	</outletlist>
 	<!--ARGUMENTS-->
 	<objarglist>
-		<objarg id="0" name="base-delay" type="int" optional="1">
+		<objarg id="0" name="buffer-name" type="symbol" optional="0">
 			<digest>
-				Base delay
+				Buffer name
 			</digest>
 			<description>
-				Base delay time (default = 1)
+				TEXT_HERE
 			</description>
 		</objarg>
 	</objarglist>
@@ -65,40 +81,55 @@
 		<method name="signal">
 			<arglist />
 			<digest>
-				Input signal
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: Value to insert
+				<br/>
+				2nd inlet: Index in buffer to insert to
+				<br/>
+				3rd inlet: Interpolation coefficient
+				<br/>
+				4th inlet: Channel
+			</description>
+		</method>
+		<method name="(mouse)">
+			<digest>
+				View buffer
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</method>
-		<method name="depth">
+		<!-- Sets the l_chan? -->
+		<!-- <method name="in3">
+			<arglist>
+				<arg name="ARG_NAME_0" type="int" optional="0" />
+			</arglist>
+			<digest>
+				TEXT_HERE
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method> -->
+		<method name="length">
 			<arglist>
 				<arg name="ARG_NAME_0" type="list" optional="0" />
 			</arglist>
 			<digest>
-				Modulation depth
+				Buffer length
 			</digest>
 			<description>
 				TEXT_HERE
 			</description>
 		</method>
-		<method name="frequency">
+		<method name="set">
 			<arglist>
-				<arg name="ARG_NAME_0" type="list" optional="0" />
+				<arg name="ARG_NAME_0" type="symbol" optional="0" />
 			</arglist>
 			<digest>
-				Modulation frequency
-			</digest>
-			<description>
-				TEXT_HERE
-			</description>
-		</method>
-		<method name="mix">
-			<arglist>
-				<arg name="ARG_NAME_0" type="list" optional="0" />
-			</arglist>
-			<digest>
-				Dry/wet
+				Set buffer
 			</digest>
 			<description>
 				TEXT_HERE
@@ -112,8 +143,7 @@
 	</examplelist>
 	<!--SEEALSO-->
 	<seealsolist>
-		<seealso name="bogus">
-			TEXT_HERE
-		</seealso>
+		<seealso name="recordf~"/>
+		<seealso name="scrubf~"/>
 	</seealsolist>
 </c74object>

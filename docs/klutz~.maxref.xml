@@ -8,7 +8,7 @@
 		Reverse sample order
 	</digest>
 	<description>
-		<o>klutz</o> reverses the order of samples in a signal vector.
+		Reverse the order of samples in a signal vector.
 	</description>
 	<!--METADATA-->
 	<metadatalist>

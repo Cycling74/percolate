@@ -8,7 +8,7 @@
 		Signal randomizer
 	</digest>
 	<description>
-		TEXT_HERE
+		Randomize an incoming vector by a specified range. By default, <o>jitter~</o> randomizes at audio rate.
 	</description>
 	<!--METADATA-->
 	<metadatalist>
