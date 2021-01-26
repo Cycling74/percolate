@@ -226,8 +226,8 @@ void *curvesmooth_new(t_symbol *s, long argc, t_atom *argv)
 
         x->in[1] = (double)upsmooth;
         x->in[2] = (double)downsmooth;
-        x->in[3] = (double)upcoeff;
-        x->in[4] = (double)downcoeff;
+        x->in[3] = (double)CLAMP(upcoeff, 0.001, 1000);
+        x->in[4] = (double)CLAMP(downcoeff, 0.001, 1000);
         x->c = 0.;
         x->update_D = 1;
         x->current_direction = 1;
