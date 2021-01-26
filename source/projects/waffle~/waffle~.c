@@ -1,4 +1,7 @@
-// waffle~ -- interpolates between two or more wavetable 'frames' stored in a buffer.
+// waffle~ -- signal crossover: If a sync signal is
+//            below a crossover signal, the input
+//            is put out the left outlet, otherwise
+//            it is put out the right outlet.
 //
 // updated for Max 7 by Darwin Grosse and Tim Place
 // ------------------------------------------------
@@ -106,23 +109,25 @@ void waffle_dsp64(t_waffle *x, t_object *dsp64, short *count, double samplerate,
 
 void waffle_perform64(t_waffle *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-    t_double *in = (t_double *)(ins[0]);
-    t_double *cross = (t_double *)(ins[1]);
-    t_double *sync = (t_double *)(ins[2]);
-    t_double *out1 = (t_double *)(outs[0]);
-    t_double *out2 = (t_double *)(outs[1]);
+    t_double *in = ins[0];
+    t_double *cross = ins[1];
+    t_double *sync = ins[2];
+    t_double *out1 = outs[0];
+    t_double *out2 = outs[1];
+    
     int n = sampleframes;
+    
     if (x->l_obj.z_disabled)
         return;
     
-    while (--n) {
-        if(*++sync<*++cross) {
-            *++out1 = *++in;
-            *++out2 = 0.;
+    while (n--) {
+        if (*(sync++) < *(cross++)) {
+            *out1++ = *(in++);
+            *out2++ = 0.;
         }
         else {
-            *++out1 = 0;
-            *++out2 = *++in;
+            *out1++ = 0.;
+            *out2++ = *(in++);
         }
     }
 }
