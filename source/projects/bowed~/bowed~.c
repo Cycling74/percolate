@@ -200,8 +200,6 @@ void *bowed_new(double initial_coeff)
         x->betaRatio = 0.127236;
         
         x->fr_save = x->x_fr;
-        
-        post("scritch, scritch, SCRITCH...");
     }
     
     return (x);

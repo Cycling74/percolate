@@ -128,12 +128,10 @@ void setpower(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
         case A_LONG:
             temp = (int)argv[i].a_w.w_long;
             x->power = temp;
-            post("scrub: setting power: %d", temp);
             break;
         case A_FLOAT:
             temp = (int)argv[i].a_w.w_long;
             x->power = temp;
-            post("scrub: setting power: %d", temp);
             break;
         }
     }
@@ -150,12 +148,10 @@ void setrecord(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
         case A_LONG:
             temp = (int)argv[i].a_w.w_long;
             x->record = temp;
-            post("scrub: record: %d", temp);
             break;
         case A_FLOAT:
             temp = (int)argv[i].a_w.w_long;
             x->record = temp;
-            post("scrub: record: %d", temp);
             break;
         }
     }
@@ -165,7 +161,6 @@ void zero(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 {
     long i;
 
-    post("scrub: zeroing delay lines");
     for (i = 0; i < x->buflen; i++)
     {
         x->buf0[i] = 0.;

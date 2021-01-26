@@ -234,7 +234,6 @@ void dopluck(t_ublotar *x, BloString *blostring, float amp, float position, floa
 	blostring->pluckAmp = amp;
 	blostring->pluckPos = blostring->squish = position;
 	blostring->pluckWidth = width;
-	//post("plucking with amp %f, position %f, width %f", amp, position, width);
 }
 
 //string-bore functions
@@ -451,7 +450,6 @@ void ublotar_float(t_ublotar *x, double f)
 	for(i=0;i<x->num_inputs;i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
-			//post("ublotar~: setting in[%d] =  %f", i, f);
 		}
 	}
 }
@@ -468,11 +466,9 @@ void ublotar_pluck(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -498,11 +494,9 @@ void ublotar_vib(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -525,11 +519,9 @@ void ublotar_breathpressure(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -537,7 +529,6 @@ void ublotar_breathpressure(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 	//need to set this up so that string = -1 will set *all* string vals
 	//string = (short)temp[0];
 	x->blo_string[0].bp = temp[0];
-	//post("bp = %f", x->blo_string[0].bp);
 	
 }
 
@@ -551,11 +542,9 @@ void ublotar_noisegain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -563,7 +552,6 @@ void ublotar_noisegain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 	//need to set this up so that string = -1 will set *all* string vals
 	//string = (short)temp[0];
 	x->blo_string[0].ng = temp[0];
-	//post("ng = %f",  x->blo_string[0].ng);
 	
 }
 
@@ -578,11 +566,9 @@ void ublotar_setlimit(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -603,11 +589,9 @@ void ublotar_setsustain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -632,11 +616,9 @@ void ublotar_lowpasscross(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -663,11 +645,9 @@ void ublotar_feedfreq(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -688,11 +668,9 @@ void ublotar_feedgain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -712,17 +690,14 @@ void ublotar_distortgain(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
 	
 	x->predistortion_gain = temp[0];
-	//post("predistortion_gain set to %f", x->predistortion_gain);
     
     
 }
@@ -736,17 +711,14 @@ void ublotar_setpower(t_ublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("ublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
 	
 	x->power = (short)temp[0];
-	post("ublotar: power = %d", x->power);
 }
 
 

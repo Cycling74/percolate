@@ -214,7 +214,6 @@ void *marimba_new(double initial_coeff)
   	x->multiStrike = 0;
 
     x->fr_save = x->x_fr;
-    post("marimba...");
     
     return (x);
 }

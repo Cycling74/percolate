@@ -87,13 +87,10 @@ void vectorcompand_setpower(t_vectorcompand *x, t_symbol *s, long argc, t_atom *
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
 				x->power = temp2;
-    			post("vcompand2~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}

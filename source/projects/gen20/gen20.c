@@ -96,7 +96,6 @@ void gen20_int(t_gen20 *x, long mode)
 	}
 	else {
 	x->g_mode = mode;
-	post("mode set to %i", mode);
 	DoTheDo(x);
 	}
 }

@@ -192,7 +192,6 @@ void sekere_int(t_sekere *x, int f)
 void sekere_bang(t_sekere *x)
 {
 	int i;
-	post("sekere: zeroing delay lines");
 	for(i=0; i<2; i++) {
 		x->output[i] = 0.;
 		//x->output1[i] = 0.;

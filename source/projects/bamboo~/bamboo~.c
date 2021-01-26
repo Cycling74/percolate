@@ -231,7 +231,6 @@ void bamboo_int(t_bamboo *x, int f)
 void bamboo_bang(t_bamboo *x)
 {
 	int i;
-	post("bamboo: zeroing delay lines");
 	for(i=0; i<2; i++) {
 		x->output[i] = 0.;
 		x->output1[i] = 0.;

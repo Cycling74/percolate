@@ -239,24 +239,21 @@ void sleigh_assist(t_sleigh *x, void *b, long m, long a, char *s)
                 sprintf(s,"(signal/float) number of items");
                 break;
             case 1:
-                sprintf(s,"(signal/float) resonance");
-                break;
-            case 2:
                 sprintf(s,"(signal/float) damping");
                 break;
-            case 3:
-                sprintf(s,"(signal/float) maximum shake");
+            case 2:
+                sprintf(s,"(signal/float) energy");
                 break;
-            case 4:
+            case 3:
                 sprintf(s,"(signal/float) frequency 1");
                 break;
-            case 5:
+            case 4:
                 sprintf(s,"(signal/float) frequency 2");
                 break;
-            case 6:
+            case 5:
                 sprintf(s,"(signal/float) frequency 3");
                 break;
-            case 7:
+            case 6:
                 sprintf(s,"(signal/float) frequency 4");
                 break;
         }
@@ -294,7 +291,6 @@ void sleigh_int(t_sleigh *x, int f)
 void sleigh_bang(t_sleigh *x)
 {
 	int i;
-	post("sleigh: zeroing delay lines");
 	for(i=0; i<2; i++) {
 		x->output[i] = 0.;
 		x->output1[i] = 0.;

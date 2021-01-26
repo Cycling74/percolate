@@ -181,8 +181,6 @@ void *curvesmooth_new(t_symbol *s, long argc, t_atom *argv)
         downcoeff = 0;
     }
     
-    // post("us: %ld, ds: %ld, uc: %f, dc: %f", upsmooth, downsmooth, upcoeff, downcoeff);
-    
     //leave this; creates our object
     t_curvesmooth *x = (t_curvesmooth *)object_alloc(curvesmooth_class);
     
@@ -314,7 +312,6 @@ void curvesmooth_float(t_curvesmooth *x, double f)
 	for(i=0;i<x->num_inputs;i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
-			//post("template~: setting in[%d] =  %f", i, f);
 		}
 	}
 }
@@ -328,12 +325,9 @@ void curvesmooth_setupdate(t_curvesmooth *x, t_symbol *s, long argc, t_atom *arg
 		switch (argv[i].a_type) {
 			case A_LONG:
 				x->update_D = (short)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-    			//post("curvesmooth~: setting updatemode to %d", x->update_D);
 				break;
 			case A_FLOAT:
 				x->update_D = (short)argv[i].a_w.w_float;
-    			//post("curvesmooth~: setting updatemode to %d", x->update_D);
 				break;
 		}
 	}
@@ -351,11 +345,9 @@ void curvesmooth_setpower(t_curvesmooth *x, t_symbol *s, long argc, t_atom *argv
 				temp2 = argv[i].a_w.w_long;
 				//probably should comment these out when the object is debugged.
 				x->power = temp2;
-    			post("template~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}

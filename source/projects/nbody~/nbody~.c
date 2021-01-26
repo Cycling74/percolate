@@ -250,8 +250,6 @@ void nbody_int(t_nbody *x, int f)
 	if(f > 12) f = 12;
 	if(f < 1) f = 1;
 	
-	post("nbody: changing input to %d", f);
-	
 	f--;
 	x->direction = f;
 	

@@ -248,7 +248,6 @@ void tamb_int(t_tamb *x, int f)
 void tamb_bang(t_tamb *x)
 {
 	int i;
-	post("tamb: zeroing delay lines");
 	for(i=0; i<2; i++) {
 		x->output[i] = 0.;
 		x->output1[i] = 0.;
@@ -375,7 +374,7 @@ void tamb_perform64(t_tamb *x, t_object *dsp64, double **ins, long numins, doubl
     }	
     
     while(n--) {
-        lastOutput = tamb_tick(x);		
+        lastOutput = tamb_tick(x) * 0.1;  // Output needs to be quieted a little		
         *out++ = lastOutput;
     }
 

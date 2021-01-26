@@ -254,8 +254,6 @@ void *bowedbar_new(double initial_coeff)
         x->velinput = 0.;
         
         x->fr_save = x->x_freq;
-        
-        post("some people do this for a living...");
     }
     
     return (x);

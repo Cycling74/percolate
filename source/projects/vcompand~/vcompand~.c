@@ -102,12 +102,10 @@ void vectorcompand_setcompthresh(t_vectorcompand *x, t_symbol *s, long argc, t_a
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
-    			//post("vectorcompand: setting comp threshold to: %f ", temp);
     			x->compthresh = temp;
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-				//post("vectorcompand: setting comp thresh to: %f ", temp);
 				x->compthresh = temp;
 				break;
 		}
@@ -123,13 +121,11 @@ void vectorcompand_setcompratio(t_vectorcompand *x, t_symbol *s, long argc, t_at
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
 				if (temp == 0.) temp = 1.;
-    			//post("vectorcompand: setting comp ratio to: %f ", temp);
     			x->compamp = 1./temp;
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
 				if (temp == 0.) temp = 1.;
-				//post("vectorcompand: setting comp ratio to: %f ", temp);
 				x->compamp = 1./temp;
 				break;
 		}
@@ -144,12 +140,10 @@ void vectorcompand_setexpthresh(t_vectorcompand *x, t_symbol *s, long argc, t_at
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
-    			//post("vectorcompand: setting exp threshold to: %f ", temp);
     			x->expthresh = temp;
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-				//post("vectorcompand: setting exp thresh to: %f ", temp);
 				x->expthresh = temp;
 				break;
 		}
@@ -165,13 +159,11 @@ void vectorcompand_setexpratio(t_vectorcompand *x, t_symbol *s, long argc, t_ato
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
 				if (temp == 0.) temp = 1.;
-    			//post("vectorcompand: setting exp ratio to: %f ", temp);
     			x->expamp = 1./temp;
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
 				if (temp == 0.) temp = 1.;
-				//post("vectorcompand: setting exp ratio to: %f ", temp);
 				x->expamp = 1./temp;
 				break;
 		}

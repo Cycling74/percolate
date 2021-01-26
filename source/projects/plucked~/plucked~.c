@@ -173,8 +173,6 @@ void *plucked_new(double initial_coeff)
    
     x->fr_save = x->x_fr;
     
-    post("oh karplus strong, the...");
-    
     return (x);
 }
 

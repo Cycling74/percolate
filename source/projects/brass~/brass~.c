@@ -226,8 +226,6 @@ void *brass_new(double initial_coeff)
         setVibFreq(x, 5.925);
 
         x->fr_save = x->x_fr;
-        
-        post("what exactly is that sound?");
     }
     
     return (x);

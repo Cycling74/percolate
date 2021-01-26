@@ -293,7 +293,6 @@ void *blotar_new(double initial_coeff)
         x->fr_save = x->x_fr;
         x->jd_save = 49.;
         
-        post("dooooooooooode, air guitar!");
     }
     return (x);
 }
@@ -398,12 +397,10 @@ void setmic(t_blotar *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp = (int)argv[i].a_w.w_long;
 				x->mic = abs(temp % 12);
-    			post("blotar: setting mic: %d", x->mic);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_long;
 				x->mic = abs(temp % 12);
-    			post("blotar: setting mic: %d", x->mic);
 				break;
 		}
 	}
@@ -418,12 +415,10 @@ void blotar_mode(t_blotar *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp = (int)argv[i].a_w.w_long;
 				x->mode = temp % 2;
-    			post("blotar: setting mode: %d", x->mode);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_long;
 				x->mode = temp % 2;
-    			post("blotar: setting mode: %d", x->mode);
 				break;
 		}
 	}

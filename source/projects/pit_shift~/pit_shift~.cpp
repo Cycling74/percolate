@@ -190,7 +190,6 @@ void pit_shift_float(t_pit_shift *x, double f)
 	for(i=0;i<x->num_inputs;i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
-			post("pit_shift~: setting in[%d] =  %f", i, f);
 		}
 	}
 }
@@ -203,12 +202,9 @@ void pit_shift_setShift(t_pit_shift *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-    			//post("template~: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -232,13 +228,10 @@ void pit_shift_setpower(t_pit_shift *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
 				x->power = temp2;
-    			post("template~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}

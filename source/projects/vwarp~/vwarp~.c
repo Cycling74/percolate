@@ -81,13 +81,10 @@ void vectorwarp_setpower(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
 				x->power = temp2;
-    			post("vwarp~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -123,7 +120,6 @@ void *vectorwarp_new(t_double initial_coeff)
 	x->interp_method = 0;
 	x->polylen = 3;
     x->power = 1;
-    //post("vwarp: power = %d", x->power);
     
     return (x);
 }
@@ -137,13 +133,11 @@ void vectorwarp_setstretch(t_vectorwarp *x, t_symbol *s, long argc, t_atom *argv
             case A_LONG:
                 temp = (float)argv[i].a_w.w_long;
                 if (temp < 0.) temp = 0.;
-                //post("vwarp: setting stretch to: %f ", temp);
                 x->stretch = temp;
                 break;
             case A_FLOAT:
                 temp = argv[i].a_w.w_float;
                 if (temp < 0.) temp = 0.;
-                //post("vwarp: setting stretch to: %f ", temp);
                 x->stretch = temp;
                 break;
         }

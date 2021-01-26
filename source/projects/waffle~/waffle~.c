@@ -38,7 +38,6 @@ void ext_main(void* p)
     
     class_register(CLASS_BOX, c);
     waffle_class = c;
-	post("waffle waffle waffle...");
 }
 
 long IConstrain(long v, long lo, long hi)

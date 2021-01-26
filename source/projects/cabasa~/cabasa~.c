@@ -228,7 +228,6 @@ void cabasa_int(t_cabasa *x, int f)
 void cabasa_bang(t_cabasa *x)
 {
 	int i;
-	post("cabasa: zeroing delay lines");
 	for(i=0; i<2; i++) {
 		x->output[i] = 0.;
 	}

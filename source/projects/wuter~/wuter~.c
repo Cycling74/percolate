@@ -271,7 +271,6 @@ void wuter_int(t_wuter *x, int f)
 void wuter_bang(t_wuter *x)
 {
 	int i;
-	post("wuter: zeroing delay lines");
 	for(i=0; i<2; i++) {
 		x->output[i] = 0.;
 		x->output1[i] = 0.;

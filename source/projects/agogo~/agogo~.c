@@ -144,8 +144,6 @@ void *agogo_new(double initial_coeff)
         x->modal.masterGain = 1.;
         
         x->fr_save = x->x_fr;
-        
-        post("agogo...");
 	}
     return (x);
 }

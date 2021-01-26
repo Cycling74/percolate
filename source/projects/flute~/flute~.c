@@ -251,8 +251,6 @@ void *flute_new(double initial_coeff)
     x->jd_save = x->jetRatio;
     x->fr_save = x->x_fr;
     
-    post("you can play the flute too");
-    
     return (x);
 }
 

@@ -214,7 +214,6 @@ void setFreqBoostBandwidth(t_gq *x, float freq, float boost, float thisBandwidth
 //primary MSP funcs
 void ext_main(void* p)
 {
-    post("Verifying update.");
     t_class *c = class_new("gq~", (method)gq_new, (method)dsp_free, (long)sizeof(t_gq), 0L, A_DEFFLOAT, 0);
     
     class_addmethod(c, (method)gq_assist, "assist", A_CANT, 0);
@@ -289,13 +288,10 @@ void gq_setpower(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
 				x->power = temp2;
-    			post("gQ: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -315,14 +311,12 @@ void gq_setbank(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 				if(temp < 0) temp = 0;
 				if(temp > x->numbanks) temp = x->numbanks;
 				x->currentbank = temp;
-    			//post("gq: using bank %d ", x->currentbank);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_float;
 				if(temp < 0) temp = 0;
 				if(temp > x->numbanks) temp = x->numbanks;
 				x->currentbank = temp;
-    			//post("gq: using bank %d ", x->currentbank);
 				break;
 		}
 	
@@ -349,14 +343,12 @@ void gq_numbanks(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 				if(temp < 1) temp = 1;
 				if(temp > MAXBANKS) temp = MAXBANKS;
 				x->numbanks = temp;
-    			//post("gq: using bank %d ", x->currentbank);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_float;
 				if(temp < 1) temp = 1;
 				if(temp >MAXBANKS) temp = MAXBANKS;
 				x->numbanks = temp;
-    			//post("gq: using bank %d ", x->currentbank);
 				break;
 		}
 
@@ -429,7 +421,6 @@ void gq_updatebank(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 void gq_clear(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 {
 	int i;
-	post("gQ: clearing delay lines");
 	
 	for(i=0;i<MAXBANKS;i++) {
 	    
@@ -447,7 +438,6 @@ void gq_clear(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 void gq_clearsettings(t_gq *x, t_symbol *s, long argc, t_atom *argv)
 {
 	int i;
-	post("gQ: clearing settings and delay lines");
 	
 	for(i=0;i<MAXBANKS;i++) {
 	    x->x_cf[i] = 440.;			//centerfreq	
@@ -517,9 +507,7 @@ void *gq_new(double initial_coeff)
     x->one_over_srate = 1./x->srate;
     
     x->numbanks = (long)initial_coeff;
-    //post("gQ: initial coeff =  %f banks", initial_coeff);
     if(x->numbanks < 1) x->numbanks = 1;
-    post("gQ: using %d banks", (int)x->numbanks);
     x->currentbank = 0;
     
     for(i=0;i<MAXBANKS;i++) {
