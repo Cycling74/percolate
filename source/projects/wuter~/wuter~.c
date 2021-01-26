@@ -242,7 +242,7 @@ void wuter_assist(t_wuter *x, void *b, long m, long a, char *s)
                 sprintf(s,"(signal/float) damping");
                 break;
             case 3:
-                sprintf(s,"(signal/float) maximum shake");
+                sprintf(s,"(signal/float) resonant spread");
                 break;
         }
     } else {
@@ -375,9 +375,6 @@ void wuter_perform64(t_wuter *x, t_object *dsp64, double **ins, long numins, dou
     
     if(res_freq != x->res_freqSave) {
         x->res_freqSave = x->res_freq = res_freq;
-        //temp = 900. * pow(1.015,res_freq);
-        //x->coeffs[0] = -0.96 * 2.0 * cos(temp * TWO_PI / x->srate);
-        //x->coeffs[1] = 0.96*0.96;
     }
     
     if(shake_damp != x->shake_dampSave) {
@@ -387,12 +384,10 @@ void wuter_perform64(t_wuter *x, t_object *dsp64, double **ins, long numins, dou
     
     if(shake_max != x->shake_maxSave) {
         x->res_random = x->shake_maxSave = x->shake_max = shake_max;
-        //x->shakeEnergy += shake_max * MAX_SHAKE * 0.1;
-        //if (x->shakeEnergy > MAX_SHAKE) x->shakeEnergy = MAX_SHAKE;
     }	
     
     while(n--) {
-        lastOutput = wuter_tick(x);		
+        lastOutput = wuter_tick(x) * 0.01;  // Quiet them down or else it'll clip very hard
         *outL++ = lastOutput*x->pandropL;
         *outR++ = lastOutput*x->pandropR;
     }
