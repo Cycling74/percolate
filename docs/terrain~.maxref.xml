@@ -59,9 +59,9 @@
 				Name of the buffer to use as the wavetable
 			</description>
 		</objarg>
-		<objarg id="0" name="table-size" type="int" optional="0">
+		<objarg id="0" name="frame-size" type="int" optional="0">
 			<digest>
-				Table size
+				Frame size (samples)
 			</digest>
 			<description>
 				TEXT_HERE

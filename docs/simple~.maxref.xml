@@ -91,7 +91,7 @@
 				Note off
 			</digest>
 			<description>
-				TEXT_HERE
+				The word <m>noteoff</m> followed by an amplitude will decay the sound and create a note off.
 			</description>
 		</method>
 		<method name="noteon">

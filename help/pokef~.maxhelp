@@ -2,14 +2,15 @@
 	"patcher" : 	{
 		"fileversion" : 1,
 		"appversion" : 		{
-			"major" : 7,
-			"minor" : 0,
-			"revision" : 3,
-			"architecture" : "x86",
+			"major" : 8,
+			"minor" : 2,
+			"revision" : 0,
+			"architecture" : "x64",
 			"modernui" : 1
 		}
 ,
-		"rect" : [ 760.0, 161.0, 751.0, 457.0 ],
+		"classnamespace" : "box",
+		"rect" : [ 862.0, 312.0, 553.0, 507.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -36,16 +37,20 @@
 		"tags" : "",
 		"style" : "",
 		"subpatcher_template" : "",
+		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
-					"id" : "obj-7",
-					"local" : 1,
-					"maxclass" : "ezdac~",
-					"numinlets" : 2,
-					"numoutlets" : 0,
-					"patching_rect" : [ 19.0, 136.5, 44.0, 44.0 ],
-					"prototypename" : "helpfile",
-					"style" : ""
+					"border" : 0,
+					"filename" : "helpargs.js",
+					"id" : "obj-82",
+					"ignoreclick" : 1,
+					"jsarguments" : [ "pokef~" ],
+					"maxclass" : "jsui",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 86.0, 358.0, 153.517509460449219, 39.0 ]
 				}
 
 			}
@@ -60,9 +65,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "float" ],
-					"patching_rect" : [ 313.0, 261.0, 58.0, 23.0 ],
-					"sig" : 0.0,
-					"style" : ""
+					"patching_rect" : [ 302.781818181818267, 245.0, 58.0, 23.0 ],
+					"sig" : 0.0
 				}
 
 			}
@@ -75,8 +79,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 274.0, 133.5, 20.0, 23.0 ],
-					"style" : "",
+					"patching_rect" : [ 263.781818181818267, 117.5, 20.0, 23.0 ],
 					"text" : "0"
 				}
 
@@ -90,8 +93,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 88.5, 139.5, 20.0, 23.0 ],
-					"style" : "",
+					"patching_rect" : [ 78.281818181818267, 123.5, 20.0, 23.0 ],
 					"text" : "2"
 				}
 
@@ -105,8 +107,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 124.0, 183.0, 20.0, 23.0 ],
-					"style" : "",
+					"patching_rect" : [ 113.781818181818267, 167.0, 20.0, 23.0 ],
 					"text" : "1"
 				}
 
@@ -121,8 +122,7 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "", "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 349.0, 133.5, 53.0, 23.0 ],
-					"style" : ""
+					"patching_rect" : [ 338.781818181818267, 117.5, 53.0, 23.0 ]
 				}
 
 			}
@@ -135,8 +135,7 @@
 					"numinlets" : 3,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 124.0, 261.0, 169.0, 23.0 ],
-					"style" : "",
+					"patching_rect" : [ 113.781818181818267, 245.0, 169.0, 23.0 ],
 					"text" : "selector~ 2 2"
 				}
 
@@ -150,8 +149,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 199.0, 225.0, 49.0, 23.0 ],
-					"style" : "",
+					"patching_rect" : [ 188.781818181818267, 209.0, 49.0, 23.0 ],
 					"text" : "sig~ -1"
 				}
 
@@ -164,8 +162,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 36.0, 300.0, 40.0, 21.0 ],
-					"style" : "",
+					"patching_rect" : [ 24.781818181818267, 273.0, 40.0, 21.0 ],
 					"text" : "value"
 				}
 
@@ -179,8 +176,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 19.0, 261.0, 58.0, 23.0 ],
-					"style" : "",
+					"patching_rect" : [ 8.781818181818267, 245.0, 58.0, 23.0 ],
 					"text" : "cycle~ 1"
 				}
 
@@ -194,8 +190,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 274.0, 183.0, 94.0, 23.0 ],
-					"style" : "",
+					"patching_rect" : [ 263.781818181818267, 167.0, 94.0, 23.0 ],
 					"text" : "count~ 0 2048"
 				}
 
@@ -209,8 +204,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "float", "bang" ],
-					"patching_rect" : [ 161.0, 398.0, 106.0, 23.0 ],
-					"style" : "",
+					"patching_rect" : [ 302.781818181818267, 358.0, 106.0, 23.0 ],
 					"text" : "buffer~ foo 1000"
 				}
 
@@ -223,8 +217,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 146.0, 300.0, 40.0, 21.0 ],
-					"style" : "",
+					"patching_rect" : [ 130.281818181818267, 273.0, 40.0, 21.0 ],
 					"text" : "index"
 				}
 
@@ -239,8 +232,8 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 371.0, 244.0, 154.0, 54.0 ],
-					"style" : "",
+					"patching_rect" : [ 360.781818181818267, 228.0, 152.0, 54.0 ],
+					"presentation_linecount" : 3,
 					"text" : "a source of an increasing index, also consider fft~"
 				}
 
@@ -255,8 +248,8 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 371.0, 158.5, 173.0, 69.0 ],
-					"style" : "",
+					"patching_rect" : [ 360.781818181818267, 142.5, 173.0, 69.0 ],
+					"presentation_linecount" : 4,
 					"text" : "count maximum sets the number of samples recorded (think of it as the loop size)"
 				}
 
@@ -271,8 +264,8 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 146.0, 165.0, 107.0, 54.0 ],
-					"style" : "",
+					"patching_rect" : [ 135.781818181818267, 149.0, 105.0, 54.0 ],
+					"presentation_linecount" : 3,
 					"text" : "stop writing by sending -1 signal"
 				}
 
@@ -282,12 +275,11 @@
 					"bubble" : 1,
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
-					"id" : "obj-33",
+					"id" : "obj-4",
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 110.5, 136.5, 111.0, 25.0 ],
-					"style" : "",
+					"patching_rect" : [ 100.281818181818267, 120.5, 111.0, 25.0 ],
 					"text" : "start writing"
 				}
 
@@ -302,50 +294,70 @@
 					"numinlets" : 4,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 19.0, 398.0, 72.0, 23.0 ],
-					"style" : "",
+					"patching_rect" : [ 8.781818181818267, 358.0, 72.0, 23.0 ],
 					"text" : "pokef~ foo"
 				}
 
 			}
 , 			{
 				"box" : 				{
+					"bubble" : 1,
 					"fontname" : "Arial",
-					"id" : "obj-5",
-					"linecount" : 2,
+					"fontsize" : 13.0,
+					"id" : "obj-76",
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 12.0, 93.0, 554.0, 33.0 ],
-					"presentation_rect" : [ 13.0, 102.0, 0.0, 0.0 ],
-					"style" : "",
-					"text" : "poke~ allows you to write samples into a buffer~ at a sample location using interpolation and a coefficient value."
+					"patching_rect" : [ 58.781818181818267, 455.5, 79.0, 25.0 ],
+					"text" : "start dsp"
 				}
 
 			}
 , 			{
 				"box" : 				{
-					"fontname" : "Arial Bold",
-					"id" : "obj-4",
-					"maxclass" : "comment",
-					"numinlets" : 1,
+					"id" : "obj-77",
+					"local" : 1,
+					"maxclass" : "ezdac~",
+					"numinlets" : 2,
 					"numoutlets" : 0,
-					"patching_rect" : [ 12.0, 71.0, 351.0, 20.0 ],
-					"style" : "",
-					"text" : "Write sample values to a buffer by index - with interpolation"
+					"patching_rect" : [ 8.781818181818267, 445.5, 45.0, 45.0 ]
 				}
 
 			}
 , 			{
 				"box" : 				{
-					"fontsize" : 48.0,
-					"id" : "obj-2",
-					"maxclass" : "comment",
+					"border" : 0,
+					"filename" : "helpdetails.js",
+					"id" : "obj-33",
+					"ignoreclick" : 1,
+					"jsarguments" : [ "pokef~" ],
+					"maxclass" : "jsui",
 					"numinlets" : 1,
-					"numoutlets" : 0,
-					"patching_rect" : [ 12.0, 11.0, 156.0, 60.0 ],
-					"style" : "",
-					"text" : "pokef~"
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 3.699999999999989, 7.0, 534.0, 101.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"background" : 1,
+					"bgcolor" : [ 1.0, 0.788235, 0.470588, 1.0 ],
+					"fontface" : 1,
+					"hint" : "",
+					"id" : "obj-80",
+					"ignoreclick" : 1,
+					"legacytextcolor" : 1,
+					"maxclass" : "textbutton",
+					"numinlets" : 1,
+					"numoutlets" : 3,
+					"outlettype" : [ "", "", "int" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 140.281818181818267, 458.0, 20.0, 20.0 ],
+					"rounded" : 60.0,
+					"text" : "1",
+					"textcolor" : [ 0.34902, 0.34902, 0.34902, 1.0 ]
 				}
 
 			}
@@ -353,8 +365,6 @@
 		"lines" : [ 			{
 				"patchline" : 				{
 					"destination" : [ "obj-23", 0 ],
-					"disabled" : 0,
-					"hidden" : 0,
 					"source" : [ "obj-12", 0 ]
 				}
 
@@ -362,8 +372,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-19", 0 ],
-					"disabled" : 0,
-					"hidden" : 0,
 					"source" : [ "obj-16", 0 ]
 				}
 
@@ -371,8 +379,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-19", 0 ],
-					"disabled" : 0,
-					"hidden" : 0,
 					"source" : [ "obj-17", 0 ]
 				}
 
@@ -380,8 +386,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-23", 1 ],
-					"disabled" : 0,
-					"hidden" : 0,
 					"source" : [ "obj-18", 0 ]
 				}
 
@@ -389,8 +393,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-6", 1 ],
-					"disabled" : 0,
-					"hidden" : 0,
 					"source" : [ "obj-19", 0 ]
 				}
 
@@ -398,8 +400,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-19", 1 ],
-					"disabled" : 0,
-					"hidden" : 0,
 					"source" : [ "obj-20", 0 ]
 				}
 
@@ -407,8 +407,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-6", 0 ],
-					"disabled" : 0,
-					"hidden" : 0,
 					"source" : [ "obj-22", 0 ]
 				}
 
@@ -416,8 +414,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-11", 0 ],
-					"disabled" : 0,
-					"hidden" : 0,
+					"order" : 0,
 					"source" : [ "obj-23", 0 ]
 				}
 
@@ -425,19 +422,140 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-19", 2 ],
-					"disabled" : 0,
-					"hidden" : 0,
+					"order" : 1,
 					"source" : [ "obj-23", 0 ]
 				}
 
 			}
  ],
 		"dependency_cache" : [ 			{
+				"name" : "helpdetails.js",
+				"bootpath" : "C74:/help/resources",
+				"type" : "TEXT",
+				"implicit" : 1
+			}
+, 			{
+				"name" : "helpargs.js",
+				"bootpath" : "C74:/help/resources",
+				"type" : "TEXT",
+				"implicit" : 1
+			}
+, 			{
 				"name" : "pokef~.mxo",
 				"type" : "iLaX"
 			}
  ],
-		"embedsnapshot" : 0
+		"autosave" : 0,
+		"styles" : [ 			{
+				"name" : "AudioStatus_Menu",
+				"default" : 				{
+					"bgfillcolor" : 					{
+						"type" : "color",
+						"color" : [ 0.294118, 0.313726, 0.337255, 1 ],
+						"color1" : [ 0.454902, 0.462745, 0.482353, 0.0 ],
+						"color2" : [ 0.290196, 0.309804, 0.301961, 1.0 ],
+						"angle" : 270.0,
+						"proportion" : 0.39,
+						"autogradient" : 0
+					}
+
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
+				"name" : "Audiomix",
+				"default" : 				{
+					"bgfillcolor" : 					{
+						"type" : "gradient",
+						"color1" : [ 0.376471, 0.384314, 0.4, 1.0 ],
+						"color2" : [ 0.290196, 0.309804, 0.301961, 1.0 ],
+						"color" : [ 0.290196, 0.309804, 0.301961, 1.0 ],
+						"angle" : 270.0,
+						"proportion" : 0.39
+					}
+
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
+				"name" : "ksliderWhite",
+				"default" : 				{
+					"color" : [ 1.0, 1.0, 1.0, 1.0 ]
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
+				"name" : "newobjBlue-1",
+				"default" : 				{
+					"accentcolor" : [ 0.317647, 0.654902, 0.976471, 1.0 ]
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
+				"name" : "newobjBrown-1",
+				"default" : 				{
+					"accentcolor" : [ 0.654902, 0.572549, 0.376471, 1.0 ]
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
+				"name" : "newobjCyan-1",
+				"default" : 				{
+					"accentcolor" : [ 0.029546, 0.773327, 0.821113, 1.0 ]
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
+				"name" : "newobjGreen-1",
+				"default" : 				{
+					"accentcolor" : [ 0.0, 0.533333, 0.168627, 1.0 ]
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
+				"name" : "newobjYellow-1",
+				"default" : 				{
+					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ],
+					"fontsize" : [ 12.059008 ]
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
+				"name" : "numberGold-1",
+				"default" : 				{
+					"accentcolor" : [ 0.764706, 0.592157, 0.101961, 1.0 ]
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
+				"name" : "rsliderGold",
+				"default" : 				{
+					"bgcolor" : [ 0.764706, 0.592157, 0.101961, 1.0 ],
+					"color" : [ 0.646639, 0.821777, 0.854593, 1.0 ]
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+ ]
 	}
 
 }
