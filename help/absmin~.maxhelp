@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 116.0, 130.0, 389.0, 498.0 ],
+		"rect" : [ 116.0, 130.0, 365.0, 491.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -56,18 +56,6 @@
 			}
 , 			{
 				"box" : 				{
-					"id" : "obj-1",
-					"maxclass" : "fpic",
-					"numinlets" : 1,
-					"numoutlets" : 1,
-					"outlettype" : [ "jit_matrix" ],
-					"patching_rect" : [ 228.0, 343.0, 134.0, 77.0 ],
-					"pic" : "percolate.jpg"
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"fontname" : "Arial",
 					"fontsize" : 13.0,
 					"id" : "obj-15",
@@ -75,9 +63,8 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 201.0, 426.0, 161.0, 50.0 ],
-					"presentation_linecount" : 3,
-					"text" : "by r. luke dubois, computer music center, columbia university",
+					"patching_rect" : [ 201.0, 426.0, 149.0, 50.0 ],
+					"text" : "by R. Luke DuBois Computer Music Center Columbia University",
 					"textjustification" : 2
 				}
 
@@ -281,13 +268,6 @@
 			}
  ],
 		"dependency_cache" : [ 			{
-				"name" : "percolate.jpg",
-				"bootpath" : "~/Documents/Max Third Party Externals/extern-dev/percolate/media",
-				"patcherrelativepath" : "../media",
-				"type" : "JPEG",
-				"implicit" : 1
-			}
-, 			{
 				"name" : "helpdetails.js",
 				"bootpath" : "C74:/help/resources",
 				"type" : "TEXT",
@@ -310,6 +290,23 @@
 						"angle" : 270.0,
 						"proportion" : 0.39,
 						"autogradient" : 0
+					}
+
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
+				"name" : "Audiomix",
+				"default" : 				{
+					"bgfillcolor" : 					{
+						"type" : "gradient",
+						"color1" : [ 0.376471, 0.384314, 0.4, 1.0 ],
+						"color2" : [ 0.290196, 0.309804, 0.301961, 1.0 ],
+						"color" : [ 0.290196, 0.309804, 0.301961, 1.0 ],
+						"angle" : 270.0,
+						"proportion" : 0.39
 					}
 
 				}
@@ -365,8 +362,8 @@
 , 			{
 				"name" : "newobjYellow-1",
 				"default" : 				{
-					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ],
-					"fontsize" : [ 12.059008 ]
+					"fontsize" : [ 12.059008 ],
+					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ]
 				}
 ,
 				"parentstyle" : "",
@@ -384,8 +381,8 @@
 , 			{
 				"name" : "rsliderGold",
 				"default" : 				{
-					"color" : [ 0.646639, 0.821777, 0.854593, 1.0 ],
-					"bgcolor" : [ 0.764706, 0.592157, 0.101961, 1.0 ]
+					"bgcolor" : [ 0.764706, 0.592157, 0.101961, 1.0 ],
+					"color" : [ 0.646639, 0.821777, 0.854593, 1.0 ]
 				}
 ,
 				"parentstyle" : "",
