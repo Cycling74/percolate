@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 717.0, 216.0, 327.0, 370.0 ],
+		"rect" : [ 717.0, 216.0, 327.0, 402.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 1,
 		"default_fontsize" : 12.0,
@@ -43,6 +43,38 @@
 					"fontface" : 0,
 					"fontname" : "Lato",
 					"fontsize" : 12.0,
+					"id" : "obj-12",
+					"linecount" : 3,
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 200.5, 442.0, 61.0, 50.0 ],
+					"presentation" : 1,
+					"presentation_rect" : [ 113.600003957748413, 193.928205478802681, 137.0, 21.0 ],
+					"text" : "Model Newton's Cradle"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-13",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 132.5, 437.584616746352253, 61.0, 22.0 ],
+					"presentation" : 1,
+					"presentation_rect" : [ 23.600003957748413, 193.928205478802681, 75.800000488758087, 22.0 ],
+					"style" : "Max 12 Regular",
+					"text" : "nscradle~"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"fontface" : 0,
+					"fontname" : "Lato",
+					"fontsize" : 12.0,
 					"id" : "obj-11",
 					"linecount" : 2,
 					"maxclass" : "comment",
@@ -67,7 +99,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 191.0, 292.584616746352197, 101.0, 35.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 113.600003957748413, 276.387693366087319, 132.0, 21.0 ],
+					"presentation_rect" : [ 113.600003957748413, 310.387693366087319, 132.0, 21.0 ],
 					"text" : "2D wavetable oscillator"
 				}
 
@@ -84,7 +116,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 90.600003957748413, 241.976082021288789, 101.0, 35.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 113.600003957748413, 316.584616746352197, 174.0, 21.0 ],
+					"presentation_rect" : [ 113.600003957748413, 350.584616746352197, 174.0, 21.0 ],
 					"text" : "Voice formant synthesis"
 				}
 
@@ -101,7 +133,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 82.600003957748413, 205.471357632421302, 101.0, 35.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 113.600003957748413, 197.976082021288789, 174.0, 21.0 ],
+					"presentation_rect" : [ 113.600003957748413, 231.976082021288789, 174.0, 21.0 ],
 					"text" : "Perry R. Cook's FM instruments"
 				}
 
@@ -118,7 +150,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 154.5, 202.599999845027924, 101.0, 35.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 113.600003957748413, 236.19076998582247, 158.0, 21.0 ],
+					"presentation_rect" : [ 113.600003957748413, 270.190769985822499, 158.0, 21.0 ],
 					"text" : "Noise/wavetable instrument"
 				}
 
@@ -185,7 +217,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 9.999999999999986, 346.905884199282468, 58.0, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 23.600003957748413, 236.19076998582247, 76.0, 22.0 ],
+					"presentation_rect" : [ 23.600003957748413, 272.256411112577439, 76.0, 22.0 ],
 					"style" : "Max 12 Regular",
 					"text" : "simple~"
 				}
@@ -215,7 +247,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 7.600004470348381, 259.960001087188743, 60.0, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 23.600003957748413, 155.796923225292772, 76.0, 22.0 ],
+					"presentation_rect" : [ 23.600003957748413, 154.764102661915302, 76.0, 22.0 ],
 					"style" : "Max 12 Regular",
 					"text" : "mesh2D~"
 				}
@@ -246,7 +278,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 7.600004470348381, 219.584616805956841, 88.0, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 23.600003957748413, 316.584616746352197, 76.0, 22.0 ],
+					"presentation_rect" : [ 23.600003957748413, 350.584616746352253, 76.0, 22.0 ],
 					"style" : "Max 12 Regular",
 					"text" : "voice_form~"
 				}
@@ -261,7 +293,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 7.600004470348381, 178.507693623579428, 64.0, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 23.600003957748413, 195.993846605557621, 75.800000488758087, 22.0 ],
+					"presentation_rect" : [ 23.600003957748413, 233.09230829569006, 75.800000488758087, 22.0 ],
 					"style" : "Max 12 Regular",
 					"text" : "prc_fm~"
 				}
@@ -276,7 +308,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 7.600004470348381, 141.276924076447074, 60.0, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 23.600003957748413, 276.387693366087319, 76.0, 22.0 ],
+					"presentation_rect" : [ 23.600003957748413, 311.420513929464846, 76.0, 22.0 ],
 					"style" : "Max 12 Regular",
 					"text" : "terrain~"
 				}
@@ -300,6 +332,13 @@
 			}
  ],
 		"lines" : [ 			{
+				"patchline" : 				{
+					"destination" : [ "obj-9", 0 ],
+					"source" : [ "obj-13", 0 ]
+				}
+
+			}
+, 			{
 				"patchline" : 				{
 					"destination" : [ "obj-9", 0 ],
 					"source" : [ "obj-14", 0 ]
