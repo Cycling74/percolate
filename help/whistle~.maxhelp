@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 818.0, 197.0, 596.0, 580.0 ],
+		"rect" : [ 100.0, 100.0, 596.0, 580.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 13.0,
@@ -49,8 +49,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 209.100000000000023, 256.5, 64.799999999999955, 55.0 ],
-					"presentation_linecount" : 3,
+					"patching_rect" : [ 209.100000000000023, 256.5, 67.0, 55.0 ],
 					"text" : "blow freq mod",
 					"textjustification" : 1
 				}
@@ -136,7 +135,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 294.5, 516.5, 225.0, 50.0 ],
-					"presentation_linecount" : 3,
 					"text" : "by Perry Cook\n\nported to MSP by Dan Trueman",
 					"textjustification" : 2
 				}
@@ -169,8 +167,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 383.631818181818289, 256.5, 61.5, 55.0 ],
-					"presentation_linecount" : 2,
+					"patching_rect" : [ 383.631818181818289, 256.5, 62.0, 55.0 ],
 					"text" : "ripple mod freq",
 					"textjustification" : 1
 				}
@@ -228,7 +225,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 121.150000000000006, 256.5, 68.699999999999989, 55.0 ],
-					"presentation_linecount" : 3,
 					"text" : "ripple mod gain",
 					"textjustification" : 1
 				}
@@ -398,7 +394,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 201.700000000000045, 161.0, 186.0, 50.0 ],
-					"presentation_linecount" : 3,
 					"text" : "Play with on-screen keyboard, MIDI controller, or computer keyboard",
 					"textcolor" : [ 0.50196099281311, 0.50196099281311, 0.50196099281311, 1.0 ]
 				}
@@ -1066,7 +1061,8 @@
 					"patching_rect" : [ 14.0, 465.5, 140.0, 35.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_initial" : [ 0.0 ],
+							"parameter_initial" : [ -80 ],
+							"parameter_initial_enable" : 1,
 							"parameter_longname" : "live.gain~[1]",
 							"parameter_mmax" : 6.0,
 							"parameter_mmin" : -70.0,
@@ -1465,8 +1461,8 @@
 , 			{
 				"name" : "newobjYellow-1",
 				"default" : 				{
-					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ],
-					"fontsize" : [ 12.059008 ]
+					"fontsize" : [ 12.059008 ],
+					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ]
 				}
 ,
 				"parentstyle" : "",

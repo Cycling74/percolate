@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 594.0, 176.0, 600.0, 637.0 ],
+		"rect" : [ 100.0, 100.0, 600.0, 637.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -62,7 +62,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 203.449999999999989, 308.5, 61.5, 55.0 ],
-					"presentation_linecount" : 3,
 					"text" : "reed stiffness",
 					"textjustification" : 1
 				}
@@ -108,7 +107,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 474.150000000000091, 308.5, 61.5, 55.0 ],
-					"presentation_linecount" : 2,
 					"text" : "breath pressure",
 					"textjustification" : 1
 				}
@@ -125,8 +123,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 374.031818181818267, 308.5, 61.5, 55.0 ],
-					"presentation_linecount" : 2,
+					"patching_rect" : [ 374.031818181818267, 308.5, 64.0, 55.0 ],
 					"text" : "tonehole state",
 					"textjustification" : 1
 				}
@@ -198,7 +195,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 122.449999999999989, 308.5, 57.5, 55.0 ],
-					"presentation_linecount" : 3,
 					"text" : "register state",
 					"textjustification" : 1
 				}
@@ -368,7 +364,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 196.399999999999977, 219.0, 186.0, 50.0 ],
-					"presentation_linecount" : 3,
 					"text" : "Play with on-screen keyboard, MIDI controller, or computer keyboard",
 					"textcolor" : [ 0.50196099281311, 0.50196099281311, 0.50196099281311, 1.0 ]
 				}
@@ -751,7 +746,7 @@
 									"maxclass" : "kslider",
 									"numinlets" : 2,
 									"numoutlets" : 2,
-									"offset" : 60,
+									"offset" : 48,
 									"outlettype" : [ "int", "int" ],
 									"parameter_enable" : 0,
 									"patching_rect" : [ 30.0, 298.0, 180.0, 53.0 ],
@@ -992,7 +987,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 361.699999999999989, 544.5, 225.0, 79.0 ],
-					"presentation_linecount" : 5,
 					"text" : "by Perry Cook and Gary Scavone\n\nported to MSP by Dan Trueman\nComputer Music Center\nColumbia University",
 					"textjustification" : 2
 				}
@@ -1052,7 +1046,8 @@
 					"patching_rect" : [ 8.699999999999989, 523.5, 140.0, 35.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_initial" : [ 0.0 ],
+							"parameter_initial" : [ -80 ],
+							"parameter_initial_enable" : 1,
 							"parameter_longname" : "live.gain~",
 							"parameter_mmax" : 6.0,
 							"parameter_mmin" : -70.0,
@@ -1403,6 +1398,23 @@
 				"multi" : 0
 			}
 , 			{
+				"name" : "Audiomix",
+				"default" : 				{
+					"bgfillcolor" : 					{
+						"type" : "gradient",
+						"color1" : [ 0.376471, 0.384314, 0.4, 1.0 ],
+						"color2" : [ 0.290196, 0.309804, 0.301961, 1.0 ],
+						"color" : [ 0.290196, 0.309804, 0.301961, 1.0 ],
+						"angle" : 270.0,
+						"proportion" : 0.39
+					}
+
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
 				"name" : "ksliderWhite",
 				"default" : 				{
 					"color" : [ 1.0, 1.0, 1.0, 1.0 ]
@@ -1450,8 +1462,8 @@
 , 			{
 				"name" : "newobjYellow-1",
 				"default" : 				{
-					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ],
-					"fontsize" : [ 12.059008 ]
+					"fontsize" : [ 12.059008 ],
+					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ]
 				}
 ,
 				"parentstyle" : "",
@@ -1469,8 +1481,8 @@
 , 			{
 				"name" : "rsliderGold",
 				"default" : 				{
-					"color" : [ 0.646639, 0.821777, 0.854593, 1.0 ],
-					"bgcolor" : [ 0.764706, 0.592157, 0.101961, 1.0 ]
+					"bgcolor" : [ 0.764706, 0.592157, 0.101961, 1.0 ],
+					"color" : [ 0.646639, 0.821777, 0.854593, 1.0 ]
 				}
 ,
 				"parentstyle" : "",

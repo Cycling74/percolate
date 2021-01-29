@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 945.0, 228.0, 560.0, 586.0 ],
+		"rect" : [ 100.0, 100.0, 560.0, 586.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -48,7 +48,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 324.700000000000045, 489.5, 225.0, 79.0 ],
-					"presentation_linecount" : 5,
 					"text" : "by Perry Cook and Gary Scavone\n\nported to MSP by Dan Trueman\nComputer Music Center\nColumbia University",
 					"textjustification" : 2
 				}
@@ -80,7 +79,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 316.613636363636545, 293.5, 61.5, 55.0 ],
-					"presentation_linecount" : 2,
 					"text" : "string sustain",
 					"textjustification" : 1
 				}
@@ -126,7 +124,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 143.731818181818255, 293.5, 63.5, 55.0 ],
-					"presentation_linecount" : 3,
 					"text" : "string stretch",
 					"textjustification" : 1
 				}
@@ -144,7 +141,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 226.231818181818255, 293.5, 74.5, 55.0 ],
-					"presentation_linecount" : 2,
 					"text" : "pickup position",
 					"textjustification" : 1
 				}
@@ -270,7 +266,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 193.399999999999977, 193.75, 186.0, 50.0 ],
-					"presentation_linecount" : 3,
 					"text" : "Play with on-screen keyboard, MIDI controller, or computer keyboard",
 					"textcolor" : [ 0.50196099281311, 0.50196099281311, 0.50196099281311, 1.0 ]
 				}
@@ -938,7 +933,8 @@
 					"patching_rect" : [ 7.981818181818255, 473.5, 140.0, 35.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_initial" : [ 0.0 ],
+							"parameter_initial" : [ -80 ],
+							"parameter_initial_enable" : 1,
 							"parameter_longname" : "live.gain~[2]",
 							"parameter_mmax" : 6.0,
 							"parameter_mmin" : -70.0,
@@ -1298,8 +1294,8 @@
 , 			{
 				"name" : "newobjYellow-1",
 				"default" : 				{
-					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ],
-					"fontsize" : [ 12.059008 ]
+					"fontsize" : [ 12.059008 ],
+					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ]
 				}
 ,
 				"parentstyle" : "",

@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 604.0, 310.0, 592.0, 530.0 ],
+		"rect" : [ 100.0, 100.0, 592.0, 530.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -368,7 +368,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 381.163636363636328, 259.0, 72.07272727272732, 55.0 ],
-					"presentation_linecount" : 2,
 					"text" : "vibrato freq",
 					"textjustification" : 1
 				}
@@ -386,7 +385,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 287.899999999999977, 259.0, 68.0, 55.0 ],
-					"presentation_linecount" : 3,
 					"text" : "max pressure",
 					"textjustification" : 1
 				}
@@ -404,7 +402,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 193.100000000000023, 255.5, 67.0, 55.0 ],
-					"presentation_linecount" : 2,
 					"text" : "vibrato gain",
 					"textjustification" : 1
 				}
@@ -422,7 +419,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 98.300000000000011, 255.5, 66.0, 55.0 ],
-					"presentation_linecount" : 2,
 					"text" : "slide targeting",
 					"textjustification" : 1
 				}
@@ -848,7 +844,7 @@
 									"maxclass" : "kslider",
 									"numinlets" : 2,
 									"numoutlets" : 2,
-									"offset" : 74,
+									"offset" : 48,
 									"outlettype" : [ "int", "int" ],
 									"parameter_enable" : 0,
 									"patching_rect" : [ 30.0, 298.0, 180.0, 53.0 ],
@@ -1090,7 +1086,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 327.200000000000045, 435.5, 249.0, 79.0 ],
-					"presentation_linecount" : 5,
 					"text" : "STK by by Perry Cook and Gary Scavone\n\nMax object by Dan Trueman\nComputer Music Center\nColumbia University",
 					"textjustification" : 2
 				}
@@ -1150,7 +1145,8 @@
 					"patching_rect" : [ 11.0, 418.5, 140.0, 35.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_initial" : [ 0.0 ],
+							"parameter_initial" : [ -80 ],
+							"parameter_initial_enable" : 1,
 							"parameter_longname" : "live.gain~",
 							"parameter_mmax" : 6.0,
 							"parameter_mmin" : -70.0,
@@ -1192,7 +1188,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 202.599999999999994, 139.5, 186.0, 65.0 ],
-					"presentation_linecount" : 4,
 					"text" : "Play with on-screen keyboard, MIDI controller, or computer keyboard, or try out a random sequencer.",
 					"textcolor" : [ 0.50196099281311, 0.50196099281311, 0.50196099281311, 1.0 ]
 				}
@@ -1472,6 +1467,23 @@
 				"multi" : 0
 			}
 , 			{
+				"name" : "Audiomix",
+				"default" : 				{
+					"bgfillcolor" : 					{
+						"type" : "gradient",
+						"color1" : [ 0.376471, 0.384314, 0.4, 1.0 ],
+						"color2" : [ 0.290196, 0.309804, 0.301961, 1.0 ],
+						"color" : [ 0.290196, 0.309804, 0.301961, 1.0 ],
+						"angle" : 270.0,
+						"proportion" : 0.39
+					}
+
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
+			}
+, 			{
 				"name" : "ksliderWhite",
 				"default" : 				{
 					"color" : [ 1.0, 1.0, 1.0, 1.0 ]
@@ -1519,8 +1531,8 @@
 , 			{
 				"name" : "newobjYellow-1",
 				"default" : 				{
-					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ],
-					"fontsize" : [ 12.059008 ]
+					"fontsize" : [ 12.059008 ],
+					"accentcolor" : [ 0.82517, 0.78181, 0.059545, 1.0 ]
 				}
 ,
 				"parentstyle" : "",
@@ -1538,8 +1550,8 @@
 , 			{
 				"name" : "rsliderGold",
 				"default" : 				{
-					"color" : [ 0.646639, 0.821777, 0.854593, 1.0 ],
-					"bgcolor" : [ 0.764706, 0.592157, 0.101961, 1.0 ]
+					"bgcolor" : [ 0.764706, 0.592157, 0.101961, 1.0 ],
+					"color" : [ 0.646639, 0.821777, 0.854593, 1.0 ]
 				}
 ,
 				"parentstyle" : "",

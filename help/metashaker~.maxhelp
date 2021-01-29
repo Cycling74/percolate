@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 557.0, 204.0, 593.0, 548.0 ],
+		"rect" : [ 100.0, 100.0, 593.0, 548.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -115,7 +115,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 530.0, 242.0, 54.0, 52.0 ],
-					"presentation_linecount" : 3,
 					"text" : "res random",
 					"textjustification" : 1
 				}
@@ -131,7 +130,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 477.869999999999948, 242.0, 48.0, 52.0 ],
-					"presentation_linecount" : 2,
 					"text" : "res spread",
 					"textjustification" : 1
 				}
@@ -146,8 +144,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 425.869999999999948, 242.0, 46.5, 52.0 ],
-					"presentation_linecount" : 3,
+					"patching_rect" : [ 425.869999999999948, 242.0, 50.0, 52.0 ],
 					"text" : "scrape vel",
 					"textjustification" : 1
 				}
@@ -162,7 +159,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 379.369999999999948, 255.0, 39.0, 39.0 ],
-					"presentation_linecount" : 2,
 					"text" : "res 5",
 					"textjustification" : 1
 				}
@@ -177,7 +173,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 325.869999999999948, 255.0, 42.0, 39.0 ],
-					"presentation_linecount" : 2,
 					"text" : "res 4",
 					"textjustification" : 1
 				}
@@ -192,7 +187,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 273.619999999999948, 255.0, 42.5, 39.0 ],
-					"presentation_linecount" : 2,
 					"text" : "res 3",
 					"textjustification" : 1
 				}
@@ -351,7 +345,8 @@
 					"patching_rect" : [ 8.699999999999989, 432.5, 140.0, 35.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_initial" : [ 0.0 ],
+							"parameter_initial" : [ -80 ],
+							"parameter_initial_enable" : 1,
 							"parameter_longname" : "live.gain~[2]",
 							"parameter_mmax" : 6.0,
 							"parameter_mmin" : -70.0,
@@ -594,7 +589,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 355.0, 482.5, 225.0, 50.0 ],
-					"presentation_linecount" : 3,
 					"text" : "ported to MSP by Dan Trueman\nComputer Music Center\nColumbia University",
 					"textjustification" : 2
 				}
