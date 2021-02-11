@@ -76,8 +76,6 @@ void jitter_assist(t_jitter *x, void *b, long m, long a, char *s)
 // instantiate the object
 void *jitter_new(double flag, double a)
 {
-    post("flag: %f; a-flag: %f", flag, a);
-    
     t_jitter *x = (t_jitter *)object_alloc(jitter_class);
     if (x) {
         dsp_setup((t_pxobject *)x,1);

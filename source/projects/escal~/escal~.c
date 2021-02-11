@@ -38,7 +38,6 @@ void escal_perform64(t_escal *x, t_object *dsp64, double **ins, long numins, dou
 
 void ext_main(void* p)
 {
-    post("Verifying update.");
     t_class *c = class_new("escal~", (method)escal_new, (method)escal_free, (long)sizeof(t_escal), 0L, A_DEFLONG, 0);
     
     class_addmethod(c, (method)escal_assist, "assist", A_CANT, 0);

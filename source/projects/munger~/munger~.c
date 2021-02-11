@@ -437,6 +437,11 @@ float newSetup(t_munger *x, int whichVoice, double frames)
 				newPosition = x->recordCurrent - x->position * x->onethirdBufsize;
             }
 		}
+        
+        else {
+            newPosition = 0.0;
+        }
+        
 	}
 	else {
 		if (x->position == -1.) {
@@ -598,13 +603,23 @@ float newNote(t_munger *x, int whichVoice, int newNote, double frames)
 			else //going backwards
 				newPosition = x->recordCurrent - x->position * x->onethirdBufsize;
 		}
+        
+        else {
+            newPosition = 0.0;
+        }
+        
 	}
 	else {
 		if (x->position == -1.) {
 			newPosition = (float)rand() * ONE_OVER_MAXRAND * frames;
 		}
-		else  if (x->position >= 0.) newPosition = x->position * frames;
-	}
+        else if (x->position >= 0.) {
+            newPosition = x->position * frames;
+        }
+        else {
+            newPosition = 0.0;
+        }
+    }
 	
 	return newPosition;
 	

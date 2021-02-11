@@ -345,7 +345,6 @@ void shaker_int(t_shaker *x, int f)
 
 void shaker_bang(t_shaker *x)
 {
-	post("shaker: zeroing delay lines");
 	x->bq_inputs[0] = 0.;
 	x->bq_inputs[1] = 0.;
     x->bq_lastOutput = 0.;
@@ -410,7 +409,6 @@ void shaker_adr(t_shaker *x, t_symbol *s, long argc, t_atom *argv)
 	x->attack_ratio = argv[0].a_w.w_float;
 	x->decay_ratio = argv[1].a_w.w_float;
 	x->release_ratio = argv[2].a_w.w_float;
-	post("attack ratio = %f, decay ratio = %f, release ratio = %f", x->attack_ratio, x->decay_ratio, x->release_ratio);
 	
 }
 

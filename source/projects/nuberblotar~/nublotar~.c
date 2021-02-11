@@ -282,7 +282,6 @@ void dopluck(t_nublotar *x, BloString *blostring, float amp, float position, flo
 	blostring->pluckAmp = amp;
 	blostring->pluckPos = blostring->squish = position;
 	blostring->pluckWidth = width;
-	//post("plucking with amp %f, position %f, width %f", amp, position, width);
 }
 
 //string-bore functions
@@ -579,7 +578,6 @@ void nublotar_float(t_nublotar *x, double f)
 	for(i=0;i<x->num_inputs;i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
-			//post("nublotar~: setting in[%d] =  %f", i, f);
 		}
 	}
 }
@@ -596,11 +594,9 @@ void nublotar_pluck(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -626,11 +622,9 @@ void nublotar_vib(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -653,11 +647,9 @@ void nublotar_breathpressure(t_nublotar *x, t_symbol *s, long argc, t_atom *argv
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -665,7 +657,6 @@ void nublotar_breathpressure(t_nublotar *x, t_symbol *s, long argc, t_atom *argv
 	//need to set this up so that string = -1 will set *all* string vals
 	//string = (short)temp[0];
 	x->blo_string[0].bp = temp[0];
-	//post("bp = %f", x->blo_string[0].bp);
 	
 }
 
@@ -679,11 +670,9 @@ void nublotar_noisegain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -691,7 +680,6 @@ void nublotar_noisegain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 	//need to set this up so that string = -1 will set *all* string vals
 	//string = (short)temp[0];
 	x->blo_string[0].ng = temp[0];
-	//post("ng = %f",  x->blo_string[0].ng);
 	
 }
 
@@ -706,11 +694,9 @@ void nublotar_setlimit(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -731,11 +717,9 @@ void nublotar_setsustain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -760,11 +744,9 @@ void nublotar_lowpasscross(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -791,11 +773,9 @@ void nublotar_feedfreq(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -816,11 +796,9 @@ void nublotar_feedgain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
@@ -840,17 +818,14 @@ void nublotar_distortgain(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
 	
 	x->predistortion_gain = temp[0];
-	//post("predistortion_gain set to %f", x->predistortion_gain);
     
     
 }
@@ -864,17 +839,14 @@ void nublotar_setpower(t_nublotar *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-    			//post("nublotar: received argument %d of mymessage with value %f", i+1, temp[i]);
 				break;
 		}
 	}
 	
 	x->power = (short)temp[0];
-	post("nublotar: power = %d", x->power);
 }
 
 void nbody_guitar1(t_nublotar *x, double f)
@@ -934,9 +906,7 @@ void nbody_int(t_nublotar *x, int f)
 	
 	if(f < 1) {
 		x->direction = -1;
-		post("nublotar: nbody filter bypassed");
 	} else {
-		post("nublotar: changing filter to %d", f);
         
 		f--;
 		x->direction = f;

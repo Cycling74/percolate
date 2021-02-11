@@ -128,12 +128,10 @@ void setpower(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp = (int)argv[i].a_w.w_long;
 				x->power = temp;
-    			post("scrub: setting power: %d", temp);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_long;
 				x->power = temp;
-    			post("scrub: setting power: %d", temp);
 				break;
 		}
 	}
@@ -148,12 +146,10 @@ void setsync(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp = (int)argv[i].a_w.w_long;
 				x->sync = temp;
-    			post("scrub: setting sync: %d", temp);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_long;
 				x->sync = temp;
-    			post("scrub: setting sync: %d", temp);
 				break;
 		}
 	}
@@ -168,12 +164,10 @@ void setrecord(t_scrub *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp = (int)argv[i].a_w.w_long;
 				x->record = temp;
-    			post("scrub: record: %d", temp);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_long;
 				x->record = temp;
-    			post("scrub: record: %d", temp);
 				break;
 		}
 	}
@@ -456,7 +450,6 @@ void *scrub_new(double scrubsize)
     
     if (scrubsize < 100.) scrubsize = 3000;
     if (scrubsize > 100000.) scrubsize = 3000;
-    post("scrubber: maximum scrubsize set to = %f milliseconds", scrubsize);
     
     if (x->buf1)
 		t_freebytes(x->buf1, x->initbuflen * sizeof(float));
@@ -526,7 +519,6 @@ void scrub_float(t_scrub *x, double f)
 {
 	if (x->x_obj.z_in == 1) {
 		x->rate = f;
-		//post("scrub: setting rate =  %f", f);
 	}
 }
 

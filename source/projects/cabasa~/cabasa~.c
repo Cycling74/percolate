@@ -121,12 +121,11 @@ float cabasa_tick(t_cabasa *x) {
   return data;
 }
 
-int my_random(int max)  {   //  Return Random Int Between 0 and max
-	unsigned long temp;
-  	temp = (unsigned long) rand();
-	temp *= (unsigned long) max;
-	temp >>= 15;
-	return (int) temp; 
+// Return a random int [0 - max]
+// https://stackoverflow.com/a/18386648
+int my_random(int max)
+{
+    return rand() / (RAND_MAX / (max + 1) + 1);
 }
 
 //noise maker
@@ -229,7 +228,6 @@ void cabasa_int(t_cabasa *x, int f)
 void cabasa_bang(t_cabasa *x)
 {
 	int i;
-	post("cabasa: zeroing delay lines");
 	for(i=0; i<2; i++) {
 		x->output[i] = 0.;
 	}

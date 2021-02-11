@@ -185,12 +185,10 @@ void setmic(t_mando *x, t_symbol *s, short argc, t_atom *argv)
 			case A_LONG:
 				temp = (int)argv[i].a_w.w_long;
 				x->mic = temp % 12;
-    			post("mando: setting mic: %d", temp);
 				break;
 			case A_FLOAT:
 				temp = (int)argv[i].a_w.w_long;
 				x->mic = temp % 12;
-    			post("mando: setting mic: %d", temp);
 				break;
 		}
 	}
@@ -293,8 +291,6 @@ void *mando_new(double initial_coeff)
        
         x->fr_save = x->x_fr;
         x->detuning_save = x->detuning;
-        
-        post("if you believe the mandolin is linear, i've got another one for ya...");
     }
     return (x);
 }

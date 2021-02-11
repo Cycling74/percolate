@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="flapper~" module="" category="">
+	<digest>
+		Triggered delay line scrubber
+	</digest>
+	<description>
+		The <o>flapper~</o> is a bit like <o>scrub~</o> except it takes a trigger to set it going, and then scrubs (flaps) back and forth between the trigger point and the "present" (current sample) for as long as desired.
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="INLET_TYPE">
+			<digest>
+				trigger (signal/float, 0/1)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="1" type="INLET_TYPE">
+			<digest>
+				input (signal)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="2" type="INLET_TYPE">
+			<digest>
+				playback speed (signal/float)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="OUTLET_TYPE">
+			<digest>
+				out left (signal)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+		<outlet id="1" type="OUTLET_TYPE">
+			<digest>
+				out right (signal)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="ARG_NAME_0" type="float" optional="0" />
+			</arglist>
+			<digest>
+				Scrub rate
+			</digest>
+			<description>
+				2nd inlet: Scrub rate
+			</description>
+		</method>
+		<method name="signal">
+			<arglist />
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: Audio source
+				<br/>
+				2nd inlet: Scrub rate
+			</description>
+		</method>
+		<method name="attack">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Attack time (ms)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="decay">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Decay time (ms)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="sustain">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Sustain level
+			</digest>
+			<description>
+				Sustain level (0.0 - 1.0)
+			</description>
+		</method>
+		<method name="release">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Release time (ms)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="length">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Delay line length (ms)
+			</digest>
+			<description>
+				Set the length of the delay line in ms (max 5000)
+			</description>
+		</method>
+		<method name="overlap">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Overlap time (ms)
+			</digest>
+			<description>
+				Set the overlap time (ms) when switching buffers on playback (100 ms is the default)
+			</description>
+		</method>
+		<method name="linear">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Linear interpolation
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="poly">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Polynomial interpolation
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<!-- <method name="poly2">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				TEXT_HERE
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method> -->
+		<method name="trigger_off">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Allow/disallow new triggers
+			</digest>
+			<description>
+				Allow/disallow new triggers (on by default)
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="scrub~"/>
+	</seealsolist>
+</c74object>

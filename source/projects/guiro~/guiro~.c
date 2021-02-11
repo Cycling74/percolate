@@ -132,12 +132,11 @@ float guiro_tick(t_guiro *x) {
   return data;
 }
 
-int my_random(int max)  {   //  Return Random Int Between 0 and max
-	unsigned long temp;
-  	temp = (unsigned long) rand();
-	temp *= (unsigned long) max;
-	temp >>= 15;
-	return (int) temp; 
+// Return a random int [0 - max]
+// https://stackoverflow.com/a/18386648
+int my_random(int max)
+{
+    return rand() / (RAND_MAX / (max + 1) + 1);
 }
 
 //noise maker
@@ -174,13 +173,13 @@ void guiro_assist(t_guiro *x, void *b, long m, long a, char *s)
                 sprintf(s,"(signal/float) number of items");
                 break;
             case 1:
-                sprintf(s,"(signal/float) resonant frequency");
-                break;
-            case 2:
                 sprintf(s,"(signal/float) damping");
                 break;
-            case 3:
+            case 2:
                 sprintf(s,"(signal/float) maximum shake");
+                break;
+            case 3:
+                sprintf(s,"(signal/float) resonant frequency");
                 break;
             case 4:
                 sprintf(s,"(signal/float) resonance frequency 2");
@@ -195,12 +194,12 @@ void guiro_float(t_guiro *x, double f)
 {
 	if (x->x_obj.z_in == 0) {
 		x->num_objects = (long)f;
-	} else if (x->x_obj.z_in == 3) {
-		x->res_freq = f;
 	} else if (x->x_obj.z_in == 1) {
 		x->shake_damp = f;
 	} else if (x->x_obj.z_in == 2) {
 		x->shake_max = f;
+	} else if (x->x_obj.z_in == 3) {
+		x->res_freq = f;
 	} else if (x->x_obj.z_in == 4) {
 		x->res_freq2 = f;
 	}
@@ -213,7 +212,6 @@ void guiro_int(t_guiro *x, int f)
 
 void guiro_bang(t_guiro *x)
 {
-	post("guiro: scraping");
 	x->guiroScrape = 0.;
 	/*
 	for(i=0; i<2; i++) {

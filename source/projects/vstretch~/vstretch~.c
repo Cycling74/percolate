@@ -101,13 +101,11 @@ void vectorstretch_setstretch(t_vectorstretch *x, t_symbol *s, long argc, t_atom
             case A_LONG:
                 temp = (float)argv[i].a_w.w_long;
                 if (temp < 0.) temp = 0.;
-                //post("vectorstretch: setting stretch to: %f ", temp);
                 x->stretch = temp;
                 break;
             case A_FLOAT:
                 temp = argv[i].a_w.w_float;
                 if (temp < 0.) temp = 0.;
-                //post("vectorstretch: setting stretch to: %f ", temp);
                 x->stretch = temp;
                 break;
         }

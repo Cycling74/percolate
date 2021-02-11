@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="scrub~" module="" category="">
+	<digest>
+		Delay line scrubber
+	</digest>
+	<description>
+		<o>scrub~</o> varies a delay line by the rate given in the right inlet. The object uses three buffers to avoid clicking and this scheme in itself can result in interesting effects.
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>
+				input
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="1" type="signal">
+			<digest>
+				delay rate
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>
+				output
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="ARG_NAME_0" type="float" optional="0" />
+			</arglist>
+			<digest>
+				Scrub rate
+			</digest>
+			<description>
+				2nd inlet: Scrub rate
+			</description>
+		</method>
+		<method name="signal">
+			<arglist />
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: Audio source
+				<br/>
+				2nd inlet: Scrub rate
+			</description>
+		</method>
+		<method name="delay">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Maximum delay time (ms)
+			</digest>
+			<description>
+				Set the maximum delay time (up to 3000 ms, the default)
+			</description>
+		</method>
+		<method name="overlap">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Overlap time (ms)
+			</digest>
+			<description>
+				Set the overlap time (ms) when switching buffers on playback (100 ms is the default)
+			</description>
+		</method>
+		<method name="ramp">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Ramp length
+			</digest>
+			<description>
+				Set how long to ramp (in ms) when switching buffers while recording (100 ms is the default)
+			</description>
+		</method>
+		<!-- <method name="record">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				TEXT_HERE
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method> -->
+		<method name="zero">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Zero delay line
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="flapper~"/>
+	</seealsolist>
+</c74object>

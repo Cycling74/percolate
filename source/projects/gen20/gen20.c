@@ -96,7 +96,6 @@ void gen20_int(t_gen20 *x, long mode)
 	}
 	else {
 	x->g_mode = mode;
-	post("mode set to %i", mode);
 	DoTheDo(x);
 	}
 }
@@ -206,8 +205,8 @@ void DoTheDo(t_gen20 *x)
 
 	// output the random series in index/amplitude pairs...
 	for(i=0;i<x->g_buffsize;i++) {
-		SETLONG(thestuff,i+(x->g_offset*x->g_buffsize));
-		SETFLOAT(thestuff+1,x->g_table[i]);
+		A_SETLONG(thestuff,i+(x->g_offset*x->g_buffsize));
+		A_SETFLOAT(thestuff+1,x->g_table[i]);
 		outlet_list(x->g_out,0L,2,thestuff);
 	}
 }

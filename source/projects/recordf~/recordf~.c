@@ -161,13 +161,11 @@ void recordf_set(t_recordf *x, t_symbol *s)
 void recordf_in2(t_recordf *x, long n)
 {
 	x->loop_start = n;
-	//post("recordf: loopstart = %d ", n);
 }
 
 void recordf_in3(t_recordf *x, long n)
 {
 	x->loop_end = n;
-	//post("recordf: loopend = %d ", n);
 }
 
 
@@ -175,7 +173,6 @@ void recordf_in0(t_recordf *x, long n)
 {
 	x->record = n;
 	if(!x->append) x->index = 0; //reset recording point to beginning of loop
-	//post("recordf: recording = %d ", n);
 }
 
 void record_loop(t_recordf *x, t_symbol *s, long argc, t_atom *argv)
@@ -210,7 +207,6 @@ void record_goto(t_recordf *x, t_symbol *s, long argc, t_atom *argv)
 	}
 	temp *= x->srate_ms;
 	x->index = (long)(temp);
-	//post("recordf~: setting new record point to %ld", x->index);
 }
 
 void record_append(t_recordf *x, t_symbol *s, long argc, t_atom *argv)

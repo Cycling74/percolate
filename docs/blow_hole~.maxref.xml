@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="blow_hole~" module="" category="">
+	<digest>
+		Model a one-tonehole clarinet
+	</digest>
+	<description>
+		The <o>blow_hole~</o> object is based on the STK clarinet model with the addition of a two-port register hole and a three-port dynamic tonehole implementation, as discussed by Scavone and Cook (1998). In this implementation, the distances between the reed/register hole and tonehole/bell are fixed. As a result, both the tonehole and register hole have variable influence on the playing frequency which is dependent on the length of the air column. In addition, the highest playing freqeuency is limited by these fixed lengths.
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="INLET_TYPE">
+			<digest>
+				control messages
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="OUTLET_TYPE">
+			<digest>
+				output (signal)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="control">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Send control messages
+			</digest>
+			<description>
+				Control messages must have two arguments, control number and control value (0-128).
+				<br/>
+				<br/>
+				Control numbers:
+				<br/>
+				1 = register state
+				<br/>
+				2 = reed stiffness
+				<br/>
+				4 = noise gain
+				<br/>
+				11 = tonehole state
+				<br/>
+				128 = breath pressure
+			</description>
+		</method>
+		<method name="noteoff">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Note off
+			</digest>
+			<description>
+				The word <m>noteoff</m> followed by an amplitude will decay the sound and create a note off.
+			</description>
+		</method>
+		<method name="noteon">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Play a note
+			</digest>
+			<description>
+				The message <m>noteon</m> followed by a pitch (Hz) and amplitude (0-1) will play a note.
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="blotar~"/>
+		<seealso name="bowed~"/>
+		<seealso name="bowedbar~"/>
+		<seealso name="brass~"/>
+		<seealso name="clar~"/>
+		<seealso name="flute~"/>
+		<seealso name="mandolin~"/>
+		<seealso name="plucked~"/>
+		<seealso name="ublotar~"/>
+		<seealso name="bandedWG~"/>
+		<seealso name="blow_botl~"/>
+		<seealso name="mesh2D~"/>
+		<seealso name="saxofony~"/>
+		<seealso name="simple~"/>
+		<seealso name="stif_karp~"/>
+		<seealso name="whistle~"/>
+		<seealso name="sitar~"/>
+	</seealsolist>
+</c74object>

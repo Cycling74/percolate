@@ -21,7 +21,6 @@ typedef struct _sigcasey
 void *sigcasey_new(double val);
 void sigcasey_float(t_sigcasey *x, double f);
 void sigcasey_int(t_sigcasey *x, long n);
-void sigcasey_bang(t_sigcasey *x);
 void sigcasey_assist(t_sigcasey *x, void *b, long m, long a, char *s);
 
 void sigcasey_dsp64(t_sigcasey *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
@@ -35,7 +34,6 @@ void ext_main(void* p)
     class_addmethod(c, (method)sigcasey_assist, "assist", A_CANT, 0);
     class_addmethod(c, (method)sigcasey_dsp64, "dsp64", A_CANT, 0);
     
-    class_addmethod(c, (method)sigcasey_bang, "bang", A_CANT, 0);
     class_addmethod(c, (method)sigcasey_int, "int", A_LONG, 0);
     class_addmethod(c, (method)sigcasey_float, "float", A_FLOAT, 0);
     class_dspinit(c);
@@ -84,10 +82,6 @@ void *sigcasey_new(double val)
     return (x);
 }
 
-void sigcasey_bang(t_sigcasey *x)
-{
-	post("x is %f", x->x_biggest);
-}
 
 // this routine covers both inlets. It doesn't matter which one is involved
 

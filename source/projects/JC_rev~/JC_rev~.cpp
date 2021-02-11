@@ -91,7 +91,6 @@ void JC_rev_setpower(t_JC_rev *x, t_symbol *s, long argc, t_atom *argv);
 //primary MSP funcs
 void ext_main(void* p)
 {
-    post("Verifying update.");
     t_class *c = class_new("JC_rev~", (method)JC_rev_new, (method)JC_rev_free, (long)sizeof(t_JC_rev), 0L, A_DEFLONG, A_DEFLONG, 0);
     
     class_addmethod(c, (method)JC_rev_dsp64, "dsp64", A_CANT, 0);
@@ -198,7 +197,6 @@ void JC_rev_float(t_JC_rev *x, double f)
 	for(i=0;i<x->num_inputs;i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
-			post("JC_rev~: setting in[%d] =  %f", i, f);
 		}
 	}
 }
@@ -211,12 +209,9 @@ void JC_rev_setT60(t_JC_rev *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-    			//post("template~: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -232,12 +227,9 @@ void JC_rev_setEffectMix(t_JC_rev *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-    			//post("template~: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -261,13 +253,10 @@ void JC_rev_setpower(t_JC_rev *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
 				x->power = temp2;
-    			post("template~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}

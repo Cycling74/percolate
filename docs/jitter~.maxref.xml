@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="jitter~" module="" category="">
+	<digest>
+		Signal randomizer
+	</digest>
+	<description>
+		Randomize an incoming vector by a specified range. By default, <o>jitter~</o> randomizes at audio rate.
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Cycling '74
+		</metadata>
+		<metadata name="tag">
+			TEXT_HERE
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>
+				Input
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="1" type="signal">
+			<digest>
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>
+				Output
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg id="0" name="range" type="int" optional="1">
+			<digest>
+				Bound the output signal by +/- the range
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</objarg>
+		<objarg id="1" name="manual" type="int" optional="1">
+			<digest>
+				Generate new random amount to be added
+			</digest>
+			<description>
+				If the second argument is 1, a new random amount will be added to the input signal when <o>jitter~</o> receives a bang.
+			</description>
+		</objarg>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arglist />
+			<digest>
+				Signal to randomize
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="range">
+			<arglist>
+				<arg name="ARG_NAME_0" type="int" optional="0" />
+			</arglist>
+			<digest>
+				Bound the output signal by +/- the range
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="manual">
+			<arglist>
+				<arg name="ARG_NAME_0" type="int" optional="0" />
+			</arglist>
+			<digest>
+				Generate new random amount to be added
+			</digest>
+			<description>
+				The message <m>manual 1</m> generates a new random amount to be added to the input signal when it receives a bang.
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+	</seealsolist>
+</c74object>

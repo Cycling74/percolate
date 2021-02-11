@@ -160,12 +160,11 @@ float tamb_tick(t_tamb *x) {
   return data;
 }
 
-int my_random(int max)  {   //  Return Random Int Between 0 and max
-	unsigned long temp;
-  	temp = (unsigned long) rand();
-	temp *= (unsigned long) max;
-	temp >>= 15;
-	return (int) temp; 
+// Return a random int [0 - max]
+// https://stackoverflow.com/a/18386648
+int my_random(int max)
+{
+    return rand() / (RAND_MAX / (max + 1) + 1);
 }
 
 //noise maker
@@ -249,7 +248,6 @@ void tamb_int(t_tamb *x, int f)
 void tamb_bang(t_tamb *x)
 {
 	int i;
-	post("tamb: zeroing delay lines");
 	for(i=0; i<2; i++) {
 		x->output[i] = 0.;
 		x->output1[i] = 0.;
@@ -376,7 +374,7 @@ void tamb_perform64(t_tamb *x, t_object *dsp64, double **ins, long numins, doubl
     }	
     
     while(n--) {
-        lastOutput = tamb_tick(x);		
+        lastOutput = tamb_tick(x) * 0.1;  // Output needs to be quieted a little		
         *out++ = lastOutput;
     }
 

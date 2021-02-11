@@ -198,12 +198,11 @@ float sleigh_tick(t_sleigh *x) {
   return data;
 }
 
-int my_random(int max)  {   //  Return Random Int Between 0 and max
-	unsigned long temp;
-  	temp = (unsigned long) rand();
-	temp *= (unsigned long) max;
-	temp >>= 15;
-	return (int) temp; 
+// Return a random int [0 - max]
+// https://stackoverflow.com/a/18386648
+int my_random(int max)
+{
+    return rand() / (RAND_MAX / (max + 1) + 1);
 }
 
 //noise maker
@@ -240,24 +239,21 @@ void sleigh_assist(t_sleigh *x, void *b, long m, long a, char *s)
                 sprintf(s,"(signal/float) number of items");
                 break;
             case 1:
-                sprintf(s,"(signal/float) resonance");
-                break;
-            case 2:
                 sprintf(s,"(signal/float) damping");
                 break;
-            case 3:
-                sprintf(s,"(signal/float) maximum shake");
+            case 2:
+                sprintf(s,"(signal/float) energy");
                 break;
-            case 4:
+            case 3:
                 sprintf(s,"(signal/float) frequency 1");
                 break;
-            case 5:
+            case 4:
                 sprintf(s,"(signal/float) frequency 2");
                 break;
-            case 6:
+            case 5:
                 sprintf(s,"(signal/float) frequency 3");
                 break;
-            case 7:
+            case 6:
                 sprintf(s,"(signal/float) frequency 4");
                 break;
         }
@@ -295,7 +291,6 @@ void sleigh_int(t_sleigh *x, int f)
 void sleigh_bang(t_sleigh *x)
 {
 	int i;
-	post("sleigh: zeroing delay lines");
 	for(i=0; i<2; i++) {
 		x->output[i] = 0.;
 		x->output1[i] = 0.;

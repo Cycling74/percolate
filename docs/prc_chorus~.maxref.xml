@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="prc_chorus~" module="" category="">
+	<digest>
+		Chorus effect
+	</digest>
+	<description>
+		Chorus effect from Perry R. Cook.
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+		<metadata name="tag">
+			TEXT_HERE
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="INLET_TYPE">
+			<digest>
+				input (signal)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="1" type="INLET_TYPE">
+			<digest>
+				input (signal)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="OUTLET_TYPE">
+			<digest>
+				output (signal)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg id="0" name="base-delay" type="int" optional="1">
+			<digest>
+				Base delay
+			</digest>
+			<description>
+				Base delay time (default = 1)
+			</description>
+		</objarg>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arglist />
+			<digest>
+				Input signal
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="depth">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Modulation depth
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="frequency">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Modulation frequency
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="mix">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Dry/wet
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="bogus">
+			TEXT_HERE
+		</seealso>
+	</seealsolist>
+</c74object>

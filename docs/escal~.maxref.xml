@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="escal~" module="" category="">
+	<digest>
+		Signal rounder
+	</digest>
+	<description>
+		Round an incoming signal to the nearest integer. Multiple rounding algorithms are available.
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+		<metadata name="tag">
+			TEXT_HERE
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>
+				Input
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="1" type="int">
+			<digest>
+				Round Type (-1, 0, 1)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>
+				Output
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg id="0" name="rounding-algorithm" type="OBJARG_TYPE" optional="1">
+			<digest>
+				Rounding algorithm
+			</digest>
+			<description>
+				-1 = always round down
+				<br/>
+				0 = round normally (>= 0.5 round up, otherwise down)
+				<br/>
+				1 always round up
+			</description>
+		</objarg>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="int">
+			<arglist>
+				<arg name="ARG_NAME_0" type="int" optional="0" />
+			</arglist>
+			<digest>
+				Rounding algorithm
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="signal">
+			<arglist />
+			<digest>
+				Input signal
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="round~"/>
+	</seealsolist>
+</c74object>

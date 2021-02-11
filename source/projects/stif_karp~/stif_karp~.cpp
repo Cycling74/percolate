@@ -206,7 +206,6 @@ void stif_karp_float(t_stif_karp *x, double f)
 	for(i=0;i<x->num_inputs;i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
-			post("stif_karp~: setting in[%d] =  %f", i, f);
 		}
 	}
 }
@@ -222,13 +221,10 @@ void stif_karp_setpower(t_stif_karp *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
 				x->power = temp2;
-    			post("stif_karp~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -249,12 +245,9 @@ void stif_karp_controlchange(t_stif_karp *x, t_symbol *s, long argc, t_atom *arg
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-				//post("template~: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-				//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -275,12 +268,9 @@ void stif_karp_noteon(t_stif_karp *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-				//post("template~: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-				//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -297,11 +287,9 @@ void stif_karp_noteoff(t_stif_karp *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}

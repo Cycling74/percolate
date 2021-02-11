@@ -202,8 +202,6 @@ void *vibraphone_new(double initial_coeff)
 
     x->fr_save = x->x_fr;
     
-    post("vibraphone...");
-    
     return (x);
 }
 

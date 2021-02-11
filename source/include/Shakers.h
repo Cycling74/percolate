@@ -76,6 +76,12 @@ class Shakers : public Instrmnt
   */
   void noteOn(StkFloat instrument, StkFloat amplitude);
 
+/*
+ * Use the instrument number directly to select and play a particular
+ * instrument.
+ */
+  void play(int instrument, StkFloat amplitude);
+
   //! Stop a note with the given amplitude (speed of decay).
   void noteOff(StkFloat amplitude);
 

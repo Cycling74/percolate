@@ -182,7 +182,6 @@ void *clar_new(double initial_coeff)
         x->x_vf = 5.; 		//vib freq
         x->x_fr = 500.;		//frequency
         x->reedStiffness_save = 0.5;
-        post("just try to sound like Beeny Goodman!");
     }
     
     return (x);

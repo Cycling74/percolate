@@ -57,7 +57,6 @@ void ext_main(void* p)
     
     class_register(CLASS_BOX, c);
     chase_class = c;
-	post("chase chase chase...");
 }
 
 void *chase_new(void)

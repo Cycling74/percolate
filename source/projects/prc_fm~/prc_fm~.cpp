@@ -256,7 +256,6 @@ void prc_fm_float(t_prc_fm *x, double f)
 	for(i=0;i<x->num_inputs;i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
-			post("prc_fm~: setting in[%d] =  %f", i, f);
 		}
 	}
 }
@@ -272,13 +271,10 @@ void prc_fm_setpower(t_prc_fm *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
 				x->power = temp2;
-    			post("template~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -299,12 +295,9 @@ void prc_fm_controlchange(t_prc_fm *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-				//post("template~: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-				//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -348,12 +341,9 @@ void prc_fm_noteon(t_prc_fm *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-				//post("template~: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-				//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -418,43 +408,33 @@ void prc_fm_settype(t_prc_fm *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-    			//post("template~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = (long)argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
 	
 	switch(temp) {
 		case 1:
-			post("prc_fm~: BeeThree\n");
 			x->fm_type = 1;
 			break;
 		case 2:
-			post("prc_fm~: FMVoices\n");
 			x->fm_type = 2;
 			break;
 		case 3:
-			post("prc_fm~: HevyMetl\n");
 			x->fm_type = 3;
 			break;
 		case 4:
-			post("prc_fm~: PercFlut\n");
 			x->fm_type = 4;
 			break;
 		case 5:
-			post("prc_fm~: Rhodey\n");
 			x->fm_type = 5;
 			break;
 		case 6:
-			post("prc_fm~: TubeBell\n");
 			x->fm_type = 6;
 			break;
 		case 7:
-			post("prc_fm~: Wurley\n");
 			x->fm_type = 7;
 			break;
 	}

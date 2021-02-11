@@ -207,7 +207,6 @@ void bandedWG_float(t_bandedWG *x, double f)
 	for(i=0;i<x->num_inputs;i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
-			post("bandedWG~: setting in[%d] =  %f", i, f);
 		}
 	}
 }
@@ -225,11 +224,9 @@ void bandedWG_setpower(t_bandedWG *x, t_symbol *s, long argc, t_atom *argv)
 				temp2 = argv[i].a_w.w_long;
 				//probably should comment these out when the object is debugged.
 				x->power = temp2;
-    			post("bandedWG~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -249,12 +246,9 @@ void bandedWG_controlchange(t_bandedWG *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-				//post("template~: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-				//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -275,12 +269,9 @@ void bandedWG_noteon(t_bandedWG *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-				//post("template~: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-				//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -297,11 +288,9 @@ void bandedWG_noteoff(t_bandedWG *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}

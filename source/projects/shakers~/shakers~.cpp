@@ -7,8 +7,6 @@
 // updated for Max 7 by Darwin Grosse and Tim Place
 // ------------------------------------------------
 
-//here are the notes from the original STK instrument
-
 #define __cplusplus
 
 extern "C" {
@@ -75,6 +73,7 @@ void shakers_setdecay(t_shakers *x, t_symbol *s, long argc, t_atom *argv);
 void shakers_setnumobjects(t_shakers *x, t_symbol *s, long argc, t_atom *argv);
 void shakers_setresfreq(t_shakers *x, t_symbol *s, long argc, t_atom *argv);
 void shakers_noteOn(t_shakers *x, t_symbol *s, long argc, t_atom *argv);
+void shakers_play(t_shakers *x, t_symbol *s, long argc, t_atom *argv);
 
 /****FUNCTIONS****/
 
@@ -94,6 +93,7 @@ void ext_main(void* p)
     class_addmethod(c, (method)shakers_setnumobjects, "numobjects", A_GIMME, 0);
     class_addmethod(c, (method)shakers_setresfreq, "resfreq", A_GIMME, 0);
     class_addmethod(c, (method)shakers_noteOn, "noteon", A_GIMME, 0);
+    class_addmethod(c, (method)shakers_play, "play", A_GIMME, 0);
     class_dspinit(c);
     
     class_register(CLASS_BOX, c);
@@ -190,7 +190,6 @@ void shakers_float(t_shakers *x, double f)
 	for(i=0;i<x->num_inputs;i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
-			post("template~: setting in[%d] =  %f", i, f);
 		}
 	}
 }
@@ -200,10 +199,9 @@ void shakers_float(t_shakers *x, double f)
 void shakers_settype(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 {
 	if (argc<1) {
-		post("skakers: need to specify instrument name\n");
+		post("shakers~: need to specify instrument name\n");
 		return;
 	}
-	post("shakers: setting to %s\n", argv[0].a_w.w_sym->s_name);
 	x->myshakers->setupName(argv[0].a_w.w_sym->s_name);
 }
 
@@ -215,12 +213,9 @@ void shakers_setenergy(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-    			//post("template~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = (long)argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -236,12 +231,9 @@ void shakers_setdecay(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-    			//post("template~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = (long)argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -257,12 +249,9 @@ void shakers_setnumobjects(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-    			//post("template~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = (long)argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -278,12 +267,9 @@ void shakers_setresfreq(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-    			//post("template~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = (long)argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -305,12 +291,9 @@ void shakers_noteOn(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
-				//post("template~: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp[i] = argv[i].a_w.w_float;
-				//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -318,9 +301,23 @@ void shakers_noteOn(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 	x->myshakers->noteOn(temp[0], temp[1]);
 }
 
+void shakers_play(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
+{
+	int instrument;
+	float amp;
+
+	if (argc < 2) {
+		post("shakers~ error: play requires two arguments, instrument and amp");
+		return;
+	}
+
+	instrument = (int)argv[0].a_w.w_long;
+	amp = (float)argv[1].a_w.w_float;
+
+	x->myshakers->play(instrument, amp);
+}
 
 
-//what to do when we get the message "mymessage" and a value (or list of values)
 void shakers_setpower(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 {
 	short i;
@@ -330,13 +327,10 @@ void shakers_setpower(t_shakers *x, t_symbol *s, long argc, t_atom *argv)
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
-				//probably should comment these out when the object is debugged.
 				x->power = temp2;
-    			post("template~: power = %d", x->power);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
-    			//post("template~: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}

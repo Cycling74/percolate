@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="munger~" module="" category="">
+	<digest>
+		Stereo granulator and pitch shifter
+	</digest>
+	<description>
+		TEXT_HERE
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal/float">
+			<digest>
+				grain rate
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="1" type="signal/float">
+			<digest>
+				grain rate variation
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="2" type="signal/float">
+			<digest>
+				grain length
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="3" type="signal/float">
+			<digest>
+				grain length variation
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="4" type="signal/float">
+			<digest>
+				grain pitch
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="5" type="signal/float">
+			<digest>
+				grain pitch variation
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="6" type="signal/float">
+			<digest>
+				grain pan spread
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="7" type="signal/float">
+			<digest>
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>
+				output
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>
+				output
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg id="0" name="max-delay-time" type="int" optional="1">
+			<digest>
+				Max delay time (ms)
+			</digest>
+			<description>
+				Maximum delay time (ms) and a constraint on the maximum grain size (max grain size = 1/3 max delay time).
+			</description>
+		</objarg>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="ARG_NAME_0" type="float" optional="0" />
+			</arglist>
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: Does nothing
+				<br/>
+				2nd inlet: Grain rate
+				<br/>
+				3rd inlet: Grain rate variation
+				<br/>
+				4th inlet: Grain length (ms)
+				<br/>
+				5th inlet: Grain length variation
+				<br/>
+				6th inlet: Grain pitch (multiplier)
+				<br/>
+				7th inlet: Grain pitch variation
+				<br/>
+				8th inlet: Grain pan spread
+			</description>
+		</method>
+		<method name="signal">
+			<arglist />
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: Audio in
+				<br/>
+				2nd inlet: Grain rate
+				<br/>
+				3rd inlet: Grain rate variation
+				<br/>
+				4th inlet: Grain length (ms)
+				<br/>
+				5th inlet: Grain length variation
+				<br/>
+				6th inlet: Grain pitch (multiplier)
+				<br/>
+				7th inlet: Grain pitch variation
+				<br/>
+				8th inlet: Grain pan spread
+			</description>
+		</method>
+		<method name="ambidirectional">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Grain playback direction
+			</digest>
+			<description>
+				Allow grains to play backwards and forwards (0), just forwards (1), or just backwards (-1). (0) by default.
+			</description>
+		</method>
+		<method name="clear">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Clear internal sample buffer
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="delaylength">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Delay length
+			</digest>
+			<description>
+				Use <m>delaylength_ms</m> instead.
+			</description>
+		</method>
+		<method name="delaylength_ms">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Delay length (ms)
+			</digest>
+			<description>
+				Constrain how far back in time <o>munger~</o> looks for grains. The smaller this is, the smaller the largest grain can be. The munger's argument sets the maximum delay length possible (and the default value for <m>delaylength</m>).
+			</description>
+		</method>
+		<method name="gain">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Gain
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="maxvoices">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Maximum number of voices
+			</digest>
+			<description>
+				Set an upper limit to the number of simultaneous voices (see <m>voices</m>), and will have some impact on performance if set really high (20 by default). <o>munger~</o> is hardwired for total maximum of 100 voices.
+			</description>
+		</method>
+		<method name="minsize">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Minimum grain size (samples)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="note">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Play a note
+			</digest>
+			<description>
+				Arguments = transposition, gain, pan, attack, decay, sustain level, release
+			</description>
+		</method>
+		<method name="oneshot">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				One-shot mode
+			</digest>
+			<description>
+				Use continuous grains or play them one-at-a-time
+			</description>
+		</method>
+		<method name="position">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Playback position
+			</digest>
+			<description>
+				Set the playback position within the buffer (between 0 and 1). The default is randomized position (-1)It is possible to get some interesting stretching effects by scrubbing through this with "record" on, and some good transposition effects with "record" off.
+			</description>
+		</method>
+		<method name="ramptime">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Ramping envelope length (ms)
+			</digest>
+			<description>
+				Constrain the length (in ms) of the ramping envelope on each grain. If the grain is smaller than the ramptime, the ramp time will be scaled to half the grain size.
+			</description>
+		</method>
+		<method name="rand_gain">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Randomize the gain
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="record">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Toggle recording mode
+			</digest>
+			<description>
+				Turn recording on and off. Turning off freezes the buffer. On (1) by default.
+			</description>
+		</method>
+		<method name="scale">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Apply pitch sieves to grains
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="smooth">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Turn off pitch sieves
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="state">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Print state
+			</digest>
+			<description>
+				Post the values of user controlled variables to the console
+			</description>
+		</method>
+		<method name="tempered">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Turn on pitch sieves
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="voices">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Number of simultaneous grains
+			</digest>
+			<description>
+				Set how many grains to allow simultaneously (10 by default). The more, the more expensive. You can smoothly sweep this parameter.
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<!-- <seealso name="bogus">
+			TEXT_HERE
+		</seealso> -->
+	</seealsolist>
+</c74object>

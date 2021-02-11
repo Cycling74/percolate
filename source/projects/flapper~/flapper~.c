@@ -255,7 +255,6 @@ void flapper_float(t_flapper *x, double f)
 	for(i=0;i<x->num_inputs;i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
-			// post("template~: setting in[%d] =  %f", i, f);
 		}
 	}
 }
@@ -536,13 +535,10 @@ void flapper_overlap(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
 				x->trigger_off = (int) temp2;
-				//probably should comment these out when the object is debugged.
-    			//post("flapper: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
 				x->trigger_off = (int) temp;
-    			//post("flapper: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -558,13 +554,10 @@ void flapper_length(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
 				x->flap_default_length = (long) ((float)temp2 * x->srate_ms);
-				//probably should comment these out when the object is debugged.
-    			//post("flapper: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
 				x->flap_default_length = (long) (temp * x->srate_ms);
-    			//post("flapper: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -580,13 +573,10 @@ void flapper_attack(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
 				x->flapAttackDefault = temp2;
-				//probably should comment these out when the object is debugged.
-    			//post("flapper: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
 				x->flapAttackDefault = (long) temp;
-    			//post("flapper: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -602,13 +592,10 @@ void flapper_decay(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
 				x->flapDecayDefault  = temp2;
-				//probably should comment these out when the object is debugged.
-    			//post("flapper: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
 				x->flapDecayDefault = (long) temp;
-    			//post("flapper: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -624,13 +611,10 @@ void flapper_sustain(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
 				x->flapSustainDefault = (float)temp2;
-				//probably should comment these out when the object is debugged.
-    			//post("flapper: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
 				x->flapSustainDefault = temp;
-    			//post("flapper: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -646,13 +630,10 @@ void flapper_release(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 			case A_LONG:
 				temp2 = argv[i].a_w.w_long;
 				x->flapReleaseDefault = temp2;
-				//probably should comment these out when the object is debugged.
-    			//post("flapper: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
 				x->flapReleaseDefault = (long) temp;
-    			//post("flapper: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}
@@ -669,14 +650,11 @@ void flapper_overlap_len(t_flapper *x, t_symbol *s, long argc, t_atom *argv)
 				temp2 = argv[i].a_w.w_long;
 				x->overlap_len_default = (double)temp2 * x->srate_ms;
 				if (x->overlap_len_default <= 1.) x->overlap_len_default = 1.;
-				//probably should comment these out when the object is debugged.
-    			//post("flapper: received argument %d of mymessage with value %d", i+1, temp2);
 				break;
 			case A_FLOAT:
 				temp = argv[i].a_w.w_float;
 				x->overlap_len_default = temp * x->srate_ms;
 				if (x->overlap_len_default <= 1.) x->overlap_len_default = 1.;
-    			//post("flapper: received argument %d of mymessage with value %f", i+1, temp);
 				break;
 		}
 	}

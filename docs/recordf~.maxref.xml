@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="recordf~" module="" category="">
+	<digest>
+		Copy a signal into a buffer
+	</digest>
+	<description>
+		Copy a signal into a <o>buffer~</o> like <o>record~</o>, but with feedback (retain current contents of <o>buffer~</o> while recording new data into the <o>buffer~</o>).
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+		<metadata name="tag">
+			TEXT_HERE
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="INLET_TYPE">
+			<digest>
+				record on/off
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="1" type="INLET_TYPE">
+			<digest>
+				feedback amount
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="2" type="INLET_TYPE">
+			<digest>
+				loop start
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+		<inlet id="3" type="INLET_TYPE">
+			<digest>
+				loop end
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>
+				output
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg id="0" name="buffer-name" type="OBJARG_TYPE" optional="0">
+			<digest>
+				Buffer to record to
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</objarg>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="int">
+			<arglist>
+				<arg name="ARG_NAME_0" type="int" optional="0" />
+			</arglist>
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: 1 = record, 0 = off
+				<br/>
+				2nd inlet: Feedback amount
+				<br/>
+				3rd inlet: Min recording point (ms)
+				<br/>
+				4th inlet: Max recording point (ms)
+			</description>
+		</method>
+		<method name="signal">
+			<arglist />
+			<digest>
+				Function depends on inlet
+			</digest>
+			<description>
+				Left inlet: Input source
+				<br/>
+				2nd inlet: Feedback amount
+				<br/>
+				3rd inlet: Min recording point (ms)
+				<br/>
+				4th inlet: Max recording point (ms)
+			</description>
+		</method>
+		<method name="(mouse)">
+			<digest>
+				View the buffer
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="append">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Continue recording
+			</digest>
+			<description>
+				Continue recording where previously stopped
+			</description>
+		</method>
+		<method name="goto">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Go to point in buffer (ms)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="in2">
+			<arglist>
+				<arg name="ARG_NAME_0" type="int" optional="0" />
+			</arglist>
+			<digest>
+				Set loop start point
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="in3">
+			<arglist>
+				<arg name="ARG_NAME_0" type="int" optional="0" />
+			</arglist>
+			<digest>
+				Set loop end point
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="loop">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Enable/disable loop
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="reset">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Reset loop start and end
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+		<method name="set">
+			<arglist>
+				<arg name="ARG_NAME_0" type="symbol" optional="0" />
+			</arglist>
+			<digest>
+				Set a buffer
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="bogus">
+			TEXT_HERE
+		</seealso>
+	</seealsolist>
+</c74object>

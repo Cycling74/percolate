@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<!--Data marked TEXT_HERE, INLET_TYPE, OUTLET_TYPE, ARG_NAME and ARG_TYPE need to be filled in-->
+<c74object name="whistle~" module="" category="">
+	<digest>
+		Police/referee whistle instrument
+	</digest>
+	<description>
+		STK police/referee whistle instrument implementing a hybrid physical/spectral model of a police whistle.	
+	</description>
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">
+			Dan Trueman and R. Luke DuBois
+		</metadata>
+		<metadata name="tag">
+			TEXT_HERE
+		</metadata>
+	</metadatalist>
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="INLET_TYPE">
+			<digest>
+				control messages
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</inlet>
+	</inletlist>
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="OUTLET_TYPE">
+			<digest>
+				output (signal)
+			</digest>
+			<description>
+				TEXT_HERE
+			</description>
+		</outlet>
+	</outletlist>
+	<!--ARGUMENTS-->
+	<objarglist>
+	</objarglist>
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="control">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Send control messages
+			</digest>
+			<description>
+				Control messages must have two arguments, control number and control value (0-128).
+				<br/>
+				<br/>
+				Control numbers:
+				<br/>
+				1 = ripple modulation gain
+				<br/>
+				2 = blow frequency modulation
+				<br/>
+				4 = noise gain
+				<br/>
+				11 = ripple modulation frequency
+				<br/>
+				128 = breath pressure
+			</description>
+		</method>
+		<method name="noteoff">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Note off
+			</digest>
+			<description>
+				The word <m>noteoff</m> followed by an amplitude will decay the sound and create a note off.
+			</description>
+		</method>
+		<method name="noteon">
+			<arglist>
+				<arg name="ARG_NAME_0" type="list" optional="0" />
+			</arglist>
+			<digest>
+				Play a note
+			</digest>
+			<description>
+				The message <m>noteon</m> followed by a pitch (Hz) and amplitude (0-1) will play a note.
+			</description>
+		</method>
+	</methodlist>
+	<!--ATTRIBUTES-->
+	<!--EXAMPLE-->
+	<examplelist>
+		<example caption="" img="" />
+	</examplelist>
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="blotar~"/>
+		<seealso name="bowed~"/>
+		<seealso name="bowedbar~"/>
+		<seealso name="brass~"/>
+		<seealso name="clar~"/>
+		<seealso name="flute~"/>
+		<seealso name="mandolin~"/>
+		<seealso name="plucked~"/>
+		<seealso name="ublotar~"/>
+		<seealso name="bandedWG~"/>
+		<seealso name="blow_botl~"/>
+		<seealso name="blow_hole~"/>
+		<seealso name="mesh2D~"/>
+		<seealso name="saxofony~"/>
+		<seealso name="simple~"/>
+		<seealso name="stif_karp~"/>
+		<seealso name="sitar~"/>
+	</seealsolist>
+</c74object>
