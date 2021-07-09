@@ -81,8 +81,8 @@ void WaveLoop :: addPhaseOffset(StkFloat angle)
 
 const StkFloat *WaveLoop :: tickFrame(void)
 {
-  register StkFloat tyme, alpha;
-  register unsigned long i, index;
+  StkFloat tyme, alpha;
+  unsigned long i, index;
 
   // Check limits of time address ... if necessary, recalculate modulo fileSize.
   while (time_ < 0.0)

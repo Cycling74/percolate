@@ -952,7 +952,7 @@ const StkFloat *WvIn :: tickFrame(void)
 {
   if (finished_) return lastOutputs_;
 
-  register StkFloat tyme = time_;
+  StkFloat tyme = time_;
   if (chunking_) {
     // Check the time address vs. our current buffer limits.
     if ( (tyme < chunkPointer_) || (tyme >= chunkPointer_+bufferSize_) )
@@ -962,12 +962,12 @@ const StkFloat *WvIn :: tickFrame(void)
   }
 
   // Integer part of time address.
-  register unsigned long index = (unsigned long) tyme;
+  unsigned long index = (unsigned long) tyme;
 
-  register unsigned long i;
+  unsigned long i;
   if (interpolate_) {
     // Linear interpolation ... fractional part of time address.
-    register StkFloat alpha = tyme - (StkFloat) index;
+    StkFloat alpha = tyme - (StkFloat) index;
     index *= channels_;
     for (i=0; i<channels_; i++) {
       lastOutputs_[i] = data_[index];
