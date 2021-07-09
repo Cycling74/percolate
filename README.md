@@ -16,4 +16,11 @@ If you have issues doing `git submodule update --init`, you may need to remove a
 git rm -r --cached source/maxsdk
 ```
 
-If you're building a C++ file, you may need to update the header search path in Xcode/Visual Studio so that the pre-processor can find the STK headers.
+## Building
+
+```
+mkdir build
+cd build
+cmake -G "Ninja" ..  # Or whichever generator you choose
+cmake --build .
+```
