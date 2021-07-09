@@ -1,0 +1,25 @@
+{
+    "name": "PeRColate",
+	"author" : "Luke DuBois, Dan Trueman, Cycling '74",
+	"description" : "A collection of synthesis, signal processing, and image processing objects originally authored by Dan Trueman and Luke Dubois.",
+	"homepatcher" : "PeRColate.maxpat",
+	"max_version_min" : "8.0", "max_version_max" : "none",
+	"name" : "@C74_PACKAGE_NAME@",
+	"os" : {
+		"macintosh" : {
+			"platform" : [ "x64" ],
+			"min_version" : "none"
+		},
+		"windows" : {
+			"platform" : [ "x64" ],
+			"min_version" : "none"
+		}
+	},
+	"package_extra" : {
+		"reverse_domain" : "com.cycling74",
+		"copyright" : "Copyright (c) 2018 Cycling '74"
+	},
+	"tags" : ["synthesis", "physical modeling"],
+	"version" : "@GIT_VERSION_MAJ@.@GIT_VERSION_MIN@.@GIT_VERSION_SUB@",
+	"website" : "http://www.github.com/Cycling74/percolate"
+}
