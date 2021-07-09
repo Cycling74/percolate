@@ -102,7 +102,7 @@ void gen20_int(t_gen20 *x, long mode)
 
 void DoTheDo(t_gen20 *x)
 {
-	register short i,j;
+	short i,j;
 	int k;
 	t_atom thestuff[2];
 	int N=12;
@@ -214,7 +214,7 @@ void DoTheDo(t_gen20 *x)
 void *gen20_new(long n, long o)
 {
 	t_gen20 *x;
-	register short c;
+	short c;
 	
 	x = (t_gen20 *)object_alloc(gen20_class);		// get memory for the object
 

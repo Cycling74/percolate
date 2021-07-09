@@ -106,7 +106,7 @@ void gen17_list(t_gen17 *x, t_symbol *s, short argc, t_atom *argv)
 {
 
 	// parse the list of incoming harmonics...
-	register short i;
+	short i;
 	for (i=0; i < argc; i++) {
 		if (argv[i].a_type==A_LONG) {
 			x->g_args[i] = (float)argv[i].a_w.w_long;
