@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 
+set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 string(REGEX REPLACE "(.*)/" "" THIS_FOLDER_NAME "${CMAKE_CURRENT_SOURCE_DIR}")
 project(${THIS_FOLDER_NAME})
 
@@ -18,7 +20,7 @@ ENDMACRO()
 
 SUBDIRLIST(PROJECT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/source/projects)
 foreach (project_dir ${PROJECT_DIRS})
-    set(project_path ${CMAKE_CURRENT_SOURCE_DIR}/source/${project_dir})
+    set(project_path ${CMAKE_CURRENT_SOURCE_DIR}/source/projects/${project_dir})
     message("checking in: ${project_path}")
     if (EXISTS "${project_path}/CMakeLists.txt")
         message("Generating: ${project_dir}")
