@@ -19,176 +19,172 @@ extern "C" {
 
 #include "BlowBotl.h"
 
-#define MAX_INPUTS 10 	//arbitrary
-#define MAX_OUTPUTS 10	//also arbitrary
+#define MAX_INPUTS 10     // arbitrary
+#define MAX_OUTPUTS 10    // also arbitrary
 
-t_class *blow_botl_class;
+t_class* blow_botl_class;
 
-typedef struct _blow_botl
-{
-	//header
-    t_pxobject x_obj;
-    
-    //variables specific to this object
-    double srate, one_over_srate;  	//sample rate vars
-    long num_inputs, num_outputs; 	//number of inputs and outputs
-    double in[MAX_INPUTS];			//values of input variables
-    double in_connected[MAX_INPUTS]; //booleans: true if signals connected to the input in question
-    //we use this "connected" boolean so that users can connect *either* signals or floats
-    //to the various inputs; sometimes it's easier just to have floats, but other times
-    //it's essential to have signals.... but we have to know. 
-    
-    BlowBotl 	*myBotl;
+typedef struct _blow_botl {
+	// header
+	t_pxobject x_obj;
 
-    long fm_type; //which instrument
-    long power;					//i like objects, especially CPU intensive ones, to have their own
-    								//"power" messages so that you can bypass them individually
+	// variables specific to this object
+	double srate, one_over_srate;       // sample rate vars
+	long   num_inputs, num_outputs;     // number of inputs and outputs
+	double in[MAX_INPUTS];              // values of input variables
+	double in_connected[MAX_INPUTS];    // booleans: true if signals connected to the input in question
+	// we use this "connected" boolean so that users can connect *either* signals or floats
+	// to the various inputs; sometimes it's easier just to have floats, but other times
+	// it's essential to have signals.... but we have to know.
 
-    
+	BlowBotl* myBotl;
+
+	long fm_type;    // which instrument
+	long power;      // i like objects, especially CPU intensive ones, to have their own
+				   //"power" messages so that you can bypass them individually
+
+
 } t_blow_botl;
 
 
 /****PROTOTYPES****/
 
-//setup funcs; this probably won't change, unless you decide to change the number of
-//args that the user can input, in which case blow_botl_new will have to change
-void *blow_botl_new(long num_inputs, long num_outputs);
-void blow_botl_free(t_blow_botl *x);
-void blow_botl_assist(t_blow_botl *x, void *b, long m, long a, char *s);
+// setup funcs; this probably won't change, unless you decide to change the number of
+// args that the user can input, in which case blow_botl_new will have to change
+void* blow_botl_new(long num_inputs, long num_outputs);
+void  blow_botl_free(t_blow_botl* x);
+void  blow_botl_assist(t_blow_botl* x, void* b, long m, long a, char* s);
 
 // dsp stuff
-void blow_botl_dsp64(t_blow_botl *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
-void blow_botl_perform64(t_blow_botl *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
+void blow_botl_dsp64(t_blow_botl* x, t_object* dsp64, short* count, double samplerate, long maxvectorsize, long flags);
+void blow_botl_perform64(t_blow_botl* x, t_object* dsp64, double** ins, long numins, double** outs, long numouts, long sampleframes,
+	long flags, void* userparam);
 
-//for getting floats at inputs
-void blow_botl_float(t_blow_botl *x, double f);
+// for getting floats at inputs
+void blow_botl_float(t_blow_botl* x, double f);
 
-//for custom messages
-void blow_botl_setpower(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv);
-void blow_botl_controlchange(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv);
-void blow_botl_noteon(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv);
-void blow_botl_noteoff(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv);
-void blow_botl_settype(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv);
+// for custom messages
+void blow_botl_setpower(t_blow_botl* x, t_symbol* s, long argc, t_atom* argv);
+void blow_botl_controlchange(t_blow_botl* x, t_symbol* s, long argc, t_atom* argv);
+void blow_botl_noteon(t_blow_botl* x, t_symbol* s, long argc, t_atom* argv);
+void blow_botl_noteoff(t_blow_botl* x, t_symbol* s, long argc, t_atom* argv);
+void blow_botl_settype(t_blow_botl* x, t_symbol* s, long argc, t_atom* argv);
 
 
 /****FUNCTIONS****/
 
-//primary MSP funcs
-void ext_main(void* p)
-{
-	//the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
-	//change these if you want different user args
-    t_class *c = class_new("blow_botl~", (method)blow_botl_new, (method)blow_botl_free, (long)sizeof(t_blow_botl), 0L, A_DEFLONG, A_DEFLONG, 0);
-   
-    class_addmethod(c, (method)blow_botl_assist, "assist", A_CANT, 0);
-    class_addmethod(c, (method)blow_botl_float, "float", A_FLOAT, 0);
+// primary MSP funcs
+void ext_main(void* p) {
+	// the two A_DEFLONG arguments give us the two arguments for the user to set number of ins/outs
+	// change these if you want different user args
+	t_class* c
+		= class_new("blow_botl~", (method)blow_botl_new, (method)blow_botl_free, (long)sizeof(t_blow_botl), 0L, A_DEFLONG, A_DEFLONG, 0);
 
-    class_addmethod(c, (method)blow_botl_setpower, "power", A_GIMME, 0);
-    class_addmethod(c, (method)blow_botl_controlchange, "control", A_GIMME, 0);
-    class_addmethod(c, (method)blow_botl_noteon, "noteon", A_GIMME, 0);
-    class_addmethod(c, (method)blow_botl_noteoff, "noteoff", A_GIMME, 0);
+	class_addmethod(c, (method)blow_botl_assist, "assist", A_CANT, 0);
+	class_addmethod(c, (method)blow_botl_float, "float", A_FLOAT, 0);
 
-    class_addmethod(c, (method)blow_botl_dsp64, "dsp64", A_CANT, 0);
-    class_dspinit(c);
-    
-    class_register(CLASS_BOX, c);
-    blow_botl_class = c;
+	class_addmethod(c, (method)blow_botl_setpower, "power", A_GIMME, 0);
+	class_addmethod(c, (method)blow_botl_controlchange, "control", A_GIMME, 0);
+	class_addmethod(c, (method)blow_botl_noteon, "noteon", A_GIMME, 0);
+	class_addmethod(c, (method)blow_botl_noteoff, "noteoff", A_GIMME, 0);
+
+	class_addmethod(c, (method)blow_botl_dsp64, "dsp64", A_CANT, 0);
+	class_dspinit(c);
+
+	class_register(CLASS_BOX, c);
+	blow_botl_class = c;
 }
 
-//this gets called when the object is created; everytime the user types in new args, this will get called
-void *blow_botl_new(long xD, long yD)
-{
+// this gets called when the object is created; everytime the user types in new args, this will get called
+void* blow_botl_new(long xD, long yD) {
 	int i;
-	
-	//leave this; creates our object
-    t_blow_botl *x = (t_blow_botl *)object_alloc(blow_botl_class);
-    
-    //zero out the struct, to be careful (takk to jkclayton)
-    if (x) { 
-        for(i=sizeof(t_pxobject);i<sizeof(t_blow_botl);i++) {
-            ((char *)x)[i]=0;
-        }
 
-        //if you just need one input for message (not using audio), you can just set num_inputs = 1
-        //i don't think this causes a performance hit.
-        x->num_inputs = 1;
-        x->num_outputs = 1;
+	// leave this; creates our object
+	t_blow_botl* x = (t_blow_botl*)object_alloc(blow_botl_class);
 
-        //setup up inputs and outputs, for audio
-        
-        //inputs
-        dsp_setup((t_pxobject *)x, x->num_inputs);
-        
-        //outputs
-        for (i=0;i<x->num_outputs;i++) {
-            outlet_new((t_object *)x, "signal");
-        }
-        
-        //initialize some variables; important to do this!
-        for (i=0;i<x->num_inputs;i++){
-            x->in[i] = 0.;
-            x->in_connected[i] = 0;
-        }
-        x->power = 1;
+	// zero out the struct, to be careful (takk to jkclayton)
+	if (x) {
+		for (i = sizeof(t_pxobject); i < sizeof(t_blow_botl); i++) {
+			((char*)x)[i] = 0;
+		}
 
-        //occasionally this line is necessary if you are doing weird asynchronous things with the in/out vectors
-        //x->x_obj.z_misc = Z_NO_INPLACE;
-        //Stk::setRawwavePath("../../rawwaves/");
+		// if you just need one input for message (not using audio), you can just set num_inputs = 1
+		// i don't think this causes a performance hit.
+		x->num_inputs  = 1;
+		x->num_outputs = 1;
 
-        x->myBotl = new BlowBotl();
-    }
+		// setup up inputs and outputs, for audio
 
-    return (x);
+		// inputs
+		dsp_setup((t_pxobject*)x, x->num_inputs);
+
+		// outputs
+		for (i = 0; i < x->num_outputs; i++) {
+			outlet_new((t_object*)x, "signal");
+		}
+
+		// initialize some variables; important to do this!
+		for (i = 0; i < x->num_inputs; i++) {
+			x->in[i]           = 0.;
+			x->in_connected[i] = 0;
+		}
+		x->power = 1;
+
+		// occasionally this line is necessary if you are doing weird asynchronous things with the in/out vectors
+		// x->x_obj.z_misc = Z_NO_INPLACE;
+		// Stk::setRawwavePath("../../rawwaves/");
+
+		x->myBotl = new BlowBotl();
+	}
+
+	return (x);
 }
 
-//this gets called when an object is destroyed. do stuff here if you need to clean up.
-void blow_botl_free(t_blow_botl *x)
-{
-	//gotta call this one, *before* you free other resources! thanks to Rob Sussman for pointing this out to me.
-	dsp_free((t_pxobject *)x);
+// this gets called when an object is destroyed. do stuff here if you need to clean up.
+void blow_botl_free(t_blow_botl* x) {
+	// gotta call this one, *before* you free other resources! thanks to Rob Sussman for pointing this out to me.
+	dsp_free((t_pxobject*)x);
 	delete x->myBotl;
 }
 
-//tells the user about the inputs/outputs when mousing over them
-void blow_botl_assist(t_blow_botl *x, void *b, long m, long a, char *s)
-{
+// tells the user about the inputs/outputs when mousing over them
+void blow_botl_assist(t_blow_botl* x, void* b, long m, long a, char* s) {
 	int i;
-	
-	//could use switch/case inside for loops, to give more informative assist info....
-	if (m==1) {
-		for(i=0; i<x->num_inputs; i++)
-			if (a==i) std::sprintf(s, "control messages");
+
+	// could use switch/case inside for loops, to give more informative assist info....
+	if (m == 1) {
+		for (i = 0; i < x->num_inputs; i++)
+			if (a == i)
+				std::sprintf(s, "control messages");
 	}
-	if (m==2) {
-		for(i=0; i<x->num_outputs; i++)
-			if (a==i) std::sprintf(s, "output (signal)");
+	if (m == 2) {
+		for (i = 0; i < x->num_outputs; i++)
+			if (a == i)
+				std::sprintf(s, "output (signal)");
 	}
-	
 }
 
-//this gets called when ever a float is received at *any* input
-void blow_botl_float(t_blow_botl *x, double f)
-{
+// this gets called when ever a float is received at *any* input
+void blow_botl_float(t_blow_botl* x, double f) {
 	int i;
-	
-	//check to see which input the float came in, then set the appropriate variable value
-	for(i=0; i<x->num_inputs; i++) {
+
+	// check to see which input the float came in, then set the appropriate variable value
+	for (i = 0; i < x->num_inputs; i++) {
 		if (x->x_obj.z_in == i) {
 			x->in[i] = f;
 		}
 	}
 }
 
-//what to do when we get the message "mymessage" and a value (or list of values)
-void blow_botl_setpower(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
-{
-	long i;
+// what to do when we get the message "mymessage" and a value (or list of values)
+void blow_botl_setpower(t_blow_botl* x, t_symbol* s, long argc, t_atom* argv) {
+	long  i;
 	float temp;
-	long temp2;
-	for (i=0; i < argc; i++) {
+	long  temp2;
+	for (i = 0; i < argc; i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
-				temp2 = argv[i].a_w.w_long;
+				temp2    = argv[i].a_w.w_long;
 				x->power = temp2;
 				break;
 			case A_FLOAT:
@@ -196,20 +192,18 @@ void blow_botl_setpower(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
 				break;
 		}
 	}
-    
 }
 
-void blow_botl_controlchange(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
-{
-	long i;
+void blow_botl_controlchange(t_blow_botl* x, t_symbol* s, long argc, t_atom* argv) {
+	long  i;
 	float temp[2];
-    
-	if(argc<2) {
+
+	if (argc < 2) {
 		post("blow_botl~ error: need two arguments, control number and control value\n");
 		return;
 	}
-    
-	for(i=0;i<2;i++) {
+
+	for (i = 0; i < 2; i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
@@ -219,21 +213,20 @@ void blow_botl_controlchange(t_blow_botl *x, t_symbol *s, long argc, t_atom *arg
 				break;
 		}
 	}
-	
+
 	x->myBotl->controlChange(temp[0], temp[1]);
 }
 
-void blow_botl_noteon(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
-{
-	long i;
+void blow_botl_noteon(t_blow_botl* x, t_symbol* s, long argc, t_atom* argv) {
+	long  i;
 	float temp[2];
-    
-	if(argc<2) {
+
+	if (argc < 2) {
 		post("blow_botl~ error: need two arguments, frequency and amplitude\n");
 		return;
 	}
-    
-	for(i=0;i<2;i++) {
+
+	for (i = 0; i < 2; i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp[i] = (float)argv[i].a_w.w_long;
@@ -246,11 +239,10 @@ void blow_botl_noteon(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
 	x->myBotl->noteOn(temp[0], temp[1]);
 }
 
-void blow_botl_noteoff(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
-{
-	long i;
+void blow_botl_noteoff(t_blow_botl* x, t_symbol* s, long argc, t_atom* argv) {
+	long  i;
 	float temp = 0.;
-	for (i=0; i < argc; i++) {
+	for (i = 0; i < argc; i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
 				temp = (float)argv[i].a_w.w_long;
@@ -263,60 +255,54 @@ void blow_botl_noteoff(t_blow_botl *x, t_symbol *s, long argc, t_atom *argv)
 	x->myBotl->noteOff(temp);
 }
 
-void blow_botl_dsp64(t_blow_botl *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
-{
+void blow_botl_dsp64(t_blow_botl* x, t_object* dsp64, short* count, double samplerate, long maxvectorsize, long flags) {
 	int i;
-    
-	//set sample rate vars
-	x->srate = samplerate;
-	x->one_over_srate = 1./x->srate;
+
+	// set sample rate vars
+	x->srate          = samplerate;
+	x->one_over_srate = 1. / x->srate;
 	Stk::setSampleRate(x->srate);
-	
-	//check to see if there are signals connected to the various inputs
-	for(i=0;i<x->num_inputs;i++) {
-        x->in_connected[i]	= count[i];
-    }
-    
-    object_method(dsp64, gensym("dsp_add64"), x, blow_botl_perform64, 0, NULL);
+
+	// check to see if there are signals connected to the various inputs
+	for (i = 0; i < x->num_inputs; i++) {
+		x->in_connected[i] = count[i];
+	}
+
+	object_method(dsp64, gensym("dsp_add64"), x, blow_botl_perform64, 0, NULL);
 }
 
-void blow_botl_perform64(t_blow_botl *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
-{
-	double *in[MAX_INPUTS]; 		//pointers to the input vectors
-	double *out[MAX_OUTPUTS];	//pointers to the output vectors
-    
-	long n = sampleframes;	//number of samples per vector
-	
-	//random local vars
+void blow_botl_perform64(t_blow_botl* x, t_object* dsp64, double** ins, long numins, double** outs, long numouts, long sampleframes,
+	long flags, void* userparam) {
+	double* in[MAX_INPUTS];      // pointers to the input vectors
+	double* out[MAX_OUTPUTS];    // pointers to the output vectors
+
+	long n = sampleframes;    // number of samples per vector
+
+	// random local vars
 	long i;
-	
-	//check to see if we should skip this routine if the patcher is "muted"
-	//i also setup of "power" messages for expensive objects, so that the
-	//object itself can be turned off directly. this can be convenient sometimes.
-	//in any case, all audio objects should have this
+
+	// check to see if we should skip this routine if the patcher is "muted"
+	// i also setup of "power" messages for expensive objects, so that the
+	// object itself can be turned off directly. this can be convenient sometimes.
+	// in any case, all audio objects should have this
 	if (x->power == 0) {
-        while (n--)
-            *outs[0]++ = *ins[0]++;
-        return;
-    }
-	
-	//check to see if we have a signal or float message connected to input
-	//then assign the pointer accordingly
-	for (i=0; i<x->num_inputs; i++) {
-		in[i] = x->in_connected[i] ? (double *)(ins[i]) : &x->in[i];
+		while (n--)
+			*outs[0]++ = *ins[0]++;
+		return;
 	}
-	
-	//assign the output vectors
-	for (i=0;i<x->num_outputs;i++) {
-		out[i] = (double *)(outs[i]);
+
+	// check to see if we have a signal or float message connected to input
+	// then assign the pointer accordingly
+	for (i = 0; i < x->num_inputs; i++) {
+		in[i] = x->in_connected[i] ? (double*)(ins[i]) : &x->in[i];
 	}
-    
-	while(n--) {
+
+	// assign the output vectors
+	for (i = 0; i < x->num_outputs; i++) {
+		out[i] = (double*)(outs[i]);
+	}
+
+	while (n--) {
 		*out[0]++ = x->myBotl->tick();
 	}
 }
-
-
-
-
-
