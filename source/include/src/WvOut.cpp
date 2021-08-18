@@ -731,7 +731,7 @@ void WvOut :: writeData( unsigned long frames )
 
 void WvOut :: clipTest( StkFloat& sample )
 {
-  register bool clip = false;
+  bool clip = false;
   if ( sample > 1.0 ) {
     sample = 1.0;
     clip = true;

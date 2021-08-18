@@ -103,7 +103,7 @@ void gen25_int(t_gen25 *x, long n)
 
 void DoTheDo(t_gen25 *x)
 {
-	register short i, j;
+	short i, j;
 	t_atom thestuff[2];
 	float wmax, xmax=0.0;
 
@@ -137,7 +137,7 @@ void DoTheDo(t_gen25 *x)
 void *gen25_new(long n, long o)
 {
 	t_gen25 *x;
-	register short c;
+	short c;
 	
 	x = (t_gen25 *)object_alloc(gen25_class);		// get memory for the object
 	

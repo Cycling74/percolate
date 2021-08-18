@@ -108,7 +108,7 @@ void gen9_list(t_gen9 *x, t_symbol *s, long argc, t_atom *argv)
 {
 
 	// parse the list of incoming harmonics...
-	register short i;
+	short i;
 	for (i=0; i < argc; i++) {
 		if (argv[i].a_type==A_LONG) {
 			x->g_args[i] = (float)argv[i].a_w.w_long;

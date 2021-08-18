@@ -108,7 +108,7 @@ void gen5_list(t_gen5 *x, t_symbol *s, long argc, t_atom *argv)
 {
 
 	// parse the list of incoming harmonics...
-	register short i;
+	short i;
 	for (i=0; i < argc; i++) {
 		if (argv[i].a_type==A_LONG) {
 			x->g_args[i] = (float)argv[i].a_w.w_long;
@@ -123,7 +123,7 @@ void gen5_list(t_gen5 *x, t_symbol *s, long argc, t_atom *argv)
 
 void DoTheDo(t_gen5 *x)
 {
-	register short j,k,l;
+	short j,k,l;
 	t_atom thestuff[2];
 	float c, amp2, amp1, wmax, xmax=0.0;
 	int i=0;

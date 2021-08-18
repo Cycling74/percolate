@@ -109,7 +109,7 @@ void gen24_list(t_gen24 *x, t_symbol *s, long argc, t_atom *argv)
 {
 
 	// parse the list of incoming harmonics...
-	register short i;
+	short i;
 
 	for (i=0; i < argc; i++) {
 		if (argv[i].a_type==A_LONG) {
@@ -125,7 +125,7 @@ void gen24_list(t_gen24 *x, t_symbol *s, long argc, t_atom *argv)
 
 void DoTheDo(t_gen24 *x)
 {
-	register short i,j,k,l;
+	short i,j,k,l;
 	t_atom thestuff[2];
 	float scaler, amp2, amp1, wmax, xmax=0.0;
 	
@@ -167,7 +167,7 @@ void DoTheDo(t_gen24 *x)
 void *gen24_new(long n, long o)
 {
 	t_gen24 *x;
-	register short c;
+	short c;
 	
 	x = (t_gen24 *)object_alloc(gen24_class);		// get memory for the object
 	

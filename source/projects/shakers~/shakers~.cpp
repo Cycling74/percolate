@@ -7,7 +7,7 @@
 // updated for Max 7 by Darwin Grosse and Tim Place
 // ------------------------------------------------
 
-#define __cplusplus
+// #define __cplusplus
 
 extern "C" {
 #include "ext.h"
