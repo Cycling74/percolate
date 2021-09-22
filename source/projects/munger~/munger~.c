@@ -992,7 +992,7 @@ void munger_bufsize(t_munger* x, t_symbol* s, long argc, t_atom* argv) {
 				x->twothirdBufsize = x->maxsize * 2.;
 				x->onethirdBufsize = x->maxsize;
 				if (x->verbose > 0)
-					object_post((t_object*)x, "setting delaylength to: %f seconds", (x->buflen / x->srate));
+					object_post((t_object*)x, "setting delaylength to: %f seconds", (temp / x->srate));
 				break;
 			case A_FLOAT:
 				temp = x->srate * argv[i].a_w.w_float;
@@ -1007,7 +1007,7 @@ void munger_bufsize(t_munger* x, t_symbol* s, long argc, t_atom* argv) {
 				x->twothirdBufsize = x->maxsize * 2.;
 				x->onethirdBufsize = x->maxsize;
 				if (x->verbose > 0)
-					object_post((t_object*)x, "setting delaylength to: %f seconds", x->buflen / x->srate);
+					object_post((t_object*)x, "setting delaylength to: %f seconds", (temp / x->srate));
 				break;
 		}
 	}
@@ -1031,7 +1031,7 @@ void munger_bufsize_ms(t_munger* x, t_symbol* s, long argc, t_atom* argv) {
 				x->twothirdBufsize = x->maxsize * 2.;
 				x->onethirdBufsize = x->maxsize;
 				if (x->verbose > 0)
-					object_post((t_object*)x, "setting delaylength to: %f seconds", (x->buflen / x->srate));
+					object_post((t_object*)x, "setting delaylength to: %f seconds", (temp / x->srate));
 				break;
 			case A_FLOAT:
 				temp = x->srate_ms * argv[i].a_w.w_float;
@@ -1046,7 +1046,7 @@ void munger_bufsize_ms(t_munger* x, t_symbol* s, long argc, t_atom* argv) {
 				x->twothirdBufsize = x->maxsize * 2.;
 				x->onethirdBufsize = x->maxsize;
 				if (x->verbose > 0)
-					object_post((t_object*)x, "setting delaylength to: %f seconds.", x->buflen / x->srate);
+					object_post((t_object*)x, "setting delaylength to: %f seconds.", (temp / x->srate));
 				break;
 		}
 	}
